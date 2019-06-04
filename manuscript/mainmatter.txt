@@ -2,7 +2,54 @@
 
 # The state of the art #
 
+Within the Scala ecosystem the Akka-HTTP library is a popular choice for implementing server side backends for HTTP APIs. Another quite popular option is the Play framework but using a full blown web framework to just provide a thin API is overkill in most cases. As most services need a database the Slick library is another popular choice which completes the picture.
+
+However while all mentioned libraries are battle tested and proven they still have problems.
+
 # Problems
+
+In the domain of functional programming we want referential transparency which we will define in the following way:
+
+I> An expression `e` is referential transparent if we can in any given program replace any occurances of `e` with the result of the evaluation of `e` without changing the behaviour of the program.
+
+Building on that we need pure functions which are
+
+1. only dependent on their input
+2. have no side effects
+
+This means in turn that our functions will be referential transparent.
+
+**But**, the mentioned libraries are built upon the `Future` from Scala which uses eager evaluation and breaks referential transparency. Let's look at an example.
+
+{caption: "Future example 1"}
+```scala
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
+for {
+  _ <- Future { println("Hi there!") }
+  _ <- Future { println("Hi there!") }
+} yield ()
+```
+
+The code above will print the text `Hi there!` two times. But how about the following one?
+
+{caption: "Future example 2"}
+```scala
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
+val printF = Future { println("Hi there!") }
+
+for {
+  _ <- printF
+  _ <- printF
+} yield ()
+```
+
+Instead of printing the text two times it will print it only once even when there is no usage of `printF` at all (try omitting the for comprehension). This means that `Future` breaks referential transparency!
+
+Q> So `Future` makes it harder (sometimes impossible) to reason about our code and also raises the bar for testability. What can we do?
 
 # Maybe there is another way #
 
