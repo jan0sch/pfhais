@@ -2,7 +2,35 @@
 
 # About this book
 
+This book is intended for the intermediate Scala programmer who is interested in functional programming and works mainly on the web service backend side. Ideally she has experience with libraries like Akka HTTP[^1] and Slick[^2] which are in heavy use in that area.
+
+However maybe you have wondered if we can't do better even though aforementioned projects are battle tested and proven.
+
+The answer to this can be found in this book which is intended to be read from cover to cover in the given order. Within the book the following libraries will be used: Cats[^3], Cats Effect[^4], http4s[^5], Doobie[^6], Refined[^7], fs2[^8] and probably others. ;-)
+
 # Copyleft Notice
+
+This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC BY-SA 4.0) license[^9]. The code snippets in this book are licensed under CC0[^10] which means you can use them without restriction. Excerpts from libraries maintain their license.
 
 # Thanks
 
+
+[^1]: https://akka.io
+
+[^2]: http://slick.lightbend.com
+
+[^3]: https://typelevel.org/cats/
+
+[^4]: https://typelevel.org/cats-effect/
+
+[^5]: https://http4s.org/
+
+[^6]: https://tpolecat.github.io/doobie/
+
+[^7]: https://github.com/fthomas/refined
+
+[^8]: https://fs2.io/
+
+[^9]: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+[^10]: https://wiki.creativecommons.org/wiki/CC0
