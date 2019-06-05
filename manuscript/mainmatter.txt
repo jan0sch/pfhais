@@ -125,7 +125,8 @@ If we want referential transparency, we must push the side effects to the bounda
 
 {caption: "IO example 1"}
 ```scala
-import cats.effect.IO, cats.implicits._
+import cats.effect.IO
+import cats.implicits._
 
 val effect = for {
   _ <- IO(println("Hi there!"))
@@ -137,7 +138,8 @@ The above code will produce no output. Only if we evaluate the variable `effect`
 
 {caption: "IO example 2"}
 ```scala
-import cats.effect.IO, cats.implicits._
+import cats.effect.IO
+import cats.implicits._
 
 val printF = IO(println("Hi there!"))
 
