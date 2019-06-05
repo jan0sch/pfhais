@@ -53,3 +53,32 @@ Q> So `Future` makes it harder (sometimes impossible) to reason about our code a
 
 # Maybe there is another way #
 
+Luckily for us meanwhile there are several pure options available in the Scala ecosystem. We will stick to the cats family of libraries namely http4s and Doobie as replacements for Akka-HTTP and Slick. They build upon the Cats Effect library which is an implementation of an IO monad[^1] for Scala. Some other options exist but we'll stick to the one from Cats.
+
+To be able to contrast both ways of implementing a service we will first implement it using Akka-HTTP and Slick and will then migrate to http4s and Doobie.
+
+# Service specification
+
+First we need to specify the exact scope and API of our service.
+
+## Data model
+
+## Database
+
+## HTTP API
+
+# Impure implementation
+
+# Pure implementation
+
+# What about tests?
+
+## Testing the impure service
+
+## Testing the pure service
+
+# Adding benchmarks
+
+# Comparison
+
+[^1]: https://wiki.haskell.org/IO_inside
