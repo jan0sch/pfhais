@@ -53,7 +53,37 @@ Q> So `Future` makes it harder (sometimes impossible) to reason about our code a
 
 # Maybe there is another way #
 
-Luckily for us meanwhile there are several pure options available in the Scala ecosystem. We will stick to the cats family of libraries namely http4s and Doobie as replacements for Akka-HTTP and Slick. They build upon the Cats Effect library which is an implementation of an IO monad[^1] for Scala. Some other options exist but we'll stick to the one from Cats.
+If we want referential transparency, we must push the side effects to the boundaries of our system (program) which can be done by using lazy evaluation. Let's repeat the previous example in a different way.
+
+{caption: "IO example 1"}
+```scala
+import cats.effect.IO, cats.implicits._
+
+val effect = for {
+  _ <- IO(println("Hi there!"))
+  _ <- IO(println("Hi there!"))
+} yield ()
+```
+
+The above code will produce no output. Only if we evaluate the variable `effect` which is of type `IO[Unit]` will the output be generated (try `effect.unsafeRunSync` in the REPL). Also the second approach works like expected.
+
+{caption: "IO example 2"}
+```scala
+import cats.effect.IO, cats.implicits._
+
+val printF = IO(println("Hi there!"))
+
+val effect = for {
+  _ <- printF
+  _ <- printF
+} yield ()
+```
+
+Q> What have we gained?
+
+Suddenly we can much more easily reason about our code! And why is that? Well we don't have unexpected side effects caused by code running even it doesn't need to. This is a sneak peak how pure code looks like. Now we only need to implement pure libraries for our use, or do we?
+
+Luckily for us meanwhile there are several pure options available in the Scala ecosystem. We will stick to the cats family of libraries namely http4s and Doobie as replacements for Akka-HTTP and Slick. They build upon the Cats Effect library which is an implementation of an IO monad for Scala. Some other options exist but we'll stick to the one from Cats.
 
 To be able to contrast both ways of implementing a service we will first implement it using Akka-HTTP and Slick and will then migrate to http4s and Doobie.
 
@@ -81,4 +111,3 @@ First we need to specify the exact scope and API of our service.
 
 # Comparison
 
-[^1]: https://wiki.haskell.org/IO_inside
