@@ -1,5 +1,73 @@
 {mainmatter}
 
+# Our use case #
+
+For better understanding we will implement a small use case in both impure and pure way. The following section will outline the specification.
+
+# Service specification
+
+First we need to specify the exact scope and API of our service. We'll design a service with a minimal API to keep things simple. It shall fulfil the following requirements.
+
+The service shall provide HTTP API endpoints for:
+
+1. the creation of a product data type identified by a unique id
+2. adding translations for a product name by language code and unique id
+3. returning the existing translations for a product
+4. returning a list of all existing products with their translations
+
+## Data model
+
+We will keep the model very simple to avoid going overboard with the implementation.
+
+1. A language code shall be defined by the ISO 639-1 (e.g. a two letter code).
+2. A translation shall contain a language code and a product name (non-empty string).
+3. A product shall contain a unique id (UUID version 4) and a list of translations.
+
+## Database
+
+The data will be stored in a relational database (RDBMS). Therefore we need to define the tables and relations within the database.
+
+### The products table
+
+The table `products` must contain only the unique id which is also the primary key.
+
+### The names table
+
+The table `names` must contain a column for the product id, one for the language code and one for the name. Its primary key is the combination of the product id and the language code. All columns must not be null. The relation to the products is realised by a foreign key constraint to the `products` table via the product id.
+
+## HTTP API
+
+The HTTP API shall provide the following endpoints on the given paths:
+
+| Path              | HTTP method | Function                              |
+|-------------------|-------------|---------------------------------------|
+| `/products`       | POST        | Create a product.                     |
+| `/products`       | GET         | Get all products and translations.    |
+| `/product/{UUID}` | PUT         | Add translations.                     |
+| `/product/{UUID}` | GET         | Get all translations for the product. |
+
+The data shall be encoded in JSON using the following specification:
+
+{caption: "JSON for a translation"}
+```json
+{
+  "lang": "ISO-639-1 Code",
+  "name": "A non empty string."
+}
+```
+
+{caption: "JSON for a product"}
+```json
+{
+  "id": "The-UUID-of-the-product",
+  "names": [
+    // A list of translations.
+  ]
+}
+```
+
+This should be enough to get us started.
+
 # The state of the art #
 
 Within the Scala ecosystem the Akka-HTTP library is a popular choice for implementing server side backends for HTTP APIs. Another quite popular option is the Play framework but using a full blown web framework to just provide a thin API is overkill in most cases. As most services need a database the Slick library is another popular choice which completes the picture.
@@ -87,69 +155,6 @@ Luckily for us meanwhile there are several pure options available in the Scala e
 
 To be able to contrast both ways of implementing a service we will first implement it using Akka-HTTP and Slick and will then migrate to http4s and Doobie.
 
-# Service specification
-
-First we need to specify the exact scope and API of our service. We'll design a service with a minimal API to keep things simple. It shall fulfil the following requirements.
-
-The service shall provide HTTP API endpoints for:
-
-1. the creation of a product data type identified by a unique id
-2. adding translations for a product name by language code and unique id
-3. returning the existing translations for a product
-4. returning a list of all existing products with their translations
-
-## Data model
-
-We will keep the model very simple to avoid going overboard with the implementation.
-
-1. A language code shall be defined by the ISO 639-1 (e.g. a two letter code).
-2. A translation shall contain a language code and a product name (non-empty string).
-3. A product shall contain a unique id (UUID version 4) and a list of translations.
-
-## Database
-
-The data will be stored in a relational database (RDBMS). Therefore we need to define the tables and relations within the database.
-
-### The products table
-
-The table `products` must contain only the unique id which is also the primary key.
-
-### The names table
-
-The table `names` must contain a column for the product id, one for the language code and one for the name. Its primary key is the combination of the product id and the language code. All columns must not be null. The relation to the products is realised by a foreign key constraint to the `products` table via the product id.
-
-## HTTP API
-
-The HTTP API shall provide the following endpoints on the given paths:
-
-| Path              | HTTP method | Function                              |
-|-------------------|-------------|---------------------------------------|
-| `/products`       | POST        | Create a product.                     |
-| `/products`       | GET         | Get all products and translations.    |
-| `/product/{UUID}` | PUT         | Add translations.                     |
-| `/product/{UUID}` | GET         | Get all translations for the product. |
-
-The data shall be encoded in JSON using the following specification:
-
-{caption: "JSON for a translation"}
-```json
-{
-  "lang": "ISO-639-1 Code",
-  "name": "A non empty string."
-}
-```
-
-{caption: "JSON for a product"}
-```json
-{
-  "id": "The-UUID-of-the-product",
-  "names": [
-    // A list of translations.
-  ]
-}
-```
-
-This should be enough to get us started.
 
 # Impure implementation
 
