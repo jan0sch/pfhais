@@ -14,6 +14,8 @@ support you.
  
 1. This project is licensed under the Creative Commons Attribution Share 
 Alike 4.0 International license. See [LICENSE](LICENSE) for details.
+Please note that the code snippets within the book are licensed under
+the CC0 license.
  
 2. Contributors are listed in the file [AUTHORS.md](AUTHORS.md). Add
 yourself if you have contributed.
