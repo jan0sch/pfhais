@@ -157,7 +157,6 @@ Luckily for us meanwhile there are several pure options available in the Scala e
 
 To be able to contrast both ways of implementing a service we will first implement it using Akka-HTTP and Slick and will then migrate to http4s and Doobie.
 
-
 # Impure implementation
 
 # Pure implementation
