@@ -1,0 +1,76 @@
+/*
+ * CC0 1.0 Universal (CC0 1.0) - Public Domain Dedication
+ *
+ *                                No Copyright
+ *
+ * The person who associated a work with this deed has dedicated the work to
+ * the public domain by waiving all of his or her rights to the work worldwide
+ * under copyright law, including all related and neighboring rights, to the
+ * extent allowed by law.
+ */
+
+package com.wegtam.books.pfhais.impure.models
+
+import com.wegtam.books.pfhais.BaseSpec
+import com.wegtam.books.pfhais.impure.models.TypeGenerators._
+import io.circe.parser._
+import io.circe.refined._
+import io.circe.syntax._
+
+class ProductTest extends BaseSpec {
+  "Product" when {
+    "decoding from JSON" when {
+      "JSON format is invalid" must {
+        "return an error" in {
+          forAll("input") { s: String =>
+            decode[Product](s).isLeft must be(true)
+          }
+        }
+      }
+
+      "JSON format is valid" when {
+        "data is invalid" must {
+          "return an error" in {
+            forAll("input") { s: String =>
+              decode[Product](s.asJson.noSpaces).isLeft must be(true)
+            }
+          }
+        }
+
+        "data is valid" must {
+          "return the correct types" in {
+            forAll("input") { i: Product =>
+              val json = s"""{
+                |"id": ${i.id.asJson.noSpaces},
+                |"names": ${i.names.asJson.noSpaces},
+                |}""".stripMargin
+              decode[Product](json) match {
+                case Left(e)  => fail(e.getMessage)
+                case Right(v) => v must be(i)
+              }
+            }
+          }
+        }
+      }
+    }
+
+    "encoding to JSON" must {
+      "return correct JSON" in {
+        forAll("input") { i: Product =>
+          val json = i.asJson.noSpaces
+          json must include(s""""id":${i.id.asJson.noSpaces}""")
+          json must include(s""""names":${i.names.asJson.noSpaces}""")
+        }
+      }
+
+      "return decodeable JSON" in {
+        forAll("input") { p: Product =>
+          decode[Product](p.asJson.noSpaces) match {
+            case Left(_)  => fail("Must be able to decode encoded JSON!")
+            case Right(d) => withClue("Must decode the same product!")(d must be(p))
+          }
+        }
+      }
+    }
+  }
+}
