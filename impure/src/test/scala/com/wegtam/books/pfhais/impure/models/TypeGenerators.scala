@@ -309,13 +309,19 @@ object TypeGenerators {
     ts <- Gen.nonEmptyListOf(genTranslation)
   } yield ts
 
+  val genNonEmptyTranslationList: Gen[NonEmptyList[Translation]] = for {
+    t  <- genTranslation
+    ts <- genTranslationList
+    ns = NonEmptyList.fromList(ts)
+  } yield ns.getOrElse(NonEmptyList.of(t))
+
   val genProduct: Gen[Product] = for {
     id <- genProductId
-    ts <- genTranslationList
+    ts <- genNonEmptyTranslationList
   } yield
     Product(
       id = id,
-      names = NonEmptyList.of(ts: _*)
+      names = ts
     )
 
   implicit val arbitraryProduct: Arbitrary[Product] = Arbitrary(genProduct)

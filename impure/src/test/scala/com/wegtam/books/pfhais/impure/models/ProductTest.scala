@@ -42,11 +42,13 @@ class ProductTest extends BaseSpec {
             forAll("input") { i: Product =>
               val json = s"""{
                 |"id": ${i.id.asJson.noSpaces},
-                |"names": ${i.names.asJson.noSpaces},
+                |"names": ${i.names.asJson.noSpaces}
                 |}""".stripMargin
-              decode[Product](json) match {
-                case Left(e)  => fail(e.getMessage)
-                case Right(v) => v must be(i)
+              withClue(s"Unable to decode JSON: $json") {
+                decode[Product](json) match {
+                  case Left(e)  => fail(e.getMessage)
+                  case Right(v) => v must be(i)
+                }
               }
             }
           }
