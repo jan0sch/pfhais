@@ -11,6 +11,15 @@
 
 package com.wegtam.books.pfhais.impure
 
+import akka.actor._
+import akka.http.scaladsl._
+import akka.http.scaladsl.server.Directives._
+import akka.stream._
+import org.flywaydb.core.Flyway
+
+import scala.concurrent.ExecutionContext
+import scala.io.StdIn
+
 object Impure {
 
   /**
@@ -18,6 +27,34 @@ object Impure {
     *
     * @param args A list of arguments given on the command line.
     */
-  def main(args: Array[String]): Unit = {}
+  def main(args: Array[String]): Unit = {
+    implicit val as: ActorSystem       = ActorSystem()
+    implicit val am: ActorMaterializer = ActorMaterializer()
+    implicit val ec: ExecutionContext  = as.dispatcher
+
+    val url = "jdbc:postgresql://" +
+    as.settings.config.getString("db.properties.serverName") +
+    ":" + as.settings.config.getString("db.properties.portNumber") +
+    "/" + as.settings.config.getString("db.properties.databaseName")
+    val user           = as.settings.config.getString("db.properties.user")
+    val pass           = as.settings.config.getString("db.properties.password")
+    val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
+    val _              = flyway.migrate()
+
+    val route = path("products") {
+      get {
+        ???
+      } ~
+      post {
+        ???
+      }
+    }
+
+    val host       = as.settings.config.getString("api.host")
+    val port       = as.settings.config.getInt("api.port")
+    val srv        = Http().bindAndHandle(route, host, port)
+    val pressEnter = StdIn.readLine()
+    srv.flatMap(_.unbind()).onComplete(_ => as.terminate())
+  }
 
 }

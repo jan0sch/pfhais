@@ -19,7 +19,9 @@ lazy val impure =
         library.circeGeneric,
         library.circeRefined,
         library.circeParser,
+	library.flywayCore,
         library.logback,
+	library.postgresql,
         library.refinedCats,
         library.refinedCore,
         library.slick,
@@ -45,8 +47,10 @@ lazy val library =
       val akkaHttpJson = "1.25.2"
       val cats         = "1.6.1"
       val circe        = "0.11.1"
+      val flyway       = "5.2.4"
       val logback      = "1.2.3"
-      val refined      = "0.9.7"
+      val postgresql   = "42.2.5"
+      val refined      = "0.9.8"
       val scalaCheck   = "1.14.0"
       val scalaTest    = "3.0.7"
       val slick        = "3.3.1"
@@ -64,7 +68,9 @@ lazy val library =
     val circeGeneric      = "io.circe"               %% "circe-generic"        % Version.circe
     val circeRefined      = "io.circe"               %% "circe-refined"        % Version.circe
     val circeParser       = "io.circe"               %% "circe-parser"         % Version.circe
+    val flywayCore        = "org.flywaydb"           %  "flyway-core"          % Version.flyway
     val logback           = "ch.qos.logback"         %  "logback-classic"      % Version.logback
+    val postgresql        = "org.postgresql"         %  "postgresql"           % Version.postgresql
     val refinedCore       = "eu.timepit"             %% "refined"              % Version.refined
     val refinedCats       = "eu.timepit"             %% "refined-cats"         % Version.refined
     val refinedScalaCheck = "eu.timepit"             %% "refined-scalacheck"   % Version.refined
