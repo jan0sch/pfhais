@@ -239,7 +239,68 @@ Now we have the models covered and can move on to the database layer.
 
 ## Database layer
 
+The database layer should provide a programmatic access to the database but also should it manage changes in the database. The latter one is called migrations or evolutions. From the available options we chose Flyway as the tool to manage our database schema.
+
 ### Migrations
+
+Flyway uses raw SQL scripts which have to be put into a certain location being `src/main/resources/db/migration` in our case. Also the files have to be named like `VXX__some_name.sql` (`XX` being a number) starting with `V1`. Please note that there are two underscores between the version prefix and the rest of the name! Because our database schema is very simply we're done quickly:
+
+{caption: "Flyway migration for creating the database"}
+```sql
+CREATE TABLE "products" (
+  "id" UUID NOT NULL,
+  CONSTRAINT "products_pk" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "names" (
+  "product_id" UUID       NOT NULL,
+  "lang_code"  VARCHAR(2) NOT NULL,
+  "name"       TEXT       NOT NULL,
+  CONSTRAINT "names_pk" 
+    PRIMARY KEY ("product_id", "lang_code"),
+  CONSTRAINT "names_product_id_fk" 
+    FOREIGN KEY ("product_id") 
+    REFERENCES "products" ("id") 
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+```
+
+In the code you'll see that we additionally set comments which are omitted from the code snippet above. This might be overkill here but it is a very handy feature to have and I advice you to use for more complicated database schemas. Because the right comment (read *information*) in the right place might save a lot of time when trying to understand things.
+
+Next we move on to the programmatic part which at first needs a configuration of our database connection. With Slick you have a multitude of options but we'll use the "Typesafe Config"[^1] approach.
+
+{caption: "Database configuration in application.conf"}
+```text
+db {
+  connectionPool = "HikariCP"
+  dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
+  properties {
+    serverName = "localhost"
+    portNumber = "5432"
+    databaseName = "impure"
+    user = "impure"
+    password = "secret"
+  }
+  numThreads = 10
+}
+```
+
+After we have this in place we can run the migrations via the API of Flyway. For this we have to load the configuration (we do it by creating an actor system), extract the needed information and create a JDBC url and use that with username and password to obtain a Flyway instance. On that one we simply call the method `migrate()` which will do the right thing. Basically it will check if the schema exists and decide to either create it, apply pending migrations or simply do nothing. The method will return the number of applied migrations.
+
+{caption: "Apply database migrations via Flyway"}
+```scala
+val as: ActorSystem = ActorSystem()
+val url = "jdbc:postgresql://" +
+  as.settings.config.getString("db.properties.serverName") +
+  ":" + as.settings.config.getString("db.properties.portNumber") +
+  "/" + as.settings.config.getString("db.properties.databaseName")
+val user           = as.settings.config.getString("db.properties.user")
+val pass           = as.settings.config.getString("db.properties.password")
+val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
+val _              = flyway.migrate()
+```
+
+Let us continue to dive into the Slick table definitions.
 
 ### Slick tables
 
@@ -255,3 +316,5 @@ Now we have the models covered and can move on to the database layer.
 
 # Comparison
 
+
+[^1]: http://slick.lightbend.com/doc/3.3.1/database.html
