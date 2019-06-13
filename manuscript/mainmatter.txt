@@ -211,7 +211,7 @@ object Translation {
 }
 ```
 
-Now onwards to the product model. Because we already now of refined types we can use them from start here.
+Now onwards to the product model. Because we already know of refined types we can use them from start here.
 
 ```scala
 type ProductId = String Refined Uuid
