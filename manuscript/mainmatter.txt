@@ -239,6 +239,10 @@ Now we have the models covered and can move on to the database layer.
 
 ## Database layer
 
+### Migrations
+
+### Slick tables
+
 # Pure implementation
 
 # What about tests?
