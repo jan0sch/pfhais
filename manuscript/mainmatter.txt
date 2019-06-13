@@ -159,6 +159,86 @@ To be able to contrast both ways of implementing a service we will first impleme
 
 # Impure implementation
 
+We'll be using the following libraries for the impure version of the service:
+
+1. Akka (including Akka-HTTP and Akka-Streams)
+2. Slick (as database layer)
+3. Flyway for database migrations (or evolutions)
+4. Circe for JSON codecs and akka-http-json as wrapper
+5. Refined for using refined types
+6. the PostgreSQL JDBC driver
+
+I'll spare you the sbt setup as you can look that up in the code repository (e.g. the `impure` folder in the book repo).
+
+## Models
+
+First we'll implement our models which are simple and straightforward. At first we need a class to store our translations or better a single translation.
+
+```scala
+final case class Translation(lang: String, name: String)
+```
+
+Q> So what is wrong with that approach?
+
+Technically it is okay but we have a bad feeling about it. Using `Option[String]` is of no use because both fields have to be set. But a `String` can always be `null` and contain a lot of unexpected stuff (literally anything).
+
+I> This is the moment when refined types come to you rescue!
+
+So let us define some refined types which we can use later on. At first we need a language code which obeys the restrictions of ISO-639-1 and we need a stronger definition for a product name. For the former we use a regular expression and for the latter we simply expect a string which is not empty.
+
+{caption: "Refined types for models"}
+```scala
+type LanguageCode = String Refined MatchesRegex[W.`"^[a-z]{2}$"`.T]
+type ProductName = String Refined NonEmpty
+```
+
+Now we can give our translation model another try.
+
+{caption: "Translation model using refined types"}
+```scala
+final case class Translation(lang: LanguageCode, name: ProductName)
+```
+
+Much better and while we're at it we can also write the JSON codecs using the refined module of the Circe library. We put them into the companion object of the model.
+
+```scala
+object Translation {
+  implicit val decode: Decoder[Translation] =
+    Decoder.forProduct2("lang", "name")(Translation.apply)
+
+  implicit val encode: Encoder[Translation] =
+    Encoder.forProduct2("lang", "name")(t => (t.lang, t.name))
+}
+```
+
+Now onwards to the product model. Because we already now of refined types we can use them from start here.
+
+```scala
+type ProductId = String Refined Uuid
+final case class Product(id: ProductId, names: List[Translation])
+```
+
+Q> Now what is wrong about this?
+
+If we look closely we realise that a `List` maybe empty. Which is valid for the list but not for our product because we need at least one entry. Luckily for us the cats library has us covered with the `NonEmptyList` data type. Including the JSON codecs this leads us to our final implementation.
+
+{caption: "Product model using refined types and NeL"}
+```scala
+final case class Product(id: ProductId, names: NonEmptyList[Translation])
+
+object Product {
+  implicit val decode: Decoder[Product] =
+    Decoder.forProduct2("id", "names")(Product.apply)
+
+  implicit val encode: Encoder[Product] =
+    Encoder.forProduct2("id", "names")(p => (p.id, p.names))
+}
+```
+
+Now we have the models covered and can move on to the database layer.
+
+## Database layer
+
 # Pure implementation
 
 # What about tests?
