@@ -265,7 +265,7 @@ CREATE TABLE "names" (
 );
 ```
 
-In the code you'll see that we additionally set comments which are omitted from the code snippet above. This might be overkill here but it is a very handy feature to have and I advice you to use for more complicated database schemas. Because the right comment (read *information*) in the right place might save a lot of time when trying to understand things.
+In the code you'll see that we additionally set comments which are omitted from the code snippet above. This might be overkill here but it is a very handy feature to have and I advice you to use it for more complicated database schemas. Because the right comment (read *information*) in the right place might save a lot of time when trying to understand things.
 
 Next we move on to the programmatic part which at first needs a configuration of our database connection. With Slick you have a multitude of options but we'll use the "Typesafe Config"[^1] approach.
 
