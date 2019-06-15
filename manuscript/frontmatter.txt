@@ -1,5 +1,9 @@
 {frontmatter}
 
+# Foreword #
+
+Thank you for your interest in this book. I hope you'll have a good time reading it and learn something from it.
+
 # About this book
 
 This book is intended for the intermediate Scala programmer who is interested in functional programming and works mainly on the web service backend side. Ideally she has experience with libraries like Akka HTTP[^1] and Slick[^2] which are in heavy use in that area.
@@ -14,6 +18,8 @@ This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC
 
 # Thanks
 
+I would like to thank my beloved wife and family who bear with me and make all of this possible.
+Also I send a big thank you to alle the nice people from the Scala community which I've had the pleasure to meet.
 
 [^1]: https://akka.io
 
