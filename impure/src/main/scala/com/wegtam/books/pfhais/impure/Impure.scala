@@ -11,6 +11,8 @@
 
 package com.wegtam.books.pfhais.impure
 
+import java.util.UUID
+
 import akka.actor._
 import akka.http.scaladsl._
 import akka.http.scaladsl.server._
@@ -18,17 +20,17 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream._
 import com.wegtam.books.pfhais.impure.models._
 import eu.timepit.refined.auto._
-import eu.timepit.refined.api.RefType
 import org.flywaydb.core.Flyway
 
 import scala.concurrent.ExecutionContext
 import scala.io.StdIn
+import scala.util.Try
 
 object Impure {
 
   // Custom path matcher to extract product ids from the akka http path.
   val ProductIdSegment: PathMatcher1[ProductId] =
-    PathMatcher("^$".r).flatMap(s => RefType.applyRef[ProductId](s).toOption)
+    PathMatcher("^$".r).flatMap(s => Try(UUID.fromString(s)).toOption)
 
   /**
     * Main entry point of the application.

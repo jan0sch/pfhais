@@ -11,6 +11,8 @@
 
 package com.wegtam.books.pfhais.impure
 
+import java.util.UUID
+
 import eu.timepit.refined.W
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection._
@@ -21,7 +23,7 @@ package object models {
   // A language code format according to ISO 639-1. Please note that this only verifies the format!
   type LanguageCode = String Refined MatchesRegex[W.`"^[a-z]{2}$"`.T]
   // A product id which must be a valid UUID in version 4.
-  type ProductId = String Refined Uuid
+  type ProductId = UUID
   // A product name must be a non-empty string.
   type ProductName = String Refined NonEmpty
 

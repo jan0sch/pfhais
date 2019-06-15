@@ -13,7 +13,6 @@ package com.wegtam.books.pfhais.impure.models
 
 import cats.data.NonEmptyList
 import io.circe._
-import io.circe.refined._
 
 /**
   * A product.

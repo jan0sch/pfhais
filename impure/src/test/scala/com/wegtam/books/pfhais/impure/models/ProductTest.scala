@@ -14,7 +14,6 @@ package com.wegtam.books.pfhais.impure.models
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.impure.models.TypeGenerators._
 import io.circe.parser._
-import io.circe.refined._
 import io.circe.syntax._
 
 class ProductTest extends BaseSpec {
