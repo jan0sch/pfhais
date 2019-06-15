@@ -31,8 +31,9 @@ class ProductTest extends BaseSpec {
       "JSON format is valid" when {
         "data is invalid" must {
           "return an error" in {
-            forAll("input") { s: String =>
-              decode[Product](s.asJson.noSpaces).isLeft must be(true)
+            forAll("id", "names") { (id: String, ns: List[String]) =>
+              val json = """{"id":""" + id.asJson.noSpaces + ""","names":""" + ns.asJson.noSpaces + """}"""
+              decode[Product](json).isLeft must be(true)
             }
           }
         }
