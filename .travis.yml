@@ -1,0 +1,15 @@
+language: scala
+scala:
+  - 2.12.8
+jdk:
+  - openjdk8
+
+sudo: false
+
+env:
+  - TEST_DIR=impure
+  - TEST_DIR=pure
+
+script:
+  - cd ${TEST_DIR} && sbt clean coverage test coverageReport
+
