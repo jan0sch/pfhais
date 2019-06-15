@@ -11,5 +11,5 @@ env:
   - TEST_DIR=pure
 
 script:
-  - cd ${TEST_DIR} && sbt clean coverage test coverageReport
+  - cd ${TEST_DIR} && sbt clean test
 
