@@ -85,6 +85,17 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
   }
 
   /**
+    * Update the given product in the database.
+    *
+    * @param p The product to be updated.
+    * @return A future holding a list of affected database rows.
+    */
+  def updateProduct(p: Product): Future[List[Int]] = {
+    val program = DBIO.sequence(saveTranslations(p).toList).transactionally
+    dbConfig.db.run(program)
+  }
+
+  /**
     * Save the translations of the given product in the database, overwriting
     * possibly existing ones.
     *
