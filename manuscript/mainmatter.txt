@@ -307,6 +307,101 @@ Let us continue to dive into the Slick table definitions.
 
 ### Slick tables
 
+Slick offers several options for approaching the database. For our example we will be using the lifted embedding but if needed Slick also provides the ability to perform plain SQL queries.
+For the lifted embedding we have to define out tables in a way Slick can understand. While this can be tricky under certain circumstances our simple model is straightforward to implement.
+
+{caption: "Slick product table definition"}
+```scala
+final class Products(tag: Tag) extends Table[(UUID)](tag, "products") {
+  def id = column[UUID]("id", O.PrimaryKey)
+
+  def * = (id)
+}
+val productsTable = TableQuery[Products]
+```
+
+As you can see above we're using simple data types (not the refined ones) to have a more easy Slick implementation. However we can also use refined types for the price of using either the slick-refined library or writing custom column mappers.
+Next we'll implement the table for the translations which will also need some constraints.
+
+{caption: "Slick translations table definition"}
+```scala
+final class Names(tag: Tag) extends Table[(UUID, String, String)](tag, "names") {
+  def productId = column[UUID]("product_id")
+  def langCode  = column[String]("lang_code")
+  def name      = column[String]("name")
+
+  def pk = primaryKey("names_pk", (productId, langCode))
+  def productFk =
+    foreignKey("names_product_id_fk", productId, productsTable)(
+      _.id,
+      onDelete = ForeignKeyAction.Cascade,
+      onUpdate = ForeignKeyAction.Cascade
+    )
+
+  def * = (productId, langCode, name)
+}
+val namesTable = TableQuery[Names]
+```
+
+As you can see the definition of constraints is also pretty simple. Now our repository needs some functions for a more convenient access to the data.
+
+{caption: "Slick repository functions"}
+```scala
+def loadProduct(id: ProductId): Future[Seq[(UUID, String, String)]] = {
+  val program = for {
+    (p, ns) <- productsTable join namesTable on (_.id === _.productId)
+  } yield (p.id, ns.langCode, ns.name)
+  dbConfig.db.run(program.result)
+}
+
+def saveProduct(p: Product): Future[List[Int]] = {
+  val cp      = productsTable += (p.id)
+  val program = DBIO.sequence(cp :: saveTranslations(p).toList)
+    .transactionally
+  dbConfig.db.run(program)
+}
+
+def updateProduct(p: Product): Future[List[Int]] = {
+  val program = DBIO.sequence(saveTranslations(p).toList).transactionally
+  dbConfig.db.run(program)
+}
+
+protected def saveTranslations(p: Product): NonEmptyList[DBIO[Int]] = {
+  val save = saveTranslation(p.id)(_)
+  p.names.map(t => save(t))
+}
+
+protected def saveTranslation(id: ProductId)(t: Translation): DBIO[Int] =
+  namesTable.insertOrUpdate((id, t.lang, t.name))
+```
+
+The last two functions are helpers to enable us to create a load queries which we can compose. They are used in the `saveProduct` and `updateProduct` functions to create a list of queries that are executed as bulk while the call to `transactionally` ensures that they will run within a transaction.
+The `loadProduct` function simply returns a list of database rows from the needed join. Therefore we need a function which builds a `Product` type out of that.
+
+{caption: "Helper function to create a Product"}
+```scala
+def fromDatabase(rows: Seq[(UUID, String, String)]): Option[Product] = {
+  val po = for {
+    (id, c, n) <- rows.headOption
+    t          <- Translation.fromUnsafe(c)(n)
+    p          <- Product(id = id, names = NonEmptyList.one(t)).some
+  } yield p
+  po.map(
+    p =>
+      rows.foldLeft(p) { (a, cols) =>
+	val (id, c, n) = cols
+	Translation.fromUnsafe(c)(n).fold(a)(t =>
+	  a.copy(names = a.names :+ t)
+	)
+    }
+  )
+}
+```
+
+So far we should have everything in place to make use of our database. Now we need to wire it all together.
+
+### Akka-HTTP routes
+
 # Pure implementation
 
 # What about tests?
