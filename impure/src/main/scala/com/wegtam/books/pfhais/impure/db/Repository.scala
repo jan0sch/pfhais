@@ -80,7 +80,7 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
     */
   def saveProduct(p: Product): Future[List[Int]] = {
     val cp      = productsTable += (p.id)
-    val program = DBIO.sequence(cp :: saveTranslations(p).toList)
+    val program = DBIO.sequence(cp :: saveTranslations(p).toList).transactionally
     dbConfig.db.run(program)
   }
 
