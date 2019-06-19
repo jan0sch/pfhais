@@ -18,11 +18,15 @@ import akka.http.scaladsl._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
 import akka.stream._
+import com.wegtam.books.pfhais.impure.db._
 import com.wegtam.books.pfhais.impure.models._
+import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
 import eu.timepit.refined.auto._
 import org.flywaydb.core.Flyway
+import slick.basic._
+import slick.jdbc._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.io.StdIn
 import scala.util.Try
 
@@ -38,24 +42,37 @@ object Impure {
     * @param args A list of arguments given on the command line.
     */
   def main(args: Array[String]): Unit = {
-    implicit val as: ActorSystem       = ActorSystem()
-    implicit val am: ActorMaterializer = ActorMaterializer()
-    implicit val ec: ExecutionContext  = as.dispatcher
+    implicit val system: ActorSystem    = ActorSystem()
+    implicit val mat: ActorMaterializer = ActorMaterializer()
+    implicit val ec: ExecutionContext   = system.dispatcher
 
     val url = "jdbc:postgresql://" +
-    as.settings.config.getString("db.properties.serverName") +
-    ":" + as.settings.config.getString("db.properties.portNumber") +
-    "/" + as.settings.config.getString("db.properties.databaseName")
-    val user           = as.settings.config.getString("db.properties.user")
-    val pass           = as.settings.config.getString("db.properties.password")
+    system.settings.config.getString("db.properties.serverName") +
+    ":" + system.settings.config.getString("db.properties.portNumber") +
+    "/" + system.settings.config.getString("db.properties.databaseName")
+    val user           = system.settings.config.getString("db.properties.user")
+    val pass           = system.settings.config.getString("db.properties.password")
     val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
     val _              = flyway.migrate()
 
+    val dbConfig: DatabaseConfig[JdbcProfile] =
+      DatabaseConfig.forConfig("db", system.settings.config)
+    val repo = new Repository(dbConfig)
+
     val route = path("product" / ProductIdSegment) { id: ProductId =>
       get {
-        ???
+        complete {
+          for {
+            rows <- repo.loadProduct(id)
+            prod <- Future { Product.fromDatabase(rows) }
+          } yield prod
+        }
       } ~ put {
-        ???
+        entity(as[Product]) { p =>
+          complete {
+            repo.saveProduct(p)
+          }
+        }
       }
     } ~ path("products") {
       get {
@@ -66,11 +83,11 @@ object Impure {
       }
     }
 
-    val host       = as.settings.config.getString("api.host")
-    val port       = as.settings.config.getInt("api.port")
+    val host       = system.settings.config.getString("api.host")
+    val port       = system.settings.config.getInt("api.port")
     val srv        = Http().bindAndHandle(route, host, port)
     val pressEnter = StdIn.readLine()
-    srv.flatMap(_.unbind()).onComplete(_ => as.terminate())
+    srv.flatMap(_.unbind()).onComplete(_ => system.terminate())
   }
 
 }
