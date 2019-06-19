@@ -223,7 +223,7 @@ Q> Now what is wrong about this?
 If we look closely we realise that a `List` maybe empty. Which is valid for the list but not for our product because we need at least one entry. Luckily for us the cats library has us covered with the `NonEmptyList` data type. Including the JSON codecs this leads us to our final implementation.
 Last but not least we really should be using the existing `UUID` data type instead of rolling our own refined string version - even when it is cool. ;-)
 
-{caption: "Product model using refined types and NeL"}
+{caption: "Product model using UUID type and NeL"}
 ```scala
 type ProductId = java.util.UUID
 final case class Product(id: ProductId, names: NonEmptyList[Translation])
