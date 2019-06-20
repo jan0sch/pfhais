@@ -412,6 +412,113 @@ So far we should have everything in place to make use of our database. Now we ne
 
 ### Akka-HTTP routes
 
+Defining the routes is pretty simple if you're used to the Akka-HTTP routing DSL syntax.
+
+{caption: "Basic routes with Akka-HTTP"}
+```scala
+val route = path("product" / ProductIdSegment) { id: ProductId =>
+  get {
+    ???
+  } ~ put {
+    ???
+  }
+} ~ path("products") {
+  get {
+    ???
+  } ~
+  post {
+    ???
+  }
+}
+```
+
+We will fill in the details later on. But now for starting the actual server to make use of our routes.
+
+{caption: "Starting an Akka-HTTP server"}
+```scala
+val host       = system.settings.config.getString("api.host")
+val port       = system.settings.config.getInt("api.port")
+val srv        = Http().bindAndHandle(route, host, port)
+val pressEnter = StdIn.readLine()
+srv.flatMap(_.unbind()).onComplete(_ => system.terminate())
+```
+
+The code will fire up a server using the defined routes and hostname and port from the configuration to start a server. It will run until you press enter and then terminate. Let us now visit the code for each routing endpoint. We will start with the one for returning a single product.
+
+{caption: "Returning a single product"}
+```scala
+path("product" / ProductIdSegment) { id: ProductId =>
+  get {
+    complete {
+      for {
+        rows <- repo.loadProduct(id)
+        prod <- Future { Product.fromDatabase(rows) }
+      } yield prod
+    }
+  }
+}
+```
+
+We load the raw product data from the repository and convert it into a proper product model. But to make the types align we have to wrap the second call in a `Future` otherwise we would get a compiler error. We don't need to marshal the response because we are using the akka-http-json library which provides for example an `ErrorAccumulatingCirceSupport` import that handles this. Unless of course you do not have circe codecs defined for your types.
+
+{caption: "Updating a single product"}
+```scala
+val route = path("product" / ProductIdSegment) { id: ProductId =>
+  put {
+    entity(as[Product]) { p =>
+      complete {
+        repo.updateProduct(p)
+      }
+    }
+  }
+}
+```
+
+The route for updating a product is also very simple. We're extracting the product entity via the `entity(as[T])` directive from the request body and simply give it to the appropriate repository function. Now onwards to creating a new product.
+
+{caption: "Creating a product"}
+```scala
+path("products") {
+  post {
+    entity(as[Product]) { p =>
+      complete {
+        repo.saveProduct(p)
+      }
+    }
+  }
+}
+```
+
+As you can see the function is basically the same except that we're calling a different function from the repository. Last but not least let us take a look at the return all products endpoint.
+
+{caption: "Return all products"}
+```scala
+path("products") {
+  get {
+    complete {
+      val products = for {
+        rows <- repo.loadProducts()
+        ps <- Future {
+          rows.toList.groupBy(_._1).map {
+            case (_, cols) => Product.fromDatabase(cols)
+          }
+        }
+      } yield ps
+      products.map(_.toList.flatten)
+    }
+  }
+}
+```
+
+This looks more complicated that the other endpoints. So what exactly are we doing here?
+Well first we load the raw product data from the repository. Afterwards we convert it into the proper data model or to be more exact into a list of product entities.
+
+Q> What is wrong with that approach?
+
+The first thing that comes to mind is that we're performing operations in memory. This is not different from the last time when we converted the data for a single product. Now however we're talking about all products which may be a lot of data. Another obvious point is that we get a list of `Option[Product]` which we explicitly flatten at the end.
+
+Q> So, how can we do better?
+
 # Pure implementation
 
 # What about tests?
