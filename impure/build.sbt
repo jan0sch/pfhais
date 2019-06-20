@@ -6,7 +6,16 @@ lazy val impure =
   project
     .in(file("."))
     .enablePlugins(AutomateHeaderPlugin)
+    .configs(IntegrationTest)
     .settings(settings)
+    .settings(
+      Defaults.itSettings,
+      headerSettings(IntegrationTest),
+      inConfig(IntegrationTest)(scalafmtSettings),
+      IntegrationTest / console / scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused-import"),
+      IntegrationTest / parallelExecution := false,
+      IntegrationTest / unmanagedSourceDirectories := Seq((IntegrationTest / scalaSource).value)
+    )
     .settings(
       libraryDependencies ++= Seq(
 	library.akkaActor,
@@ -26,10 +35,16 @@ lazy val impure =
         library.refinedCore,
         library.slick,
         library.slickHikariCP,
+        library.akkaHttpTestkit   % IntegrationTest,
+        library.akkaStreamTestkit % IntegrationTest,
+        library.akkaTestkit       % IntegrationTest,
+	library.h2Db              % IntegrationTest,
+        library.refinedScalaCheck % IntegrationTest,
+        library.scalaCheck        % IntegrationTest,
+        library.scalaTest         % IntegrationTest,
         library.akkaHttpTestkit   % Test,
         library.akkaStreamTestkit % Test,
         library.akkaTestkit       % Test,
-	library.h2Db              % Test,
         library.refinedScalaCheck % Test,
         library.scalaCheck        % Test,
         library.scalaTest         % Test
