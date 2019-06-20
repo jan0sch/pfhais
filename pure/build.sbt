@@ -6,7 +6,16 @@ lazy val pure =
   project
     .in(file("."))
     .enablePlugins(AutomateHeaderPlugin)
+    .configs(IntegrationTest)
     .settings(settings)
+    .settings(
+      Defaults.itSettings,
+      headerSettings(IntegrationTest),
+      inConfig(IntegrationTest)(scalafmtSettings),
+      IntegrationTest / console / scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused-import"),
+      IntegrationTest / parallelExecution := false,
+      IntegrationTest / unmanagedSourceDirectories := Seq((IntegrationTest / scalaSource).value)
+    )
     .settings(
       libraryDependencies ++= Seq(
         library.catsCore,
@@ -26,6 +35,10 @@ lazy val pure =
 	library.postgresql,
         library.refinedCats,
         library.refinedCore,
+	library.doobieScalaTest   % IntegrationTest,
+        library.refinedScalaCheck % IntegrationTest,
+        library.scalaCheck        % IntegrationTest,
+        library.scalaTest         % IntegrationTest,
 	library.doobieScalaTest   % Test,
         library.refinedScalaCheck % Test,
         library.scalaCheck        % Test,
