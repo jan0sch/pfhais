@@ -63,9 +63,22 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
     * Load a product from the database repository.
     *
     * @param id The unique ID of the product.
-    * @return A future holding a list of database rows which you'll need to combine.
+    * @return A future holding a list of database rows for a single product
+    *         which you'll need to combine.
     */
   def loadProduct(id: ProductId): Future[Seq[(UUID, String, String)]] = {
+    val program = for {
+      (p, ns) <- productsTable.filter(_.id === id) join namesTable on (_.id === _.productId)
+    } yield (p.id, ns.langCode, ns.name)
+    dbConfig.db.run(program.result)
+  }
+
+  /**
+    * Load all products from the database repository.
+    *
+    * @return A future holding a list of database rows which you'll need to combine.
+    */
+  def loadProducts(): Future[Seq[(UUID, String, String)]] = {
     val program = for {
       (p, ns) <- productsTable join namesTable on (_.id === _.productId)
     } yield (p.id, ns.langCode, ns.name)
