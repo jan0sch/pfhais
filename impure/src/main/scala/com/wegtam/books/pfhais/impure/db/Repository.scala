@@ -68,7 +68,10 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
     */
   def loadProduct(id: ProductId): Future[Seq[(UUID, String, String)]] = {
     val program = for {
-      (p, ns) <- productsTable.filter(_.id === id) join namesTable on (_.id === _.productId)
+      (p, ns) <- productsTable
+        .filter(_.id === id)
+        .join(namesTable)
+        .on(_.id === _.productId)
     } yield (p.id, ns.langCode, ns.name)
     dbConfig.db.run(program.result)
   }
