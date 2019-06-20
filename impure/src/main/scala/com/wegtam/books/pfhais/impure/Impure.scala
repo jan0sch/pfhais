@@ -26,8 +26,8 @@ import org.flywaydb.core.Flyway
 import slick.basic._
 import slick.jdbc._
 
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.io.StdIn
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 object Impure {
@@ -70,16 +70,31 @@ object Impure {
       } ~ put {
         entity(as[Product]) { p =>
           complete {
-            repo.saveProduct(p)
+            repo.updateProduct(p)
           }
         }
       }
     } ~ path("products") {
       get {
-        ???
+        complete {
+          // FIXME This is pretty ugly and eats up memory.
+          val products = for {
+            rows <- repo.loadProducts()
+            ps <- Future {
+              rows.toList.groupBy(_._1).map {
+                case (_, cols) => Product.fromDatabase(cols)
+              }
+            }
+          } yield ps
+          products.map(_.toList.flatten)
+        }
       } ~
       post {
-        ???
+        entity(as[Product]) { p =>
+          complete {
+            repo.saveProduct(p)
+          }
+        }
       }
     }
 
