@@ -13,12 +13,14 @@ package com.wegtam.books.pfhais.impure
 
 import java.util.UUID
 
+import akka.NotUsed
 import akka.actor._
 import akka.http.scaladsl._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
 import akka.stream._
 import akka.stream.scaladsl._
+import cats.implicits._
 import com.wegtam.books.pfhais.impure.db._
 import com.wegtam.books.pfhais.impure.models._
 import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
@@ -42,6 +44,7 @@ object Impure {
     *
     * @param args A list of arguments given on the command line.
     */
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   def main(args: Array[String]): Unit = {
     implicit val system: ActorSystem    = ActorSystem()
     implicit val mat: ActorMaterializer = ActorMaterializer()
@@ -79,6 +82,18 @@ object Impure {
       get {
         complete {
           val src = Source.fromPublisher(repo.loadProducts())
+          val str: Source[Option[Product], NotUsed] = src
+            .collect(
+              cs =>
+                Product.fromDatabase(Seq(cs)) match {
+                  case Some(p) => p
+              }
+            )
+            .groupBy(Int.MaxValue, _.id)
+            .fold(Option.empty[Product])(
+              (op, x) => op.fold(x.some)(p => p.copy(names = p.names ::: x.names).some)
+            )
+            .mergeSubstreams
           ???
         }
       } ~
