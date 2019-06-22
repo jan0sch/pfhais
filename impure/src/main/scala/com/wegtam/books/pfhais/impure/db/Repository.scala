@@ -83,7 +83,7 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
     */
   def loadProducts(): DatabasePublisher[(UUID, String, String)] = {
     val program = for {
-      (p, ns) <- productsTable.join(namesTable).on(_.id === _.productId)
+      (p, ns) <- productsTable.join(namesTable).on(_.id === _.productId).sortBy(_._1.id)
     } yield (p.id, ns.langCode, ns.name)
     dbConfig.db.stream(program.result)
   }
