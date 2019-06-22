@@ -81,11 +81,11 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
     *
     * @return A future holding a list of database rows which you'll need to combine.
     */
-  def loadProducts(): Future[Seq[(UUID, String, String)]] = {
+  def loadProducts(): DatabasePublisher[(UUID, String, String)] = {
     val program = for {
-      (p, ns) <- productsTable join namesTable on (_.id === _.productId)
+      (p, ns) <- productsTable.join(namesTable).on(_.id === _.productId)
     } yield (p.id, ns.langCode, ns.name)
-    dbConfig.db.run(program.result)
+    dbConfig.db.stream(program.result)
   }
 
   /**

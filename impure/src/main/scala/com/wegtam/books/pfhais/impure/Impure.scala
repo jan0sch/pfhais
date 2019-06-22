@@ -18,6 +18,7 @@ import akka.http.scaladsl._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
 import akka.stream._
+import akka.stream.scaladsl._
 import com.wegtam.books.pfhais.impure.db._
 import com.wegtam.books.pfhais.impure.models._
 import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
@@ -77,16 +78,8 @@ object Impure {
     } ~ path("products") {
       get {
         complete {
-          // FIXME This is pretty ugly and eats up memory.
-          val products = for {
-            rows <- repo.loadProducts()
-            ps <- Future {
-              rows.toList.groupBy(_._1).map {
-                case (_, cols) => Product.fromDatabase(cols)
-              }
-            }
-          } yield ps
-          products.map(_.toList.flatten)
+          val src = Source.fromPublisher(repo.loadProducts())
+          ???
         }
       } ~
       post {
