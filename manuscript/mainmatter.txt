@@ -519,6 +519,22 @@ The first thing that comes to mind is that we're performing operations in memory
 
 Q> So, how can we do better?
 
+Maybe we should consider streaming the results. But we still have to group and combine the rows which belong to a single product into a product entity. Can we achieve that with streaming? Well, let's look at our data flow.
+We receive a list of 3 columns from the database in the following format: `product id, language code, name`. The tricky part being that multiple rows (list entries) can belong to the same product recognizable by the same value for the first column `product id`. At first we should simplify our problem by ensuring that the list will be sorted by the `product id`. This is done by adjusting the function `loadProducts` in the repository.
+
+{caption: "Sort the returned list of entries."}
+```scala
+def loadProducts(): DatabasePublisher[(UUID, String, String)] = {
+  val program = for {
+    (p, ns) <- productsTable.join(namesTable).on(_.id === _.productId)
+               .sortBy(_._1.id)
+  } yield (p.id, ns.langCode, ns.name)
+  dbConfig.db.stream(program.result)
+}
+```
+
+Now we can rely on the fact that we have seen all entries for one product if the product id in our list changes.
+
 # Pure implementation
 
 # What about tests?
