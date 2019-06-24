@@ -52,16 +52,16 @@ object Impure {
     implicit val ec: ExecutionContext   = system.dispatcher
 
     val url = "jdbc:postgresql://" +
-    system.settings.config.getString("db.properties.serverName") +
-    ":" + system.settings.config.getString("db.properties.portNumber") +
-    "/" + system.settings.config.getString("db.properties.databaseName")
-    val user           = system.settings.config.getString("db.properties.user")
-    val pass           = system.settings.config.getString("db.properties.password")
+    system.settings.config.getString("database.db.properties.serverName") +
+    ":" + system.settings.config.getString("database.db.properties.portNumber") +
+    "/" + system.settings.config.getString("database.db.properties.databaseName")
+    val user           = system.settings.config.getString("database.db.properties.user")
+    val pass           = system.settings.config.getString("database.db.properties.password")
     val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
     val _              = flyway.migrate()
 
     val dbConfig: DatabaseConfig[JdbcProfile] =
-      DatabaseConfig.forConfig("db", system.settings.config)
+      DatabaseConfig.forConfig("database", system.settings.config)
     val repo = new Repository(dbConfig)
 
     val route = path("product" / ProductIdSegment) { id: ProductId =>

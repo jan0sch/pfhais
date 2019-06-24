@@ -274,17 +274,20 @@ Next we move on to the programmatic part which at first needs a configuration of
 
 {caption: "Database configuration in application.conf"}
 ```text
-db {
-  connectionPool = "HikariCP"
-  dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
-  properties {
-    serverName = "localhost"
-    portNumber = "5432"
-    databaseName = "impure"
-    user = "impure"
-    password = "secret"
+database {
+  profile = "slick.jdbc.PostgresProfile$"
+  db {
+    connectionPool = "HikariCP"
+    dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
+    properties {
+      serverName = "localhost"
+      portNumber = "5432"
+      databaseName = "impure"
+      user = "impure"
+      password = "secret"
+    }
+    numThreads = 10
   }
-  numThreads = 10
 }
 ```
 
@@ -292,13 +295,16 @@ After we have this in place we can run the migrations via the API of Flyway. For
 
 {caption: "Apply database migrations via Flyway"}
 ```scala
-val as: ActorSystem = ActorSystem()
+implicit val system: ActorSystem    = ActorSystem()
+implicit val mat: ActorMaterializer = ActorMaterializer()
+implicit val ec: ExecutionContext   = system.dispatcher
+
 val url = "jdbc:postgresql://" +
-  as.settings.config.getString("db.properties.serverName") +
-  ":" + as.settings.config.getString("db.properties.portNumber") +
-  "/" + as.settings.config.getString("db.properties.databaseName")
-val user           = as.settings.config.getString("db.properties.user")
-val pass           = as.settings.config.getString("db.properties.password")
+system.settings.config.getString("database.db.properties.serverName") +
+":" + system.settings.config.getString("database.db.properties.portNumber") +
+"/" + system.settings.config.getString("database.db.properties.databaseName")
+val user           = system.settings.config.getString("database.db.properties.user")
+val pass           = system.settings.config.getString("database.db.properties.password")
 val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
 val _              = flyway.migrate()
 ```
