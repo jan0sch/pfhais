@@ -16,6 +16,7 @@ import java.util.UUID
 import akka.NotUsed
 import akka.actor._
 import akka.http.scaladsl._
+import akka.http.scaladsl.common._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
 import akka.stream._
@@ -80,22 +81,29 @@ object Impure {
       }
     } ~ path("products") {
       get {
-        complete {
-          val src = Source.fromPublisher(repo.loadProducts())
-          val str: Source[Option[Product], NotUsed] = src
-            .collect(
-              cs =>
-                Product.fromDatabase(Seq(cs)) match {
-                  case Some(p) => p
-              }
-            )
-            .groupBy(Int.MaxValue, _.id)
-            .fold(Option.empty[Product])(
-              (op, x) => op.fold(x.some)(p => p.copy(names = p.names ::: x.names).some)
-            )
-            .mergeSubstreams
-          ???
-        }
+        implicit val jsonStreamingSupport: JsonEntityStreamingSupport =
+          EntityStreamingSupport.json()
+
+        val src = Source.fromPublisher(repo.loadProducts())
+        val products: Source[Product, NotUsed] = src
+          .collect(
+            cs =>
+              Product.fromDatabase(Seq(cs)) match {
+                case Some(p) => p
+            }
+          )
+          .groupBy(Int.MaxValue, _.id)
+          .fold(Option.empty[Product])(
+            (op, x) => op.fold(x.some)(p => p.copy(names = p.names ::: x.names).some)
+          )
+          .mergeSubstreams
+          .collect(
+            op =>
+              op match {
+                case Some(p) => p
+            }
+          )
+        complete(products)
       } ~
       post {
         entity(as[Product]) { p =>
