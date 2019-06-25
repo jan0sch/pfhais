@@ -33,6 +33,7 @@ lazy val pure =
 	library.http4sDsl,
         library.logback,
 	library.postgresql,
+	library.pureConfig,
         library.refinedCats,
         library.refinedCore,
 	library.doobieScalaTest   % IntegrationTest,
@@ -60,6 +61,7 @@ lazy val library =
       val http4s       = "0.20.3"
       val logback      = "1.2.3"
       val postgresql   = "42.2.5"
+      val pureConfig   = "0.11.1"
       val refined      = "0.9.8"
       val scalaCheck   = "1.14.0"
       val scalaTest    = "3.0.7"
@@ -80,6 +82,7 @@ lazy val library =
     val http4sDsl         = "org.http4s"             %% "http4s-dsl"           % Version.http4s
     val logback           = "ch.qos.logback"         %  "logback-classic"      % Version.logback
     val postgresql        = "org.postgresql"         %  "postgresql"           % Version.postgresql
+    val pureConfig        = "com.github.pureconfig"  %% "pureconfig"           % Version.pureConfig
     val refinedCore       = "eu.timepit"             %% "refined"              % Version.refined
     val refinedCats       = "eu.timepit"             %% "refined-cats"         % Version.refined
     val refinedScalaCheck = "eu.timepit"             %% "refined-scalacheck"   % Version.refined
