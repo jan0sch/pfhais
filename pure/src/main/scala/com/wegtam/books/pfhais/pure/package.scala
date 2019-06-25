@@ -24,7 +24,7 @@ package object pure {
   // A string containing a database password which must be non empty.
   type DatabasePassword = String Refined NonEmpty
   // A string containing a database url.
-  type DatabaseUrl = String Refined Url
+  type DatabaseUrl = String Refined Uri
   // A string that must not be empty.
   type NonEmptyString = String Refined NonEmpty
   // A TCP port number which is valid in the range of 1 to 65535.

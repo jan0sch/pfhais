@@ -12,6 +12,10 @@
 package com.wegtam.books.pfhais.pure.config
 
 import com.wegtam.books.pfhais.pure.{ DatabaseLogin, DatabasePassword, DatabaseUrl, NonEmptyString }
+import eu.timepit.refined.auto._
+import eu.timepit.refined.pureconfig._
+import pureconfig._
+import pureconfig.generic.semiauto._
 
 /**
   * The configuration for our database connection.
@@ -25,3 +29,9 @@ final case class DatabaseConfig(driver: NonEmptyString,
                                 url: DatabaseUrl,
                                 user: DatabaseLogin,
                                 pass: DatabasePassword)
+
+object DatabaseConfig {
+
+  implicit val configReader: ConfigReader[DatabaseConfig] = deriveReader[DatabaseConfig]
+
+}
