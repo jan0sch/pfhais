@@ -12,10 +12,10 @@
 package com.wegtam.books.pfhais.pure.config
 
 import com.wegtam.books.pfhais.pure.{ NonEmptyString, PortNumber }
-import pureconfig._
-import pureconfig.generic.semiauto._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.pureconfig._
+import pureconfig._
+import pureconfig.generic.semiauto._
 
 /**
   * The configuration for our HTTP API.
