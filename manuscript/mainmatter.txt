@@ -586,7 +586,50 @@ The solution has two problems:
 As the first problem is simply related to the usage of `groupBy` we may say that we only have one problem: The usage of `groupBy`. ;-)
 For a limited amount of data the proposed solution is perfectly fine so we will leave it as is for now.
 
+Regarding the state of our service we have a working solution, so congratulations and let's move on to the pure implementation.
+
 # Pure implementation
+
+Like in the previous section I will spare you the details of the sbt setup. We will be using the following set of libraries:
+
+1. Http4s
+2. Doobie (as database layer)
+3. Flyway for database migrations (or evolutions)
+4. Circe for JSON codecs
+5. Refined for using refined types
+6. the PostgreSQL JDBC driver
+7. pureconfig (for proper configuration loading)
+
+## Pure configuration handling
+
+Last time we simply loaded our configuration via the typesafe config library but can't we do a bit better here? The answer is yes by using the pureconfig[^12] library. First we start by implementing the necessary parts of our configuration as data types.
+
+{caption: "Configuration data types"
+```scala
+final case class ApiConfig(host: NonEmptyString, port: PortNumber)
+
+object ApiConfig {
+  implicit val configReader: ConfigReader[ApiConfig] =
+    deriveReader[ApiConfig]
+}
+
+final case class DatabaseConfig(driver: NonEmptyString,
+                                url: DatabaseUrl,
+                                user: DatabaseLogin,
+                                pass: DatabasePassword)
+
+object DatabaseConfig {
+  implicit val configReader: ConfigReader[DatabaseConfig] =
+    deriveReader[DatabaseConfig]
+}
+```
+
+As we can see the code is pretty simple. The implicits in the companion objects are needed for pureconfig to actually map from a configuration to your data types. As you can see we are using a function `deriveReader` which will derive (like in mathematics) the codec (Yes, it is similar to a JSON codec thus the name.) for us.
+
+I> **A note on derivation**
+I> In general we always want the compiler to derive stuff automatically because it means less work for us. However...
+I> As always there is a cost and sometimes a rather big one (compile time). Therefore you should not use fully automatic derivation but the semi automatic variant instead. The latter will let you chose what to derive explicitly.
+I> In some circumstances it may even be better to generate a codec manually (complex, deeply nested models).
 
 # What about tests?
 
@@ -600,3 +643,5 @@ For a limited amount of data the proposed solution is perfectly fine so we will 
 
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
+
+[^12]: https://pureconfig.github.io/
