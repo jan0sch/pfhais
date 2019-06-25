@@ -17,7 +17,7 @@ import eu.timepit.refined.auto._
 import org.scalacheck.{ Arbitrary, Gen }
 
 object ApiConfigGenerators {
-  val DefaultHost: NonEmptyString = "db.example.com"
+  val DefaultHost: NonEmptyString = "api.example.com"
   val DefaultPort: PortNumber     = 1234
 
   val genApiConfig: Gen[ApiConfig] = for {
