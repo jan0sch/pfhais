@@ -539,7 +539,52 @@ def loadProducts(): DatabasePublisher[(UUID, String, String)] = {
 }
 ```
 
-Now we can rely on the fact that we have seen all entries for one product if the product id in our list changes.
+Now we can rely on the fact that we have seen all entries for one product if the product id in our list changes. Let's adjust our code in the endpoint to make use of streaming now. Because Akka-HTTP is based on Akka-Streams we can simply use that.
+
+{caption: "Return all products as stream"}
+```scala
+path("products") {
+  get {
+    implicit val jsonStreamingSupport: JsonEntityStreamingSupport =
+      EntityStreamingSupport.json()
+
+    val src = Source.fromPublisher(repo.loadProducts())
+    val products: Source[Product, NotUsed] = src
+      .collect(
+	cs =>
+	  Product.fromDatabase(Seq(cs)) match {
+	    case Some(p) => p
+	}
+      )
+      .groupBy(Int.MaxValue, _.id)
+      .fold(Option.empty[Product])(
+	(op, x) => op.fold(x.some)(p =>
+	  p.copy(names = p.names ::: x.names).some
+	)
+      )
+      .mergeSubstreams
+      .collect(
+	op =>
+	  op match {
+	    case Some(p) => p
+	}
+      )
+    complete(products)
+  }
+}
+```
+
+Wow, this may look scary but let's break it apart piece by piece. At first we need an implicit value which provides streaming support for JSON. Next we create a `Source` from the database stream. Now we implement the processing logic via the high level streams API. We collect every defined output of our helper function `fromDatabase` which leads to a stream of `Product` entities. But we have created way too many (Each product will be created as often as it has translations.). So we group our stream by the product id which creates a new stream for each product id holding only the entities for the specific product. We fold over each of these streams by merging together the list of translations (`names`). Afterwards we merge the streams back together and run another collect function to simply get a result stream of `Product` and not of `Option[Product]`. Last but not least the stream is passed to the `complete` function which will do the right thing.
+
+#### Problems with the solution
+
+The solution has two problems:
+
+1. The number of individual streams (and thus products) is limited to `Int.MaxValue`.
+2. The `groupBy` operator holds the references to these streams in memory opening a possible out of memory issue here.
+
+As the first problem is simply related to the usage of `groupBy` we may say that we only have one problem: The usage of `groupBy`. ;-)
+For a limited amount of data the proposed solution is perfectly fine so we will leave it as is for now.
 
 # Pure implementation
 
