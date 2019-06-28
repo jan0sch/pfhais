@@ -24,6 +24,8 @@ import org.http4s.server.Router
 import org.http4s.server.blaze._
 import pureconfig._
 
+import scala.io.StdIn
+
 object Pure extends IOApp {
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
@@ -51,7 +53,7 @@ object Pure extends IOApp {
          loadConfigOrThrow[DatabaseConfig](cfg, "database"))
       }
       server = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
-      fiber  = server.resource.use(_ => IO.never).as(ExitCode.Success)
+      fiber  = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
     } yield fiber
     program.unsafeRunSync
   }
