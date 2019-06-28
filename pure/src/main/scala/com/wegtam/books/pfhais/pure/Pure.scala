@@ -12,7 +12,8 @@
 package com.wegtam.books.pfhais.pure
 
 import cats.effect._
-import cats.syntax.all._
+import cats.implicits._
+//import cats.syntax.all._
 import com.typesafe.config._
 import com.wegtam.books.pfhais.pure.config._
 import eu.timepit.refined.auto._
@@ -25,6 +26,7 @@ import pureconfig._
 
 object Pure extends IOApp {
 
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   def run(args: List[String]): IO[ExitCode] = {
     val productRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
       case GET -> Root / "product" / id =>
@@ -42,12 +44,15 @@ object Pure extends IOApp {
     val httpApp = Router("/" -> routes).orNotFound
 
     val program = for {
-      cfg       <- IO(ConfigFactory.load)
-      apiConfig <- loadConfig[ApiConfig](cfg, "api")
-      dbConfig  <- loadConfig[DatabaseConfig](cfg, "database")
+      (apiConfig, dbConfig) <- IO {
+        val cfg = ConfigFactory.load
+        // TODO Think about alternatives to `Throw`.
+        (loadConfigOrThrow[ApiConfig](cfg, "api"),
+         loadConfigOrThrow[DatabaseConfig](cfg, "database"))
+      }
       server = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
-      fiber  = server.resource.use(_ => IO.never)
+      fiber  = server.resource.use(_ => IO.never).as(ExitCode.Success)
     } yield fiber
-    program.as(ExitCode.Success)
+    program.unsafeRunSync
   }
 }
