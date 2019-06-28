@@ -631,6 +631,24 @@ I> In general we always want the compiler to derive stuff automatically because 
 I> As always there is a cost and sometimes a rather big one (compile time). Therefore you should not use fully automatic derivation but the semi automatic variant instead. The latter will let you chose what to derive explicitly.
 I> In some circumstances it may even be better to generate a codec manually (complex, deeply nested models).
 
+## Models
+
+Because we have already written our models we just re-use them here. The only thing we change is the semi automatic derivation of the JSON codecs. We just need to import the appropriate circe package and call the derive functions.
+
+{caption: "Derive JSON codecs"}
+```scala
+import io.circe._
+import io.circe.generic.semiauto._
+
+implicit val decode: Decoder[Product] = deriveDecoder[Product]
+implicit val encode: Encoder[Product] = deriveEncoder[Product]
+implicit val decode: Decoder[Translation] = deriveDecoder[Translation]
+implicit val encode: Encoder[Translation] = deriveEncoder[Translation]
+```
+
+I> Remind please that for complex classes this can add significant compile time overhead.
+I> Also using (semi) automatic derivation for data models that are used in a public API may result in breaking changes if an attribute name is changed.
+
 # What about tests?
 
 ## Testing the impure service
