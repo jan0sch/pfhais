@@ -655,7 +655,35 @@ In general the same applies to the database layer as we have already read in the
 
 ### Migrations
 
-For the sake of simplicity we will stick to Flyway for our database migrations. However we will wrap the migration code in a different way (read Encapsulate it properly within an `IO` to defer side effects.).
+For the sake of simplicity we will stick to Flyway for our database migrations. However we will wrap the migration code in a different way (read Encapsulate it properly within an `IO` to defer side effects.). While we're at it we may just as well write our migration code using the interpreter pattern (it became famous under the name "tagless final" in Scala).
+
+{caption: "Database migrator base"}
+```scala
+trait DatabaseMigrator[F[_]] {
+  def migrate(url: DatabaseUrl,
+              user: DatabaseLogin,
+	      pass: DatabasePassword): F[Int]
+}
+```
+
+We define a trait which describes the functionality desired by our interpreter and use a higher kinded type parameter to be able to abstract over the type. But now let's continue with our Flyway interpreter.
+
+{caption: "Flyway migrator interpreter"}
+```scala
+final class FlywayDatabaseMigrator extends DatabaseMigrator[IO] {
+  override def migrate(url: DatabaseUrl,
+                       user: DatabaseLogin,
+		       pass: DatabasePassword): IO[Int] =
+    IO {
+      val flyway: Flyway = Flyway.configure()
+        .dataSource(url, user, pass)
+	.load()
+      flyway.migrate()
+    }
+}
+```
+
+As we can see, the implementation is pretty simple and we just wrap our code into an `IO` monad to constrain the effect.
 
 ### Doobie
 

@@ -16,6 +16,7 @@ import cats.implicits._
 //import cats.syntax.all._
 import com.typesafe.config._
 import com.wegtam.books.pfhais.pure.config._
+import com.wegtam.books.pfhais.pure.db._
 import eu.timepit.refined.auto._
 import org.http4s._
 import org.http4s.dsl.io._
@@ -45,6 +46,8 @@ object Pure extends IOApp {
     val routes  = productRoutes <+> productsRoutes
     val httpApp = Router("/" -> routes).orNotFound
 
+    val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
+
     val program = for {
       (apiConfig, dbConfig) <- IO {
         val cfg = ConfigFactory.load
@@ -52,6 +55,7 @@ object Pure extends IOApp {
         (loadConfigOrThrow[ApiConfig](cfg, "api"),
          loadConfigOrThrow[DatabaseConfig](cfg, "database"))
       }
+      _ <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
       server = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
       fiber  = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
     } yield fiber
