@@ -651,11 +651,11 @@ I> Also using (semi) automatic derivation for data models that are used in a pub
 
 ## Database layer
 
-TODO
+In general the same applies to the database layer as we have already read in the "impure" section.
 
 ### Migrations
 
-TODO
+For the sake of simplicity we will stick to Flyway for our database migrations. However we will wrap the migration code in a different way (read Encapsulate it properly within an `IO` to defer side effects.).
 
 ### Doobie
 
