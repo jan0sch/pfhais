@@ -416,7 +416,7 @@ def fromDatabase(rows: Seq[(UUID, String, String)]): Option[Product] = {
 
 So far we should have everything in place to make use of our database. Now we need to wire it all together.
 
-### Akka-HTTP routes
+## Akka-HTTP routes
 
 Defining the routes is pretty simple if you're used to the Akka-HTTP routing DSL syntax.
 
@@ -576,7 +576,7 @@ path("products") {
 
 Wow, this may look scary but let's break it apart piece by piece. At first we need an implicit value which provides streaming support for JSON. Next we create a `Source` from the database stream. Now we implement the processing logic via the high level streams API. We collect every defined output of our helper function `fromDatabase` which leads to a stream of `Product` entities. But we have created way too many (Each product will be created as often as it has translations.). So we group our stream by the product id which creates a new stream for each product id holding only the entities for the specific product. We fold over each of these streams by merging together the list of translations (`names`). Afterwards we merge the streams back together and run another collect function to simply get a result stream of `Product` and not of `Option[Product]`. Last but not least the stream is passed to the `complete` function which will do the right thing.
 
-#### Problems with the solution
+### Problems with the solution
 
 The solution has two problems:
 
@@ -649,16 +649,41 @@ implicit val encode: Encoder[Translation] = deriveEncoder[Translation]
 I> Remind please that for complex classes this can add significant compile time overhead.
 I> Also using (semi) automatic derivation for data models that are used in a public API may result in breaking changes if an attribute name is changed.
 
+## Database layer
+
+TODO
+
+### Migrations
+
+TODO
+
+### Doobie
+
+TODO
+
+## Http4s routes
+
+TODO
+
 # What about tests?
+
+TODO
 
 ## Testing the impure service
 
+TODO
+
 ## Testing the pure service
+
+TODO
 
 # Adding benchmarks
 
+TODO
+
 # Comparison
 
+TODO
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
