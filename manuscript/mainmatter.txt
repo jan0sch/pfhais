@@ -683,7 +683,7 @@ final class FlywayDatabaseMigrator extends DatabaseMigrator[IO] {
 }
 ```
 
-As we can see, the implementation is pretty simple and we just wrap our code into an `IO` monad to constrain the effect.
+As we can see, the implementation is pretty simple and we just wrap our code into an `IO` monad to constrain the effect. Having the migration code settled we can move on to the repository.
 
 ### Doobie
 
