@@ -685,6 +685,18 @@ final class FlywayDatabaseMigrator extends DatabaseMigrator[IO] {
 
 As we can see, the implementation is pretty simple and we just wrap our code into an `IO` monad to constrain the effect. Having the migration code settled we can move on to the repository.
 
+Q> So what is wrong with our solution?
+
+If we take a closer look at the method definition of `Flyway.migrate`, we see this:
+
+{caption: "Method definition of Flyway.migrate"}
+```scala
+public int migrate() throws FlywayException
+```
+
+While `IO` will gladly defer side effects for us it won't stop enclosed code from throwing exceptions. This is not that great. So what can we do about it?
+Having an instance of `MonadError` in scope we could just use the `.attempt` function provided by it. But is this enough or better does this provide a sensible solution for us?
+
 ### Doobie
 
 TODO
