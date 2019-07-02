@@ -55,10 +55,20 @@ object Pure extends IOApp {
         (loadConfigOrThrow[ApiConfig](cfg, "api"),
          loadConfigOrThrow[DatabaseConfig](cfg, "database"))
       }
-      _ <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
+      ms <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
       server = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
       fiber  = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
     } yield fiber
-    program.unsafeRunSync
+    program.attempt.unsafeRunSync match {
+      case Left(e) =>
+        IO {
+          println("*** An error occured! ***")
+          if (e != null) {
+            println(e.getMessage)
+          }
+          ExitCode.Error
+        }
+      case Right(r) => r
+    }
   }
 }

@@ -695,7 +695,42 @@ public int migrate() throws FlywayException
 ```
 
 While `IO` will gladly defer side effects for us it won't stop enclosed code from throwing exceptions. This is not that great. So what can we do about it?
-Having an instance of `MonadError` in scope we could just use the `.attempt` function provided by it. But is this enough or better does this provide a sensible solution for us?
+Having an instance of `MonadError` in scope we could just use the `.attempt` function provided by it. But is this enough or better does this provide a sensible solution for us? Let's play a bit on the REPL.
+
+{caption: "MonadError on the REPL"}
+```scala
+@ import cats._, cats.effect._, cats.implicits._
+@ val program = for {
+           _ <- IO(println("one"))
+           _ <- IO(println("two"))
+           x <- IO.pure(42)
+           } yield x
+@ program.attempt.unsafeRunSync match {
+           case Left(e) =>
+             println(e.getMessage)
+             -1
+           case Right(r) => r
+           }
+one
+two
+res3: Int = 42
+@ val program = for {
+           _ <- IO(println("one"))
+           _ <- IO(throw new Error("BOOM!"))
+           x <- IO.pure(42)
+           } yield x
+@ program.attempt.unsafeRunSync match {
+           case Left(e) =>
+             println(e.getMessage)
+             -1
+           case Right(r) => r
+           }
+one
+BOOM!
+res5: Int = -1
+```
+
+This looks like we just have to use `MonadError` then. Hurray, we don't need to change our code in the migrator. As model citizens of the functional programming camp we just defer the responsibility upwards to the calling site.
 
 ### Doobie
 
