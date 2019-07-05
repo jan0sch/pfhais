@@ -246,7 +246,7 @@ The database layer should provide a programmatic access to the database but also
 
 ### Migrations
 
-Flyway uses raw SQL scripts which have to be put into a certain location being `src/main/resources/db/migration` in our case. Also the files have to be named like `VXX__some_name.sql` (`XX` being a number) starting with `V1`. Please note that there are two underscores between the version prefix and the rest of the name! Because our database schema is very simply we're done quickly:
+Flyway uses raw SQL scripts which have to be put into a certain location being `/db/migration` (under the `resources` folder) in our case. Also the files have to be named like `VXX__some_name.sql` (`XX` being a number) starting with `V1`. Please note that there are two underscores between the version prefix and the rest of the name! Because our database schema is very simply we're done quickly:
 
 {caption: "Flyway migration for creating the database"}
 ```sql
@@ -303,10 +303,10 @@ val url = "jdbc:postgresql://" +
 system.settings.config.getString("database.db.properties.serverName") +
 ":" + system.settings.config.getString("database.db.properties.portNumber") +
 "/" + system.settings.config.getString("database.db.properties.databaseName")
-val user           = system.settings.config.getString("database.db.properties.user")
-val pass           = system.settings.config.getString("database.db.properties.password")
-val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
-val _              = flyway.migrate()
+val user = system.settings.config.getString("database.db.properties.user")
+val pass = system.settings.config.getString("database.db.properties.password")
+val flyway = Flyway.configure().dataSource(url, user, pass).load()
+val _ = flyway.migrate()
 ```
 
 Let us continue to dive into the Slick table definitions.
@@ -604,7 +604,7 @@ Like in the previous section I will spare you the details of the sbt setup. We w
 
 Last time we simply loaded our configuration via the typesafe config library but can't we do a bit better here? The answer is yes by using the pureconfig[^12] library. First we start by implementing the necessary parts of our configuration as data types.
 
-{caption: "Configuration data types"
+{caption: "Configuration data types"}
 ```scala
 final case class ApiConfig(host: NonEmptyString, port: PortNumber)
 
