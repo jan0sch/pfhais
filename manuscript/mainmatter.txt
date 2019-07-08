@@ -741,7 +741,7 @@ As we already started with using a tagless final approach we might as well conti
 trait Repository[F[_]] {
   def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]]
 
-  def loadProducts(): F[Seq[(ProductId, LanguageCode, ProductName)]]
+  def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)]
 
   def saveProduct(p: Product): F[Seq[Int]]
 
@@ -749,7 +749,7 @@ trait Repository[F[_]] {
 }
 ```
 
-There is nothing exciting here except that we feel brave now and try to use proper refined types in our database functions. This is possible due to the usage of the doobie-refined module. To be able to map the `UUID` data type (and others) we also need to include the doobie-postgresql module. For convenience we are still using `ProductId` instead of `UUID` in our definition.
+There is nothing exciting here except that we feel brave now and try to use proper refined types in our database functions. This is possible due to the usage of the doobie-refined module. To be able to map the `UUID` data type (and others) we also need to include the doobie-postgresql module. For convenience we are still using `ProductId` instead of `UUID` in our definition. In addition we wire the return type of `loadProducts` to be a `fs2.Stream` because we want to achieve pure functional streaming here. :-)
 
 ## Http4s routes
 

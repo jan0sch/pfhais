@@ -18,8 +18,9 @@ import doobie.implicits._
 import doobie.postgres.implicits._
 import doobie.refined.implicits._
 import eu.timepit.refined.auto._
+import fs2.Stream
 
-import scala.collection.immutable._
+import scala.collection.immutable.Seq
 
 /**
   * The doobie implementation of our repository.
@@ -34,7 +35,7 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @param id The unique ID of the product.
     * @return A list of database rows for a single product which you'll need to combine.
     */
-  def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]] =
+  override def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]] =
     sql"SELECT products.id, names.lang_code, names.name FROM products JOIN names ON products.id = names.product_id WHERE products.id = $id"
       .query[(ProductId, LanguageCode, ProductName)]
       .to[Seq]
@@ -43,9 +44,13 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
   /**
     * Load all products from the database repository.
     *
-    * @return A list of database rows which you'll need to combine.
+    * @return A stream of database rows which you'll need to combine.
     */
-  def loadProducts(): F[Seq[(ProductId, LanguageCode, ProductName)]] = ???
+  override def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)] =
+    sql"SELECT products.id, names.lang_code, names.name FROM products JOIN names ON products.id = names.product_id ORDER BY products.id"
+      .query[(ProductId, LanguageCode, ProductName)]
+      .stream
+      .transact(tx)
 
   /**
     * Save the given product in the database.
@@ -53,7 +58,7 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @param p A product to be saved.
     * @return A list of affected database rows (product + translations).
     */
-  def saveProduct(p: Product): F[Seq[Int]] = ???
+  override def saveProduct(p: Product): F[Seq[Int]] = ???
 
   /**
     * Update the given product in the database.
@@ -61,6 +66,6 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @param p The product to be updated.
     * @return A list of affected database rows.
     */
-  def updateProduct(p: Product): F[Seq[Int]] = ???
+  override def updateProduct(p: Product): F[Seq[Int]] = ???
 
 }

@@ -12,8 +12,9 @@
 package com.wegtam.books.pfhais.pure.db
 
 import com.wegtam.books.pfhais.pure.models._
+import fs2.Stream
 
-import scala.collection.immutable._
+import scala.collection.immutable.Seq
 
 /**
   * A base class for our database repository.
@@ -33,9 +34,9 @@ trait Repository[F[_]] {
   /**
     * Load all products from the database repository.
     *
-    * @return A list of database rows which you'll need to combine.
+    * @return A stream of database rows which you'll need to combine.
     */
-  def loadProducts(): F[Seq[(ProductId, LanguageCode, ProductName)]]
+  def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)]
 
   /**
     * Save the given product in the database.
