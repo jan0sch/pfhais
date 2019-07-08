@@ -26,6 +26,7 @@ lazy val pure =
 	library.doobieCore,
 	library.doobieHikari,
 	library.doobiePostgres,
+	library.doobieRefined,
 	library.flywayCore,
 	library.http4sBlazeClient,
 	library.http4sBlazeServer,
@@ -75,6 +76,7 @@ lazy val library =
     val doobieCore        = "org.tpolecat"           %% "doobie-core"          % Version.doobie
     val doobieHikari      = "org.tpolecat"           %% "doobie-hikari"        % Version.doobie
     val doobiePostgres    = "org.tpolecat"           %% "doobie-postgres"      % Version.doobie
+    val doobieRefined     = "org.tpolecat"           %% "doobie-refined"       % Version.doobie
     val doobieScalaTest   = "org.tpolecat"           %% "doobie-scalatest"     % Version.doobie
     val flywayCore        = "org.flywaydb"           %  "flyway-core"          % Version.flyway
     val http4sBlazeServer = "org.http4s"             %% "http4s-blaze-server"  % Version.http4s
