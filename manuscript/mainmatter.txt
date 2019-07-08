@@ -734,7 +734,22 @@ This looks like we just have to use `MonadError` then. Hurray, we don't need to 
 
 ### Doobie
 
-TODO
+As we already started with using a tagless final approach we might as well continue with it and define a base for our repository.
+
+{caption: "Base trait for the repository"}
+```scala
+trait Repository[F[_]] {
+  def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]]
+
+  def loadProducts(): F[Seq[(ProductId, LanguageCode, ProductName)]]
+
+  def saveProduct(p: Product): F[Seq[Int]]
+
+  def updateProduct(p: Product): F[Seq[Int]]
+}
+```
+
+There is nothing exciting here except that we feel brave now and try to use proper refined types in our database functions. This is possible due to the usage of the doobie-refined module. To be able to map the `UUID` data type (and others) we also need to include the doobie-postgresql module. For convenience we are still using `ProductId` instead of `UUID` in our definition.
 
 ## Http4s routes
 
