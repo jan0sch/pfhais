@@ -42,9 +42,9 @@ trait Repository[F[_]] {
     * Save the given product in the database.
     *
     * @param p A product to be saved.
-    * @return A list of affected database rows (product + translations).
+    * @return The number of affected database rows (product + translations).
     */
-  def saveProduct(p: Product): F[Seq[Int]]
+  def saveProduct(p: Product): F[Int]
 
   /**
     * Update the given product in the database.

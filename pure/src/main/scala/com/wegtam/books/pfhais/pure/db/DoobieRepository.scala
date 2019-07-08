@@ -56,9 +56,16 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * Save the given product in the database.
     *
     * @param p A product to be saved.
-    * @return A list of affected database rows (product + translations).
+    * @return The number of affected database rows (product + translations).
     */
-  override def saveProduct(p: Product): F[Seq[Int]] = ???
+  override def saveProduct(p: Product): F[Int] = {
+    val namesSql = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+    val program = for {
+      pi <- sql"INSERT INTO products (id) VALUES(${p.id})".update.run
+      ni <- Update[Translation](namesSql).updateMany(p.names)
+    } yield pi + ni
+    program.transact(tx)
+  }
 
   /**
     * Update the given product in the database.
