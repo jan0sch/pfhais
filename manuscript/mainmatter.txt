@@ -745,7 +745,7 @@ trait Repository[F[_]] {
 
   def saveProduct(p: Product): F[Int]
 
-  def updateProduct(p: Product): F[Seq[Int]]
+  def updateProduct(p: Product): F[Int]
 }
 ```
 

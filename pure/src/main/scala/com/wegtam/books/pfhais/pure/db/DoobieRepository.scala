@@ -71,8 +71,13 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * Update the given product in the database.
     *
     * @param p The product to be updated.
-    * @return A list of affected database rows.
+    * @return The number of affected database rows.
     */
-  override def updateProduct(p: Product): F[Seq[Int]] = ???
+  override def updateProduct(p: Product): F[Int] = {
+    val namesSql =
+      "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?) ON CONFLICT (product_id) DO UPDATE SET lang_code = EXCLUDED.lang_code, name = EXCLUDED.name"
+    val program = Update[Translation](namesSql).updateMany(p.names)
+    program.transact(tx)
+  }
 
 }

@@ -50,8 +50,8 @@ trait Repository[F[_]] {
     * Update the given product in the database.
     *
     * @param p The product to be updated.
-    * @return A list of affected database rows.
+    * @return The number of affected database rows.
     */
-  def updateProduct(p: Product): F[Seq[Int]]
+  def updateProduct(p: Product): F[Int]
 
 }
