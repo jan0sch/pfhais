@@ -59,13 +59,13 @@ lazy val library =
       val circe        = "0.11.1"
       val doobie       = "0.7.0"
       val flyway       = "5.2.4"
-      val http4s       = "0.20.3"
+      val http4s       = "0.20.4"
       val logback      = "1.2.3"
-      val postgresql   = "42.2.5"
+      val postgresql   = "42.2.6"
       val pureConfig   = "0.11.1"
       val refined      = "0.9.8"
       val scalaCheck   = "1.14.0"
-      val scalaTest    = "3.0.7"
+      val scalaTest    = "3.0.8"
     }
     val catsCore          = "org.typelevel"          %% "cats-core"            % Version.cats
     val circeCore         = "io.circe"               %% "circe-core"           % Version.circe
