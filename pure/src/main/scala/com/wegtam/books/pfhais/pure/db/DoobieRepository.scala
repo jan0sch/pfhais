@@ -76,7 +76,10 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
   override def updateProduct(p: Product): F[Int] = {
     val namesSql =
       "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?) ON CONFLICT (product_id) DO UPDATE SET lang_code = EXCLUDED.lang_code, name = EXCLUDED.name"
-    val program = Update[Translation](namesSql).updateMany(p.names)
+    val program = for {
+      dl <- sql"DELETE FROM names WHERE product_id = ${p.id}".update.run
+      ts <- Update[Translation](namesSql).updateMany(p.names)
+    } yield dl + ts
     program.transact(tx)
   }
 
