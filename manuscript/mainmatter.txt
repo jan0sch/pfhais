@@ -752,6 +752,54 @@ trait Repository[F[_]] {
 ```
 
 There is nothing exciting here except that we feel brave now and try to use proper refined types in our database functions. This is possible due to the usage of the doobie-refined module. To be able to map the `UUID` data type (and others) we also need to include the doobie-postgresql module. For convenience we are still using `ProductId` instead of `UUID` in our definition. In addition we wire the return type of `loadProducts` to be a `fs2.Stream` because we want to achieve pure functional streaming here. :-)
+So let's see what a repository using doobie looks like.
+
+{caption: "The doobie repository."}
+```scala
+final class DoobieRepository[F[_]: Sync](tx: Transactor[F])
+  extends Repository[F] {
+
+  override def loadProduct(id: ProductId) = 
+    sql"""SELECT products.id, names.lang_code, names.name 
+          FROM products
+          JOIN names ON products.id = names.product_id
+          WHERE products.id = $id"""
+      .query[(ProductId, LanguageCode, ProductName)]
+      .to[Seq]
+      .transact(tx)
+
+  override def loadProducts() =
+    sql"""SELECT products.id, names.lang_code, names.name
+        FROM products
+        JOIN names ON products.id = names.product_id
+        ORDER BY products.id"""
+      .query[(ProductId, LanguageCode, ProductName)]
+      .stream
+      .transact(tx)
+
+  override def saveProduct(p: Product) = {
+    val namesSql = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+    val program = for {
+      pi <- sql"INSERT INTO products (id) VALUES(${p.id})".update.run
+      ni <- Update[Translation](namesSql).updateMany(p.names)
+    } yield pi + ni
+    program.transact(tx)
+  }
+
+  override def updateProduct(p: Product) = {
+    val namesSql = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+    val program = for {
+      dl <- sql"DELETE FROM names WHERE product_id = ${p.id}".update.run
+      ts <- Update[Translation](namesSql).updateMany(p.names)
+    } yield dl + ts
+    program.transact(tx)
+  }
+}
+```
+
+The first big difference is that with doobie you write plain SQL queries. You can do this with Slick too[^13] but with doobie it is the only way. If you're used to object relational mapping (ORM) or other forms of query compilers then this may seem strange at first. But: "In data processing it seems, all roads eventually lead back to SQL!"[^14] =)
+We won't discuss the benefits or drawbacks here but in general I also lean towards the approach of using the de factor lingua franca for database access because it was made for this and so far no query compiler was able to beat hand crafted SQL in terms of performance. Another benefit is that if you ask a database guru for help, she will be much more able to help you with plain SQL queries than with some meta query which is compiled into something that you have no idea of.
+That aside let's work through the functions. First we have `loadProduct` which is dead simple and just returns a list of rows from our table. The same can be said for `loadProducts` except that latter will return a `Stream` of rows. The programs within the save and update function use a monadic notation. While `saveProduct` first creates the needed "master" entry in the products table, the `updateProduct` function deletes all old translations before inserting the new ones.
 
 ## Http4s routes
 
@@ -780,3 +828,7 @@ TODO
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/
+
+[^13]: http://slick.lightbend.com/doc/3.3.1/sql.html
+
+[^14]: https://blog.acolyer.org/2019/07/03/one-sql-to-rule-them-all/
