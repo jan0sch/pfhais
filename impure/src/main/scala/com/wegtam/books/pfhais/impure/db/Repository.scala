@@ -107,7 +107,8 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
     * @return A future holding a list of affected database rows.
     */
   def updateProduct(p: Product): Future[List[Int]] = {
-    val program = DBIO.sequence(saveTranslations(p).toList).transactionally
+    val deleteOld = namesTable.filter(_.productId === p.id).delete
+    val program   = DBIO.sequence(deleteOld :: saveTranslations(p).toList).transactionally
     dbConfig.db.run(program)
   }
 

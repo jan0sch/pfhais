@@ -378,7 +378,9 @@ def saveProduct(p: Product): Future[List[Int]] = {
 }
 
 def updateProduct(p: Product): Future[List[Int]] = {
-  val program = DBIO.sequence(saveTranslations(p).toList).transactionally
+  val deleteOld = namesTable.filter(_.productId === p.id).delete
+  val program   = DBIO.sequence(deleteOld :: saveTranslations(p).toList)
+    .transactionally
   dbConfig.db.run(program)
 }
 
@@ -391,7 +393,7 @@ protected def saveTranslation(id: ProductId)(t: Translation): DBIO[Int] =
   namesTable.insertOrUpdate((id, t.lang, t.name))
 ```
 
-The last two functions are helpers to enable us to create a load queries which we can compose. They are used in the `saveProduct` and `updateProduct` functions to create a list of queries that are executed as bulk while the call to `transactionally` ensures that they will run within a transaction.
+The last two functions are helpers to enable us to create a load queries which we can compose. They are used in the `saveProduct` and `updateProduct` functions to create a list of queries that are executed as bulk while the call to `transactionally` ensures that they will run within a transaction. When updating a product we first delete all existing translations to allow the removal of existing translations via an update.
 The `loadProduct` function simply returns a list of database rows from the needed join. Therefore we need a function which builds a `Product` type out of that.
 
 {caption: "Helper function to create a Product"}
