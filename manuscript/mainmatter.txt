@@ -594,7 +594,7 @@ Regarding the state of our service we have a working solution, so congratulation
 
 Like in the previous section I will spare you the details of the sbt setup. We will be using the following set of libraries:
 
-1. Http4s
+1. http4s
 2. Doobie (as database layer)
 3. Flyway for database migrations (or evolutions)
 4. Circe for JSON codecs
@@ -801,9 +801,27 @@ The first big difference is that with doobie you write plain SQL queries. You ca
 We won't discuss the benefits or drawbacks here but in general I also lean towards the approach of using the de factor lingua franca for database access because it was made for this and so far no query compiler was able to beat hand crafted SQL in terms of performance. Another benefit is that if you ask a database guru for help, she will be much more able to help you with plain SQL queries than with some meta query which is compiled into something that you have no idea of.
 That aside let's work through the functions. First we have `loadProduct` which is dead simple and just returns a list of rows from our table. The same can be said for `loadProducts` except that latter will return a `Stream` of rows. The programs within the save and update function use a monadic notation. While `saveProduct` first creates the needed "master" entry in the products table, the `updateProduct` function deletes all old translations before inserting the new ones.
 
-## Http4s routes
+## http4s routes
 
-TODO
+The routing DSL of http4s differs from the one of Akka-HTTP. Although I like the latter one more it poses no problem to model out a base for our routes.
+
+{caption: "Base for http4s routes"}
+```scala
+val productRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+  case GET -> Root / "product" / id =>
+    ???
+  case PUT -> Root / "product" / id =>
+    ???
+}
+val productsRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+  case GET -> Root / "products" =>
+    ???
+  case POST -> Root / "products" =>
+    ???
+}
+```
+
+As we can see the DSL is closer to Scala syntax and quite easy to read. But before we move on to the details of each route let's think about how we can model this a bit more abstract. While it is fine to have our routes bound to `IO` it would be better to have more flexibility here.
 
 # What about tests?
 
