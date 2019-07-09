@@ -36,7 +36,10 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @return A list of database rows for a single product which you'll need to combine.
     */
   override def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]] =
-    sql"SELECT products.id, names.lang_code, names.name FROM products JOIN names ON products.id = names.product_id WHERE products.id = $id"
+    sql"""SELECT products.id, names.lang_code, names.name 
+          FROM products
+          JOIN names ON products.id = names.product_id
+          WHERE products.id = $id"""
       .query[(ProductId, LanguageCode, ProductName)]
       .to[Seq]
       .transact(tx)
@@ -47,7 +50,10 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @return A stream of database rows which you'll need to combine.
     */
   override def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)] =
-    sql"SELECT products.id, names.lang_code, names.name FROM products JOIN names ON products.id = names.product_id ORDER BY products.id"
+    sql"""SELECT products.id, names.lang_code, names.name
+        FROM products
+        JOIN names ON products.id = names.product_id
+        ORDER BY products.id"""
       .query[(ProductId, LanguageCode, ProductName)]
       .stream
       .transact(tx)
@@ -74,8 +80,7 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @return The number of affected database rows.
     */
   override def updateProduct(p: Product): F[Int] = {
-    val namesSql =
-      "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?) ON CONFLICT (product_id) DO UPDATE SET lang_code = EXCLUDED.lang_code, name = EXCLUDED.name"
+    val namesSql = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
     val program = for {
       dl <- sql"DELETE FROM names WHERE product_id = ${p.id}".update.run
       ts <- Update[Translation](namesSql).updateMany(p.names)
