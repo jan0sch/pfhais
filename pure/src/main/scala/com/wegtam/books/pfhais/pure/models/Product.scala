@@ -39,17 +39,17 @@ object Product {
     * @param rows The database rows describing a product and its translations.
     * @return An option to the successfully created Product.
     */
-  def fromDatabase(rows: Seq[(UUID, String, String)]): Option[Product] = {
+  def fromDatabase(rows: Seq[(UUID, LanguageCode, ProductName)]): Option[Product] = {
     val po = for {
       (id, c, n) <- rows.headOption
-      t          <- Translation.fromUnsafe(c)(n)
-      p          <- Product(id = id, names = NonEmptyList.one(t)).some
+      t = Translation(lang = c, name = n)
+      p <- Product(id = id, names = NonEmptyList.one(t)).some
     } yield p
     po.map(
       p =>
         rows.foldLeft(p) { (a, cols) =>
           val (id, c, n) = cols
-          Translation.fromUnsafe(c)(n).fold(a)(t => a.copy(names = a.names :+ t))
+          a.copy(names = a.names :+ Translation(lang = c, name = n))
       }
     )
   }

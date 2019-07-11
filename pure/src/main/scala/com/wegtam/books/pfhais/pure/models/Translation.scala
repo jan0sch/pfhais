@@ -11,7 +11,6 @@
 
 package com.wegtam.books.pfhais.pure.models
 
-import eu.timepit.refined.api._
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.refined._
@@ -25,19 +24,6 @@ import io.circe.refined._
 final case class Translation(lang: LanguageCode, name: ProductName)
 
 object Translation {
-
-  /**
-    * Try to create an instance of a Translation from unsafe input data.
-    *
-    * @param lang A string that must contain a valid LanguageCode.
-    * @param name A string that must contain a valid ProductName.
-    * @return An option to the successfully created Translation.
-    */
-  def fromUnsafe(lang: String)(name: String): Option[Translation] =
-    for {
-      l <- RefType.applyRef[LanguageCode](lang).toOption
-      n <- RefType.applyRef[ProductName](name).toOption
-    } yield Translation(lang = l, name = n)
 
   implicit val decode: Decoder[Translation] = deriveDecoder[Translation]
 
