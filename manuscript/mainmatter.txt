@@ -771,7 +771,7 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F])
 
 We keep our higher kinded type as abstract as we can but the transactor needed by Doobie has some requirements regarding it. Therefore we require an implicit `Sync`.
 If we look at the detailed function definitions further below, the first big difference is that with doobie you write plain SQL queries. You can do this with Slick too[^13] but with doobie it is the only way. If you're used to object relational mapping (ORM) or other forms of query compilers then this may seem strange at first. But: "In data processing it seems, all roads eventually lead back to SQL!"[^14] =)
-We won't discuss the benefits or drawbacks here but in general I also lean towards the approach of using the de factor lingua franca for database access because it was made for this and so far no query compiler was able to beat hand crafted SQL in terms of performance. Another benefit is that if you ask a database guru for help, she will be much more able to help you with plain SQL queries than with some meta query which is compiled into something that you have no idea of.
+We won't discuss the benefits or drawbacks here but in general I also lean towards the approach of using the de facto lingua franca for database access because it was made for this and so far no query compiler was able to beat hand crafted SQL in terms of performance. Another benefit is that if you ask a database guru for help, she will be much more able to help you with plain SQL queries than with some meta query which is compiled into something that you have no idea of.
 
 {caption: "Loading a product."}
 ```scala
