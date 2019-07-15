@@ -22,7 +22,8 @@ import org.http4s.circe._
 import org.http4s.dsl._
 
 final class ProductRoutes[F[_]: Monad: Sync](repo: Repository[F]) extends Http4sDsl[F] {
-  implicit def wtf[A[_]: Applicative]: EntityEncoder[A, Option[Product]] = jsonEncoderOf
+  implicit def decodeProduct: EntityDecoder[F, Product]                            = jsonOf
+  implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Option[Product]] = jsonEncoderOf
 
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / "product" / UUIDVar(id) =>
@@ -30,8 +31,12 @@ final class ProductRoutes[F[_]: Monad: Sync](repo: Repository[F]) extends Http4s
         rows <- repo.loadProduct(id)
         resp <- Ok(Product.fromDatabase(rows))
       } yield resp
-    case PUT -> Root / "product" / UUIDVar(id) =>
-      ???
+    case req @ PUT -> Root / "product" / UUIDVar(id) =>
+      for {
+        p <- req.as[Product]
+        _ <- repo.updateProduct(p)
+        r <- NoContent()
+      } yield r
   }
 
 }
