@@ -15,11 +15,11 @@ import cats.effect._
 import cats.implicits._
 //import cats.syntax.all._
 import com.typesafe.config._
+import com.wegtam.books.pfhais.pure.api._
 import com.wegtam.books.pfhais.pure.config._
 import com.wegtam.books.pfhais.pure.db._
+import doobie._
 import eu.timepit.refined.auto._
-import org.http4s._
-import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
@@ -31,21 +31,6 @@ object Pure extends IOApp {
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   def run(args: List[String]): IO[ExitCode] = {
-    val productRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-      case GET -> Root / "product" / id =>
-        ???
-      case PUT -> Root / "product" / id =>
-        ???
-    }
-    val productsRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-      case GET -> Root / "products" =>
-        ???
-      case POST -> Root / "products" =>
-        ???
-    }
-    val routes  = productRoutes <+> productsRoutes
-    val httpApp = Router("/" -> routes).orNotFound
-
     val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
 
     val program = for {
@@ -56,8 +41,15 @@ object Pure extends IOApp {
          loadConfigOrThrow[DatabaseConfig](cfg, "database"))
       }
       ms <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
-      server = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
-      fiber  = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
+      tx = Transactor
+        .fromDriverManager[IO](dbConfig.driver, dbConfig.url, dbConfig.user, dbConfig.pass)
+      repo           = new DoobieRepository(tx)
+      productRoutes  = new ProductRoutes(repo)
+      productsRoutes = new ProductsRoutes(repo)
+      routes         = productRoutes.routes <+> productsRoutes.routes
+      httpApp        = Router("/" -> routes).orNotFound
+      server         = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
+      fiber          = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
     } yield fiber
     program.attempt.unsafeRunSync match {
       case Left(e) =>
