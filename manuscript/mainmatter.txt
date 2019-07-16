@@ -806,11 +806,14 @@ Our `loadProducts` function is equivalent to the first one but it returns the da
 
 {caption: "Save a product"}
 ```scala
-override def saveProduct(p: Product) = {
-  val namesSql = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+override def saveProduct(p: Product): F[Int] = {
+  val namesSql = 
+    "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+  val namesValues = p.names.map(t => (p.id, t.lang, t.name))
   val program = for {
     pi <- sql"INSERT INTO products (id) VALUES(${p.id})".update.run
-    ni <- Update[Translation](namesSql).updateMany(p.names)
+    ni <- Update[(ProductId, LanguageCode, ProductName)](namesSql)
+            .updateMany(namesValues)
   } yield pi + ni
   program.transact(tx)
 }
@@ -820,11 +823,14 @@ When saving a product we use monadic notation for our program to have it short c
 
 {caption: "Update a product"}
 ```scala
-override def updateProduct(p: Product) = {
-  val namesSql = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+override def updateProduct(p: Product): F[Int] = {
+  val namesSql =
+    "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+  val namesValues = p.names.map(t => (p.id, t.lang, t.name))
   val program = for {
     dl <- sql"DELETE FROM names WHERE product_id = ${p.id}".update.run
-    ts <- Update[Translation](namesSql).updateMany(p.names)
+    ts <- Update[(ProductId, LanguageCode, ProductName)](namesSql)
+            .updateMany(namesValues)
   } yield dl + ts
   program.transact(tx)
 }

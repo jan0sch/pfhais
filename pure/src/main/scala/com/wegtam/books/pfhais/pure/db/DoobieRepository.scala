@@ -65,10 +65,11 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @return The number of affected database rows (product + translations).
     */
   override def saveProduct(p: Product): F[Int] = {
-    val namesSql = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+    val namesSql    = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+    val namesValues = p.names.map(t => (p.id, t.lang, t.name))
     val program = for {
       pi <- sql"INSERT INTO products (id) VALUES(${p.id})".update.run
-      ni <- Update[Translation](namesSql).updateMany(p.names)
+      ni <- Update[(ProductId, LanguageCode, ProductName)](namesSql).updateMany(namesValues)
     } yield pi + ni
     program.transact(tx)
   }
@@ -80,10 +81,11 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @return The number of affected database rows.
     */
   override def updateProduct(p: Product): F[Int] = {
-    val namesSql = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+    val namesSql    = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
+    val namesValues = p.names.map(t => (p.id, t.lang, t.name))
     val program = for {
       dl <- sql"DELETE FROM names WHERE product_id = ${p.id}".update.run
-      ts <- Update[Translation](namesSql).updateMany(p.names)
+      ts <- Update[(ProductId, LanguageCode, ProductName)](namesSql).updateMany(namesValues)
     } yield dl + ts
     program.transact(tx)
   }
