@@ -769,7 +769,7 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F])
 }
 ```
 
-We keep our higher kinded type as abstract as we can but the transactor needed by Doobie has some requirements regarding it. Therefore we require an implicit `Sync`.
+We keep our higher kinded type as abstract as we can but we want it to be able to suspend our side effects. Therefore we require an implicit `Sync`.[^15]
 If we look at the detailed function definitions further below, the first big difference is that with doobie you write plain SQL queries. You can do this with Slick too[^13] but with doobie it is the only way. If you're used to object relational mapping (ORM) or other forms of query compilers then this may seem strange at first. But: "In data processing it seems, all roads eventually lead back to SQL!"[^14] =)
 We won't discuss the benefits or drawbacks here but in general I also lean towards the approach of using the de facto lingua franca for database access because it was made for this and so far no query compiler was able to beat hand crafted SQL in terms of performance. Another benefit is that if you ask a database guru for help, she will be much more able to help you with plain SQL queries than with some meta query which is compiled into something that you have no idea of.
 
@@ -858,7 +858,34 @@ val productsRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 }
 ```
 
-As we can see the DSL is closer to Scala syntax and quite easy to read. But before we move on to the details of each route let's think about how we can model this a bit more abstract. While it is fine to have our routes bound to `IO` it would be better to have more flexibility here.
+As we can see the DSL is closer to Scala syntax and quite easy to read. But before we move on to the details of each route let's think about how we can model this a bit more abstract. While it is fine to have our routes bound to `IO` it would be better to have more flexibility here. We have several options here but for starters we just extract our routes into their own classes like in the following schema.
+
+{caption: "Routing classes"}
+```scala
+final class ProductRoutes[F[_]: Sync](repo: Repository[F])
+  extends Http4sDsl[F] {
+
+  val routes: HttpRoutes[F] = HttpRoutes.of[F] {
+    case GET -> Root / "product" / UUIDVar(id) =>
+      ???
+    case req @ PUT -> Root / "product" / UUIDVar(id) =>
+      ???
+  }
+}
+
+final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) 
+  extends Http4sDsl[F] {
+
+  val routes: HttpRoutes[F] = HttpRoutes.of[F] {
+    case GET -> Root / "products" =>
+      ???
+    case req @ POST -> Root / "products" =>
+      ???
+  }
+}
+```
+
+So far they only need the repository to access and manipulate data.
 
 # What about tests?
 
@@ -887,3 +914,5 @@ TODO
 [^13]: http://slick.lightbend.com/doc/3.3.1/sql.html
 
 [^14]: https://blog.acolyer.org/2019/07/03/one-sql-to-rule-them-all/
+
+[^15]: https://typelevel.org/cats-effect/typeclasses/sync.html
