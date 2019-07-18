@@ -17,17 +17,23 @@ import cats.implicits._
 import com.wegtam.books.pfhais.pure.db._
 import com.wegtam.books.pfhais.pure.models._
 import eu.timepit.refined.auto._
+import fs2._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
 
 final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
-  implicit def decodeProduct: EntityDecoder[F, Product]                            = jsonOf
-  implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Option[Product]] = jsonEncoderOf
+  implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
+  implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
 
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / "products" =>
-      ???
+      val ps: Stream[F, Product] = repo.loadProducts
+        .map(cs => Product.fromDatabase(List(cs)))
+        .collect {
+          case Some(p) => p
+        }
+      Ok(ps)
     case req @ POST -> Root / "products" =>
       for {
         p <- req.as[Product]
