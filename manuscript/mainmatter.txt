@@ -911,7 +911,39 @@ final class ProductRoutes[F[_]: Sync](repo: Repository[F])
 ```
 
 First we need to bring JSON codecs in scope for http4s thus the implicit definitions on top of the file. In the route for loading a single product we simply load the database rows which we pipe through our helper function to construct a proper `Product` and return that.
-The update route (via `PUT`) transforms the request body into a `Product` and gives that to the update function of the repository. Finally a `NoContent` is returned.
+The update route (via `PUT`) transforms the request body into a `Product` and gives that to the update function of the repository. Finally a `NoContent` response is returned.
+
+{caption: "Products routes (1st try)"}
+```scala
+final class ProductsRoutes[F[_]: Sync](repo: Repository[F])
+  extends Http4sDsl[F] {
+  implicit def decodeProduct = jsonOf
+  implicit def encodeProduct = jsonEncoderOf
+
+  val routes: HttpRoutes[F] = HttpRoutes.of[F] {
+    case GET -> Root / "products" =>
+      val ps: Stream[F, Product] = repo.loadProducts
+        .map(cs => Product.fromDatabase(List(cs)))
+        .collect {
+          case Some(p) => p
+        }
+      Ok(ps)
+    case req @ POST -> Root / "products" =>
+      for {
+        p <- req.as[Product]
+        _ <- repo.saveProduct(p)
+        r <- NoContent()
+      } yield r
+  }
+}
+```
+
+Our first take on the routes for products looks pretty complete already. Again we need implicit definitions for our JSON codecs to be able to serialize and de-serialize our entities. The `POST` route for creating a product is basically the same as the update route from the previous part. We create a `Product` from the request body, pass it to the save function of the repository and return a 204 `NoContent` response.
+The `GET` route for returning all products calls the appropriate repository function which returns a stream which we map over using our helper function. Afterwards we use `collect` to convert our stream from `Option[Product]` to a stream of `Product` which we pass to the `Ok` function of http4s.
+
+I> The attentive reader will have noticed that our "fetch all products" implementation faces the same problem as our first try in the impure section: We return to many products!
+
+To solve this we need to dive into the fs2 API and leverage it's power to merge our products back together. So let's see how we do.
 
 # What about tests?
 
