@@ -769,8 +769,8 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F])
 }
 ```
 
-We keep our higher kinded type as abstract as we can but we want it to be able to suspend our side effects. Therefore we require an implicit `Sync`.[^15]
-If we look at the detailed function definitions further below, the first big difference is that with doobie you write plain SQL queries. You can do this with Slick too[^13] but with doobie it is the only way. If you're used to object relational mapping (ORM) or other forms of query compilers then this may seem strange at first. But: "In data processing it seems, all roads eventually lead back to SQL!"[^14] =)
+We keep our higher kinded type as abstract as we can but we want it to be able to suspend our side effects. Therefore we require an implicit `Sync`.[^13]
+If we look at the detailed function definitions further below, the first big difference is that with doobie you write plain SQL queries. You can do this with Slick too[^14] but with doobie it is the only way. If you're used to object relational mapping (ORM) or other forms of query compilers then this may seem strange at first. But: "In data processing it seems, all roads eventually lead back to SQL!"[^15] ;-)
 We won't discuss the benefits or drawbacks here but in general I also lean towards the approach of using the de facto lingua franca for database access because it was made for this and so far no query compiler was able to beat hand crafted SQL in terms of performance. Another benefit is that if you ask a database guru for help, she will be much more able to help you with plain SQL queries than with some meta query which is compiled into something that you have no idea of.
 
 {caption: "Loading a product."}
@@ -885,7 +885,33 @@ final class ProductsRoutes[F[_]: Sync](repo: Repository[F])
 }
 ```
 
-So far they only need the repository to access and manipulate data.
+So far they only need the repository to access and manipulate data. Now let's take on the single route implementations.
+
+{caption: "Product routes"}
+```scala
+final class ProductRoutes[F[_]: Sync](repo: Repository[F])
+  extends Http4sDsl[F] {
+  implicit def decodeProduct = jsonOf
+  implicit def encodeProduct = jsonEncoderOf
+
+  val routes: HttpRoutes[F] = HttpRoutes.of[F] {
+    case GET -> Root / "product" / UUIDVar(id) =>
+      for {
+        rows <- repo.loadProduct(id)
+        resp <- Ok(Product.fromDatabase(rows))
+      } yield resp
+    case req @ PUT -> Root / "product" / UUIDVar(id) =>
+      for {
+        p <- req.as[Product]
+        _ <- repo.updateProduct(p)
+        r <- NoContent()
+      } yield r
+  }
+}
+```
+
+First we need to bring JSON codecs in scope for http4s thus the implicit definitions on top of the file. In the route for loading a single product we simply load the database rows which we pipe through our helper function to construct a proper `Product` and return that.
+The update route (via `PUT`) transforms the request body into a `Product` and gives that to the update function of the repository. Finally a `NoContent` is returned.
 
 # What about tests?
 
@@ -911,8 +937,9 @@ TODO
 
 [^12]: https://pureconfig.github.io/
 
-[^13]: http://slick.lightbend.com/doc/3.3.1/sql.html
+[^13]: https://typelevel.org/cats-effect/typeclasses/sync.html
 
-[^14]: https://blog.acolyer.org/2019/07/03/one-sql-to-rule-them-all/
+[^14]: http://slick.lightbend.com/doc/3.3.1/sql.html
 
-[^15]: https://typelevel.org/cats-effect/typeclasses/sync.html
+[^15]: https://blog.acolyer.org/2019/07/03/one-sql-to-rule-them-all/
+
