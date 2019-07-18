@@ -11,6 +11,7 @@
 
 package com.wegtam.books.pfhais.pure.models
 
+import cats.implicits._
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.pure.models.TypeGenerators._
 import io.circe.parser._
@@ -80,6 +81,18 @@ class ProductTest extends BaseSpec {
         forAll("input") { p: Product =>
           val rows = p.names.map(t => (p.id, t.lang, t.name)).toList
           Product.fromDatabase(rows) must contain(p)
+        }
+      }
+    }
+
+    "combining Options" when {
+      "ids match" must {
+        "combine correct" in {
+          forAll("a", "b") { (a: Product, b: Product) =>
+            val e = a.copy(names = a.names ::: b.names)
+            val c = a.some |+| b.copy(id = a.id).some
+            c must contain(e)
+          }
         }
       }
     }

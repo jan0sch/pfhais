@@ -13,6 +13,7 @@ package com.wegtam.books.pfhais.pure.models
 
 import java.util.UUID
 
+import cats.Semigroup
 import cats.data.NonEmptyList
 import cats.implicits._
 import eu.timepit.refined.auto._
@@ -32,6 +33,19 @@ object Product {
   implicit val decode: Decoder[Product] = deriveDecoder[Product]
 
   implicit val encode: Encoder[Product] = deriveEncoder[Product]
+
+  implicit val semigroupO: Semigroup[Option[Product]] = new Semigroup[Option[Product]] {
+    override def combine(x: Option[Product], y: Option[Product]): Option[Product] = (x, y) match {
+      case (Some(a), Some(b)) =>
+        if (a.id === b.id)
+          a.copy(names = a.names ::: b.names).some
+        else
+          None
+      case (Some(a), None) => a.some
+      case (None, Some(b)) => b.some
+      case (None, None)    => None
+    }
+  }
 
   /**
     * Try to create a Product from the given list of database rows.
