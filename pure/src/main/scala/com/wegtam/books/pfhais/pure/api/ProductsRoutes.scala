@@ -33,6 +33,7 @@ final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F]
         .collect {
           case Some(p) => p
         }
+        .fold(List.empty[Product])((acc, p) => Product.merge(acc)(p))
       Ok(ps)
     case req @ POST -> Root / "products" =>
       for {

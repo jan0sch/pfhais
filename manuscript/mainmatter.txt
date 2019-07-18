@@ -938,12 +938,61 @@ final class ProductsRoutes[F[_]: Sync](repo: Repository[F])
 }
 ```
 
-Our first take on the routes for products looks pretty complete already. Again we need implicit definitions for our JSON codecs to be able to serialize and de-serialize our entities. The `POST` route for creating a product is basically the same as the update route from the previous part. We create a `Product` from the request body, pass it to the save function of the repository and return a 204 `NoContent` response.
+Our first take on the routes for products looks pretty complete already. Again we need implicit definitions for our JSON codecs to be able to serialize and de-serialize our entities. The `POST` route for creating a product is basically the same as the update route from the previous part. We create a `Product` from the request body, pass it to the save function of the repository and return a 205 `NoContent` response.
 The `GET` route for returning all products calls the appropriate repository function which returns a stream which we map over using our helper function. Afterwards we use `collect` to convert our stream from `Option[Product]` to a stream of `Product` which we pass to the `Ok` function of http4s.
 
 I> The attentive reader will have noticed that our "fetch all products" implementation faces the same problem as our first try in the impure section: We return to many products!
 
 To solve this we need to dive into the fs2 API and leverage it's power to merge our products back together. So let's see how we do.
+
+### Streaming - Take 1
+
+Because we believe ourselves to be clever we pick the simple sledge hammer approach and just run some accumulator on the stream. So what do we need? A helper function and some code changes on the stream (e.g. in the route).
+
+{caption: "Merging products"}
+```scala
+def merge(ps: List[Product])(p: Product): List[Product] =
+  ps.headOption.fold(List(p)) { h =>
+    if (h.id === p.id)
+      h.copy(names = h.names ::: p.names) :: ps.drop(1)
+    else
+      p :: ps
+  }
+```
+
+So this function will take a list (that may be empty) and a product and will merge the top most element (the head) of the list with the given one. It will return an updated list that either contains an updated head element or a new head. Leaving aside the question of who guarantees that the relevant list element will always be the head, we may use it.
+
+{caption: "Adapted streaming route"}
+```scala
+case GET -> Root / "products" =>
+  val ps: Stream[F, Product] = repo.loadProducts
+    .map(cs => Product.fromDatabase(List(cs)))
+    .collect {
+      case Some(p) => p
+    }
+    .fold(List.empty[Product])((acc, p) => Product.merge(acc)(p))
+  Ok(ps)
+```
+
+Looks so simple, does it? Just a simple `fold` which uses our accumulator and we should be settled. But life is not that simple...
+
+{caption: "Compiler error"}
+```text
+found   : fs2.Stream[F,List[com.wegtam.books.pfhais.pure.models.Product]]
+required: fs2.Stream[F,com.wegtam.books.pfhais.pure.models.Product]
+         .fold(List.empty[Product])((acc, p) => Product.merge(acc)(p))
+              ^
+```
+
+The compiler complains that we have changed the type of the stream and rightly so. So let's fix that compiler error.
+
+Q> Should we really do this?
+
+Let's take a look again and think about what it means to change a stream of products into a stream of a list of products. It means that we will be building the whole thing in memory! Well if we wanted that we could have skipped streaming at all. So back to the drawing board.
+
+### Streaming - Take 2
+
+We need to process our stream of database columns (or products if we use the converter like before) in such a way that all related entities will be grouped into one product and emitted as such.
 
 # What about tests?
 
