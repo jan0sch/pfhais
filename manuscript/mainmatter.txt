@@ -788,7 +788,7 @@ override def loadProduct(id: ProductId) =
 The `loadProduct` function simply returns all rows for a single product from the database like its Slick counterpart in the impure variant. The parameter will be correctly interpolated by Doobie therefore we don't need to worry about SQL injections here. We specify the type of the query, instruct Doobie to transform it into a sequence and give it to the transactor.
 
 I> Please note that instead of the Slick variant the code does not run at that point!
-I> While the `db.run` of Slick will run your code the `transact` of Doobie will not. It just provides a free structure (read free monads) which can be interpreted later on.
+I> While the `db.run` of Slick will run your code the `transact` of Doobie will not. It just provides a free structure (read *free monads*) which can be interpreted later on.
 
 {caption: "Load all products"}
 ```scala
@@ -992,7 +992,208 @@ Let's take a look again and think about what it means to change a stream of prod
 
 ### Streaming - Take 2
 
-We need to process our stream of database columns (or products if we use the converter like before) in such a way that all related entities will be grouped into one product and emitted as such.
+We need to process our stream of database columns (or products if we use the converter like before) in such a way that all related entities will be grouped into one product and emitted as such. After browsing the documentation of fs2 we stumble upon a function called `groupAdjacentBy` so we try that one.
+
+{caption: "Proper streaming of products"}
+```scala
+case GET -> Root / "products" =>
+  val ps = repo.loadProducts
+    .groupAdjacentBy(_._1)
+    .map {
+      case (id, rows) => Product.fromDatabase(rows.toList)
+    }
+    .collect {
+      case Some(p) => p
+    }
+  Ok(ps)
+```
+
+Okay, this does not look complicated and it even compiles - Hooray! :-)
+So let's break it apart piece by piece. The group function of fs2 will partition the input depending on the given function into chunks. A `Chunk` is used internally by fs2 for all kinds of stuff. You may compare it to a sub-stream of Akka-Streams. However the documentation labels it as: *Strict, finite sequence of values that allows index-based random access of elements.*
+Having our chunks we can map over each one converting it into a list which is then passed to our helper function `fromDatabase` to create proper products. Last but not least we need to collect our entities to get from an `Option[Product]` to a stream of `Product`.
+
+### JSON trouble
+
+Now that we have a proper streaming solution we try it out but what do we get when we expect a list of products?
+
+I> In case you wonder what the `http` command is, we use the tool httpie[^16] for querying our service.
+
+{caption: "Broken JSON"}
+```text
+% http :53248/products
+HTTP/1.1 200 OK
+Content-Type: application/json
+Transfer-Encoding: chunked
+
+{
+  "id":"8773899b-fcfa-401f-af3e-b188ebb0c00c",
+  "names":[
+    {"lang":"de","name":"Erdbeere"},
+    {"lang":"en","name":"Strawberry"}
+  ]
+}
+{
+  "id":"983aaf86-abe4-44af-9896-d8f2d2c5f82c",
+  "names":[
+    {"lang":"de","name":"Gurke"},
+    {"lang":"en","name":"Cucumber"}
+  ]
+}
+```
+
+Well, whatever this is, it is not JSON! It might look like it, but it isn't. However quite often you can see such things in the wild (read *in production*).
+
+Q> So, how can we improve this?
+
+If we think about it then this sounds like a bug in http4s and indeed we find an issue[^17] for it. Because the underlying problem is not as trivial as it first sounds maybe we should try to work around the issue.
+The fs2 API offers concatenation of streams and the nifty `intersperse` function to insert elements between emitted ones. So let's give it a try.
+
+{caption: "Fix JSON encoding issues"}
+```scala
+case GET -> Root / "products" =>
+  val prefix = Stream.eval("[".pure[F])
+  val suffix = Stream.eval("]".pure[F])
+  val ps = repo.loadProducts
+    .groupAdjacentBy(_._1)
+    .map {
+      case (id, rows) => Product.fromDatabase(rows.toList)
+    }
+    .collect {
+      case Some(p) => p
+    }
+    .map(_.asJson.noSpaces)
+    .intersperse(",")
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  val result: Stream[F, String] = prefix ++ ps ++ suffix
+  Ok(result)
+```
+
+First we create streams for the first and last JSON that we need to emit. Please not that we cannot simply use a `String` here put have to lift it into our HKT `F`. The usage of `pure` is okay because we simply lift a fixed value. Then we extend our original stream processing by explicitly converting our products to JSON and inserting the delimiter (a comma) manually using the `intersperse` function. In the end we simply concatenate our streams and return the result.
+Our solution is quite simple, having the downside that we need to suppress a warning from the wartremover[^18] tool. This is somewhat annoying but can happen. If we remove the annotation, we'll get a compiler error:
+
+{caption: "Wartremover error"}
+```text
+[error] ... [wartremover:Any] Inferred type containing Any
+[error] val result: Stream[F, String] = prefix ++ ps ++ suffix
+[error]                                        ^
+[error] ... [wartremover:Any] Inferred type containing Any
+[error] val result: Stream[F, String] = prefix ++ ps ++ suffix
+[error]                                              ^
+[error] two errors found
+```
+
+So let's check if we have succeeded:
+
+{caption: "Checking our JSON"}
+```text
+% http :53248/products
+HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Transfer-Encoding: chunked
+
+[
+    {
+        "id": "8773899b-fcfa-401f-af3e-b188ebb0c00c", 
+        "names": [
+            {
+                "lang": "de",
+                "name": "Erdbeere"
+            },
+            {
+                "lang": "en",
+                "name": "Strawberry"
+            }
+        ]
+    },
+    {
+        "id": "983aaf86-abe4-44af-9896-d8f2d2c5f82c", 
+        "names": [
+            {
+                "lang": "de",
+                "name": "Gurke"
+            },
+            {
+                "lang": "en",
+                "name": "Cucumber"
+            }
+        ]
+    }
+]
+```
+
+This looks good, so we congratulations: We are done with our routes!
+
+### Starting the application
+
+Within our main entry point we simply initialise all needed components and wire them together. We'll step through each part in this section. The first thing you'll notice is that we use the `IOApp` provided by the cats effect library[^19].
+
+{caption: "Main application"}
+```scala
+object Pure extends IOApp {
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  def run(args: List[String]): IO[ExitCode] = ???
+}
+```
+
+Yet again we need to suppress a warning from wartremover here. But let's continue to initialising the database connection.
+
+{caption: "Database initialisation"}
+```scala
+val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
+
+val program = for {
+  (apiConfig, dbConfig) <- IO {
+    val cfg = ConfigFactory.load
+    (loadConfigOrThrow[ApiConfig](cfg, "api"),
+     loadConfigOrThrow[DatabaseConfig](cfg, "database"))
+  }
+  ms <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
+  tx = Transactor
+    .fromDriverManager[IO](dbConfig.driver,
+      dbConfig.url,
+      dbConfig.user,
+      dbConfig.pass)
+  repo = new DoobieRepository(tx)
+```
+
+We create our database migrator explicitly wired to the `IO` data type. Now we start with a for comprehension in which we load our configuration via pureconfig yet again within an `IO`. After successful loading of the configuration we continue with migrating the database. Finally we create the transactor needed by Doobie and the database repository.
+
+{caption: "Routes and http4s server"}
+```scala
+val program = for {
+  // ...
+  productRoutes  = new ProductRoutes(repo)
+  productsRoutes = new ProductsRoutes(repo)
+  routes         = productRoutes.routes <+> productsRoutes.routes
+  httpApp        = Router("/" -> routes).orNotFound
+  server         = BlazeServerBuilder[IO].bindHttp(apiConfig.port,
+		     apiConfig.host).withHttpApp(httpApp)
+  fiber          = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
+} yield fiber
+```
+
+Here we create our routes via the classes, combine them (via `<+>` operator) and create the http4s app explicitly using an `IO` thus wiring our abstract routes to `IO`. The service will - like the impure one - run until you press enter. But it won't run yet. ;-)
+
+{caption: "Running the service"}
+```scala
+program.attempt.unsafeRunSync match {
+  case Left(e) =>
+    IO {
+      println("*** An error occured! ***")
+      if (e != null) {
+	println(e.getMessage)
+      }
+      ExitCode.Error
+    }
+  case Right(r) => r
+}
+```
+
+If you remember playing around with `MonadError` then you'll recognize the `attempt` here. We attempt to run our program and execute possible side effects via the `unsafeRunSync` method from cats effect. But to provide a proper return type for the `IOApp` we need to evaluate the return value which is either an error or a proper exit code. In case of an error we print it out on the console (no fancy logging here) and explicitly set an error code as the return value.
+
+I> Please note that we also wrap our error handler into an `IO` to defer possible side effects.
+
+As it seems we are done with our pure service! Or are we? Let's see what we need add to both services if we want to test them.
 
 # What about tests?
 
@@ -1024,3 +1225,10 @@ TODO
 
 [^15]: https://blog.acolyer.org/2019/07/03/one-sql-to-rule-them-all/
 
+[^16]: https://httpie.org/
+
+[^17]: https://github.com/http4s/http4s/issues/2371
+
+[^18]: https://www.wartremover.org/
+
+[^19]: https://typelevel.org/cats-effect/datatypes/ioapp.html
