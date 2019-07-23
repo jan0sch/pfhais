@@ -1068,7 +1068,7 @@ case GET -> Root / "products" =>
   Ok(result)
 ```
 
-First we create streams for the first and last JSON that we need to emit. Please not that we cannot simply use a `String` here put have to lift it into our HKT `F`. The usage of `pure` is okay because we simply lift a fixed value. Then we extend our original stream processing by explicitly converting our products to JSON and inserting the delimiter (a comma) manually using the `intersperse` function. In the end we simply concatenate our streams and return the result.
+First we create streams for the first and last JSON that we need to emit. Please not that we cannot simply use a `String` here but have to lift it into our HKT `F`. The usage of `pure` is okay because we simply lift a fixed value. Then we extend our original stream processing by explicitly converting our products to JSON and inserting the delimiter (a comma) manually using the `intersperse` function. In the end we simply concatenate our streams and return the result.
 Our solution is quite simple, having the downside that we need to suppress a warning from the wartremover[^18] tool. This is somewhat annoying but can happen. If we remove the annotation, we'll get a compiler error:
 
 {caption: "Wartremover error"}
