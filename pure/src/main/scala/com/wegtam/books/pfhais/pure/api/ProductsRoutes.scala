@@ -17,7 +17,6 @@ import cats.implicits._
 import com.wegtam.books.pfhais.pure.db._
 import com.wegtam.books.pfhais.pure.models._
 import eu.timepit.refined.auto._
-import fs2._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
@@ -28,12 +27,14 @@ final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F]
 
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / "products" =>
-      val ps: Stream[F, Product] = repo.loadProducts
-        .map(cs => Product.fromDatabase(List(cs)))
+      val ps = repo.loadProducts
+        .groupAdjacentBy(_._1)
+        .map {
+          case (id, rows) => Product.fromDatabase(rows.toList)
+        }
         .collect {
           case Some(p) => p
         }
-        .fold(List.empty[Product])((acc, p) => Product.merge(acc)(p))
       Ok(ps)
     case req @ POST -> Root / "products" =>
       for {
