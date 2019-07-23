@@ -11,8 +11,6 @@
 
 package com.wegtam.books.pfhais.pure.models
 
-import java.util.UUID
-
 import cats.data.NonEmptyList
 import cats.implicits._
 import eu.timepit.refined.auto._
@@ -39,7 +37,7 @@ object Product {
     * @param rows The database rows describing a product and its translations.
     * @return An option to the successfully created Product.
     */
-  def fromDatabase(rows: Seq[(UUID, LanguageCode, ProductName)]): Option[Product] = {
+  def fromDatabase(rows: Seq[(ProductId, LanguageCode, ProductName)]): Option[Product] = {
     val po = for {
       (id, c, n) <- rows.headOption
       t = Translation(lang = c, name = n)
