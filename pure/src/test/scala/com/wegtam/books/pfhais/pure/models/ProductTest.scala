@@ -11,7 +11,6 @@
 
 package com.wegtam.books.pfhais.pure.models
 
-import cats.implicits._
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.pure.models.TypeGenerators._
 import io.circe.parser._
