@@ -51,18 +51,4 @@ object Product {
       }
     )
   }
-
-  /**
-    * Merge the given product with the given list of products.
-    *
-    * @param ps A list of products which is supposed to contain the given product in its head if it contains it.
-    * @param p  A product to be merged with the given list.
-    * @return The updated list.
-    */
-  def merge(ps: List[Product])(p: Product): List[Product] = ps.headOption.fold(List(p)) { h =>
-    if (h.id === p.id)
-      h.copy(names = h.names ::: p.names) :: ps.drop(1)
-    else
-      p :: ps
-  }
 }

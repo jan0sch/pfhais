@@ -84,17 +84,5 @@ class ProductTest extends BaseSpec {
         }
       }
     }
-
-    "combining Options" when {
-      "ids match" must {
-        "combine correct" in {
-          forAll("a", "b") { (a: Product, b: Product) =>
-            val e = a.copy(names = a.names ::: b.names)
-            val c = a.some |+| b.copy(id = a.id).some
-            c must contain(e)
-          }
-        }
-      }
-    }
   }
 }
