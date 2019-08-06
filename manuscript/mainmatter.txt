@@ -657,7 +657,7 @@ In general the same applies to the database layer as we have already read in the
 
 ### Migrations
 
-For the sake of simplicity we will stick to Flyway for our database migrations. However we will wrap the migration code in a different way (read Encapsulate it properly within an `IO` to defer side effects.). While we're at it we may just as well write our migration code using the interpreter pattern (it became famous under the name "tagless final" in Scala).
+For the sake of simplicity we will stick to Flyway for our database migrations. However we will wrap the migration code in a different way (read *Encapsulate it properly within an `IO` to defer side effects.*). While we're at it we may just as well write our migration code using the interpreter pattern (it became famous under the name "tagless final" in Scala).
 
 {caption: "Database migrator base"}
 ```scala
