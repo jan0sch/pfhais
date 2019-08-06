@@ -23,17 +23,11 @@ object TypeGenerators {
   val DefaultProductId: ProductId     = UUID.randomUUID
   val DefaultProductName: ProductName = "I am a product name!"
 
-  val genLanguageCode: Gen[LanguageCode] = for {
-    lc <- Gen.oneOf(LanguageCodes.all)
-  } yield lc
+  val genLanguageCode: Gen[LanguageCode] = Gen.oneOf(LanguageCodes.all)
 
-  val genUuid: Gen[UUID] = for {
-    uuid <- Gen.oneOf(List(UUID.randomUUID, UUID.randomUUID))
-  } yield uuid
+  val genUuid: Gen[UUID] = Gen.oneOf(List(UUID.randomUUID, UUID.randomUUID))
 
-  val genProductId: Gen[ProductId] = for {
-    uuid <- genUuid
-  } yield uuid
+  val genProductId: Gen[ProductId] = genUuid
 
   val genProductName: Gen[ProductName] = for {
     cs <- Gen.nonEmptyListOf(Gen.alphaNumChar)
