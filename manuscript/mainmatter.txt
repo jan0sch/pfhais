@@ -1281,7 +1281,7 @@ val genNonEmptyTranslationList: Gen[NonEmptyList[Translation]] = for {
 } yield ns.getOrElse(NonEmptyList.of(t))
 ```
 
-The first generator will create a non empty list of translations but will be types as a simple `List`. Therefore we create a second generator which uses the `fromList` helper of the non empty list from Cats. Because that helper returns an `Option` (read *is a safe function*) we need to fallback to using a simple `of` function at the end.
+The first generator will create a non empty list of translations but will be typed as a simple `List`. Therefore we create a second generator which uses the `fromList` helper of the non empty list from Cats. Because that helper returns an `Option` (read *is a safe function*) we need to fallback to using a simple `of` function at the end.
 With all these in place we can finally create our `Product` instances.
 
 {caption: "ScalaCheck generate Product"}
