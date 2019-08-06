@@ -153,7 +153,7 @@ Q> What have we gained?
 
 Suddenly we can much more easily reason about our code! And why is that? Well we don't have unexpected side effects caused by code running even when it doesn't need to. This is a sneak peak how pure code looks like. Now we only need to implement pure libraries for our use, or do we?
 
-Luckily for us meanwhile there are several pure options available in the Scala ecosystem. We will stick to the cats family of libraries namely http4s and Doobie as replacements for Akka-HTTP and Slick. They build upon the Cats Effect library which is an implementation of an IO monad for Scala. Some other options exist but we'll stick to the one from Cats.
+Luckily for us meanwhile there are several pure options available in the Scala ecosystem. We will stick to the Cats family of libraries namely http4s and Doobie as replacements for Akka-HTTP and Slick. They build upon the Cats Effect library which is an implementation of an IO monad for Scala. Some other options exist but we'll stick to the one from Cats.
 
 To be able to contrast both ways of implementing a service we will first implement it using Akka-HTTP and Slick and will then migrate to http4s and Doobie.
 
@@ -220,7 +220,7 @@ final case class Product(id: ProductId, names: List[Translation])
 
 Q> Now what is wrong about this?
 
-If we look closely we realise that a `List` maybe empty. Which is valid for the list but not for our product because we need at least one entry. Luckily for us the cats library has us covered with the `NonEmptyList` data type. Including the JSON codecs this leads us to our final implementation.
+If we look closely we realise that a `List` maybe empty. Which is valid for the list but not for our product because we need at least one entry. Luckily for us the Cats library has us covered with the `NonEmptyList` data type. Including the JSON codecs this leads us to our final implementation.
 Last but not least we really should be using the existing `UUID` data type instead of rolling our own refined string version - even when it is cool. ;-)
 
 {caption: "Product model using UUID type and NeL"}
@@ -1125,7 +1125,7 @@ This looks good, so we congratulations: We are done with our routes!
 
 ### Starting the application
 
-Within our main entry point we simply initialise all needed components and wire them together. We'll step through each part in this section. The first thing you'll notice is that we use the `IOApp` provided by the cats effect library[^19].
+Within our main entry point we simply initialise all needed components and wire them together. We'll step through each part in this section. The first thing you'll notice is that we use the `IOApp` provided by the Cats effect library[^19].
 
 {caption: "Main application"}
 ```scala
@@ -1189,7 +1189,7 @@ program.attempt.unsafeRunSync match {
 }
 ```
 
-If you remember playing around with `MonadError` then you'll recognize the `attempt` here. We attempt to run our program and execute possible side effects via the `unsafeRunSync` method from cats effect. But to provide a proper return type for the `IOApp` we need to evaluate the return value which is either an error or a proper exit code. In case of an error we print it out on the console (no fancy logging here) and explicitly set an error code as the return value.
+If you remember playing around with `MonadError` then you'll recognize the `attempt` here. We attempt to run our program and execute possible side effects via the `unsafeRunSync` method from Cats effect. But to provide a proper return type for the `IOApp` we need to evaluate the return value which is either an error or a proper exit code. In case of an error we print it out on the console (no fancy logging here) and explicitly set an error code as the return value.
 
 I> Please note that we also wrap our error handler into an `IO` to defer possible side effects.
 
@@ -1205,6 +1205,102 @@ Furthermore we want to unleash the power of ScalaCheck[^10] to benefit from prop
 Besides the regular unit tests there should be integration tests if a service is written. We can test a lot of things on the unit test side but in the end the integration of all our moving parts is what matters and often (usually on the not so pure side of things) you would have to trick (read *mock*) a lot to test things in isolation.
 
 ## Testing the impure service
+
+We will start with writing some data generators using the ScalaCheck library.
+
+### Generators
+
+ScalaCheck already provides several generators for primitives but for our data models we have to do some more plumbing. Let's start with generating a language code.
+
+{caption: "ScalaCheck generate LanguageCode"}
+```scala
+val genLanguageCode: Gen[LanguageCode] = Gen.oneOf(LanguageCodes.all)
+```
+
+Using the `Gen.oneOf` helper from the library the code becomes dead simple. Generating a `UUID` is nothing special either.
+
+{caption: "ScalaCheck generate UUID"}
+```scala
+val genUuid: Gen[UUID] = Gen.oneOf(
+  List(UUID.randomUUID, UUID.randomUUID)
+)
+```
+
+Instead of juggling with code to generate UUIDs we simply pick from a list. I agree that this code could be more sophisticated but for our intended usage it is enough.
+
+{caption: "ScalaCheck generate ProductName"}
+```scala
+val DefaultProductName: ProductName = "I am a product name!"
+val genProductName: Gen[ProductName] = for {
+  cs <- Gen.nonEmptyListOf(Gen.alphaNumChar)
+  name = RefType.applyRef[ProductName](cs.mkString)
+           .getOrElse(DefaultProductName)
+} yield name
+```
+
+So what do we have here? We want to generate a non empty string (because that is a requirement for our `ProductName`) but we also want to return a properly typed entity. First we let ScalaCheck generate a non empty list of random characters which we give to a utility function of refined. However we need a fallback value in case the validation done by refined fails. Therefore we defined a general default product name beforehand.
+
+I> If the data generated will always be valid then we can simplify the code above by using the `Refined.unsafeApply` function. This reduces code complexity but may introduce bugs in your tests which are hard to track down.
+
+{caption: "ScalaCheck using Refined unsafeApply"}
+```scala
+val genProductName: Gen[ProductName] =
+  Gen.nonEmptyListOf(Gen.alphaNumChar).map(cs => 
+    Refined.unsafeApply(cs.mkString)
+  )
+```
+
+Now that we have generators for language codes and product names we can write a generator for our `Translation` type.
+
+{caption: "ScalaCheck generate Translation"}
+```scala
+val genTranslation: Gen[Translation] = for {
+  c <- genLanguageCode
+  n <- genProductName
+} yield
+  Translation(
+    lang = c,
+    name = n
+  )
+
+implicit val arbitraryTranslation: Arbitrary[Translation] =
+  Arbitrary(genTranslation)
+```
+
+As we can see the code is also quite simple. Additionally we create an implicit arbitrary value which will be used automatically by the `forAll` test helper if it is in scope. To be able to generate a `Product` we will need to provide a non empty list of translations.
+
+{caption: "ScalaCheck generate lists of translations"}
+```scala
+val genTranslationList: Gen[List[Translation]] = for {
+  ts <- Gen.nonEmptyListOf(genTranslation)
+} yield ts
+
+val genNonEmptyTranslationList: Gen[NonEmptyList[Translation]] = for {
+  t  <- genTranslation
+  ts <- genTranslationList
+  ns = NonEmptyList.fromList(ts)
+} yield ns.getOrElse(NonEmptyList.of(t))
+```
+
+The first generator will create a non empty list of translations but will be types as a simple `List`. Therefore we create a second generator which uses the `fromList` helper of the non empty list from Cats. Because that helper returns an `Option` (read *is a safe function*) we need to fallback to using a simple `of` function at the end.
+With all these in place we can finally create our `Product` instances.
+
+{caption: "ScalaCheck generate Product"}
+```scala
+val genProduct: Gen[Product] = for {
+  id <- genProductId
+  ts <- genNonEmptyTranslationList
+} yield
+  Product(
+    id = id,
+    names = ts
+  )
+
+implicit val arbitraryProduct: Arbitrary[Product] =
+  Arbitrary(genProduct)
+```
+
+The code is basically the same as for `Translation` - the arbitrary implicit included.
 
 ### Unit Tests
 
