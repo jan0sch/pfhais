@@ -1199,15 +1199,22 @@ As it seems we are done with our pure service! Or are we? Let's see what we need
 
 In the domain of strong static typing (not necessarily functional) you might here phrases like "It compiles therefore it must be correct thus we don't need tests!". While there is a point that certain kinds of tests can be omitted in favour of strong static typing such stances overlook that even a correctly typed program may produce the wrong output. The other extreme (coming from dynamic typed land) is to substitute typing with testing - which is even worse. Remember that testing is usually a probabilistic approach and cannot guarantee the absence of bugs. If you have every refactored a large code base in both paradigms then you'll very likely come the esteem a good type system.
 
-However, we need tests, so let's write some. :-)
+However, we need tests, so let's write some. But before let us think a bit about what kinds of tests we need. :-)
+Our service must read and create data in the JSON format. This format should be fixed and changes to it should raise some red flag because: Hey, we just broke our API!
+Furthermore we want to unleash the power of ScalaCheck[^10] to benefit from property based testing. But even when we're not using that we can still use it to generate test data for us.
+Besides the regular unit tests there should be integration tests if a service is written. We can test a lot of things on the unit test side but in the end the integration of all our moving parts is what matters and often (usually on the not so pure side of things) you would have to trick (read *mock*) a lot to test things in isolation.
 
 ## Testing the impure service
 
-TODO
+### Unit Tests
+
+### Integration Tests
 
 ## Testing the pure service
 
-TODO
+### Unit Tests
+
+### Integration Tests
 
 # Adding benchmarks
 
@@ -1234,3 +1241,5 @@ TODO
 [^18]: https://www.wartremover.org/
 
 [^19]: https://typelevel.org/cats-effect/datatypes/ioapp.html
+
+[^20]: http://www.scalacheck.org/
