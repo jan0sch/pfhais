@@ -1303,6 +1303,115 @@ The code is basically the same as for `Translation` - the arbitrary implicit inc
 
 ### Unit Tests
 
+To avoid repeating the construction of our unit test classes we will implement a base class for tests which is quite simple.
+
+{caption: "Base class for unit tests"}
+```scala
+abstract class BaseSpec extends WordSpec 
+  with MustMatchers with ScalaCheckPropertyChecks {}
+```
+
+Feel free to use other test styles - after all ScalaTest offers a lot[^21] of them. I tend to lean towards the more verbose ones like `WordSpec`. Maybe that is because I spent a lot of time with RSpec[^22] in the Ruby world. ;-)
+
+{caption: "Testing Product#fromDatabase"}
+```scala
+import com.wegtam.books.pfhais.impure.models.TypeGenerators._
+
+forAll("input") { p: Product =>
+  val rows = p.names.map(t => (p.id, t.lang.value, t.name.value)).toList
+  Product.fromDatabase(rows) must contain(p)
+}
+```
+
+The code above is a very simple test of our helper function `fromDatabase` which works in the following way:
+
+1. The `forAll` will generate a lot of `Product` entities using the generator.
+2. From each entity a list of "rows" is constructed like they would appear in the database.
+3. These constructed rows are given to the `fromDatabase` function.
+4. The returned `Option` must then contain the generated value.
+
+Because we construct the input for the function from a valid generated instance the function must always return a valid output.
+
+Now let's continue with testing our JSON codec for `Product`.
+
+#### Testing a JSON codec
+
+We need our JSON codec to provide several guarantees:
+
+1. It must fail to decode invalid JSON input format (read *garbage*).
+2. It must fail to decode valid JSON input format with invalid data (read *wrong semantics*).
+3. It must succeed to decode completely valid input.
+4. It must encode JSON which contains all fields included in the model.
+5. It must be able to decode JSON that itself encoded.
+
+The first one is pretty simple and to be honest: You don't have to write a test for this because that should be guaranteed by the Circe library. Things look a bit different for very simple JSON representations though (read *when encoding to numbers or strings*).
+I've seen people arguing about point 5 and there may be applications for it but implementing encoders and decoders in a non-reversible way will make your life way more complicated.
+
+{caption: "Testing decoding garbage input"}
+```scala
+forAll("input") { s: String =>
+  decode[Product](s).isLeft must be(true)
+}
+```
+
+There is not much to say about the test above: It will generate a lot of random strings which will be passed to the decoder which must fail.
+
+{caption: "Testing invalid input values"}
+```scala
+forAll("id", "names") { (id: String, ns: List[String]) =>
+  val json = """{
+    |"id":""" + id.asJson.noSpaces + """,
+    |"names":""" + ns.asJson.noSpaces + """
+    |}""".stripMargin
+  decode[Product](json).isLeft must be(true)
+}
+```
+
+This test will generate random instances for `id` which are all wrong because it must be a UUID and not a string. Also the instances for `names` will mostly (but maybe not always) be wrong because there might be empty strings or an even empty list. So the decoder is given a valid JSON format but invalid values, therefore it must fail.
+
+{caption: "Testing valid input"}
+```scala
+forAll("input") { i: Product =>
+  val json = s"""{
+    |"id": ${i.id.asJson.noSpaces},
+    |"names": ${i.names.asJson.noSpaces}
+    |}""".stripMargin
+  withClue(s"Unable to decode JSON: $json") {
+    decode[Product](json) match {
+      case Left(e)  => fail(e.getMessage)
+      case Right(v) => v must be(i)
+    }
+  }
+}
+```
+
+In this case we manually construct a valid JSON input using values from a generated valid `Product` entity. This is passed to the decoder and the decoder must not only succeed but return an instance equal to the generated one.
+
+{caption: "Test included fields"}
+```scala
+forAll("input") { i: Product =>
+  val json = i.asJson.noSpaces
+  json must include(s""""id":${i.id.asJson.noSpaces}""")
+  json must include(s""""names":${i.names.asJson.noSpaces}""")
+}
+```
+
+The test will generate again a lot of entities and we construct a JSON string from each. We then expect the string to include several field names and their correctly encoded values. You might ask why we do not check for more things like: Are these fields the *only* ones within the JSON string? Well, this would be more cumbersome to test and a JSON containing more fields than we specify won't matter for the decoder because it will just ignore them.
+
+I> You might be tempted to produce a JSON string manually (like in the other tests) and simply compare the generated one to it. Please beware because JSON does not provide stable sorted attributes (fields). So you might get false positives because the compared strings are semantically equal but formally different.
+
+{caption: "Decoding encoded JSON"}
+```scala
+forAll("input") { p: Product =>
+  decode[Product](p.asJson.noSpaces) match {
+    case Left(_)  => fail("Must be able to decode encoded JSON!")
+    case Right(d) => withClue("Must decode the same product!")(d must be(p))
+  }
+}
+```
+
+Here we encode a generated entity and pass it to the encoder which must return the same entity.
+
 ### Integration Tests
 
 ## Testing the pure service
@@ -1338,3 +1447,7 @@ TODO
 [^19]: https://typelevel.org/cats-effect/datatypes/ioapp.html
 
 [^20]: http://www.scalacheck.org/
+
+[^21]: http://www.scalatest.org/user_guide/selecting_a_style
+
+[^22]: https://rspec.info/
