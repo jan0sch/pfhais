@@ -1412,6 +1412,46 @@ forAll("input") { p: Product =>
 
 Here we encode a generated entity and pass it to the encoder which must return the same entity.
 
+#### More tests
+
+So this is basically what we do for models. Because we have more than one we will have to write tests for each of the others. I will spare you the JSON tests for `Translation` but that one also has a helper function called `fromUnsafe` so let's take a look at the function.
+
+{caption: "Translation#fromUnsafe"}
+```scala
+def fromUnsafe(lang: String)(name: String): Option[Translation] =
+  for {
+    l <- RefType.applyRef[LanguageCode](lang).toOption
+    n <- RefType.applyRef[ProductName](name).toOption
+  } yield Translation(lang = l, name = n)
+```
+
+This function simply tries to create a valid `Translation` entity from unsafe input values using the helpers provided by refined. As we can see it is a total function (read *is safe to use*). To cover all corner cases we must test it with safe and unsafe input.
+
+{caption: "Testing Translation#fromUnsafe (1)"}
+```scala
+forAll("lang", "name") { (l: String, n: String) =>
+  whenever(
+    RefType
+      .applyRef[LanguageCode](l)
+      .toOption
+      .isEmpty || RefType.applyRef[ProductName](n).toOption.isEmpty
+  ) {
+    Translation.fromUnsafe(l)(n) must be(empty)
+  }
+}
+```
+
+Here we generate two random strings which we explicitly check to be invalid using the `whenever` helper. Finally the function must return an empty `Option` e.g. `None` for such values.
+
+{caption: "Testing Translation#fromUnsafe (2)"}
+```scala
+forAll("input") { t: Translation =>
+  Translation.fromUnsafe(t.lang.value)(t.name.value) must contain(t)
+}
+```
+
+The test for valid input is very simple because we simply use the values from our automatically generated valid instances. :-)
+
 ### Integration Tests
 
 ## Testing the pure service
