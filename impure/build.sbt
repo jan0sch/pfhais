@@ -58,19 +58,19 @@ lazy val impure =
 lazy val library =
   new {
     object Version {
-      val akka         = "2.5.23"
-      val akkaHttp     = "10.1.8"
-      val akkaHttpJson = "1.25.2"
+      val akka         = "2.5.24"
+      val akkaHttp     = "10.1.9"
+      val akkaHttpJson = "1.27.0"
       val cats         = "1.6.1"
       val circe        = "0.11.1"
       val flyway       = "5.2.4"
       val h2Db         = "1.4.199"
       val logback      = "1.2.3"
-      val postgresql   = "42.2.5"
-      val refined      = "0.9.8"
+      val postgresql   = "42.2.6"
+      val refined      = "0.9.9"
       val scalaCheck   = "1.14.0"
-      val scalaTest    = "3.0.7"
-      val slick        = "3.3.1"
+      val scalaTest    = "3.0.8"
+      val slick        = "3.3.2"
     }
     val akkaActor         = "com.typesafe.akka"      %% "akka-actor"           % Version.akka
     val akkaTestkit       = "com.typesafe.akka"      %% "akka-testkit"         % Version.akka
@@ -117,13 +117,13 @@ val licenseText = s"""CC0 1.0 Universal (CC0 1.0) - Public Domain Dedication
 
 lazy val commonSettings =
   Seq(
-    scalaVersion := "2.12.8",
+    scalaVersion := "2.12.9",
     organization := "com.wegtam",
     organizationName := "Jens Grassel",
     startYear := Some(2019),
     headerLicense := Some(HeaderLicense.Custom(licenseText)),
-    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.0"),
-    addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.2"),
+    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
     scalacOptions ++= Seq(
       "-deprecation",
       "-encoding", "UTF-8",
