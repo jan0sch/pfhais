@@ -13,25 +13,22 @@ package com.wegtam.books.pfhais.impure
 
 import java.util.UUID
 
-import akka.NotUsed
 import akka.actor._
 import akka.http.scaladsl._
-import akka.http.scaladsl.common._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
 import akka.stream._
-import akka.stream.scaladsl._
 import cats.implicits._
+import com.wegtam.books.pfhais.impure.api._
 import com.wegtam.books.pfhais.impure.db._
 import com.wegtam.books.pfhais.impure.models._
-import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
 import eu.timepit.refined.auto._
 import org.flywaydb.core.Flyway
 import slick.basic._
 import slick.jdbc._
 
 import scala.io.StdIn
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 object Impure {
@@ -64,59 +61,13 @@ object Impure {
       DatabaseConfig.forConfig("database", system.settings.config)
     val repo = new Repository(dbConfig)
 
-    val route = path("product" / ProductIdSegment) { id: ProductId =>
-      get {
-        complete {
-          for {
-            rows <- repo.loadProduct(id)
-            prod <- Future { Product.fromDatabase(rows) }
-          } yield prod
-        }
-      } ~ put {
-        entity(as[Product]) { p =>
-          complete {
-            repo.updateProduct(p)
-          }
-        }
-      }
-    } ~ path("products") {
-      get {
-        implicit val jsonStreamingSupport: JsonEntityStreamingSupport =
-          EntityStreamingSupport.json()
-
-        val src = Source.fromPublisher(repo.loadProducts())
-        val products: Source[Product, NotUsed] = src
-          .collect(
-            cs =>
-              Product.fromDatabase(Seq(cs)) match {
-                case Some(p) => p
-            }
-          )
-          .groupBy(Int.MaxValue, _.id)
-          .fold(Option.empty[Product])(
-            (op, x) => op.fold(x.some)(p => p.copy(names = p.names ::: x.names).some)
-          )
-          .mergeSubstreams
-          .collect(
-            op =>
-              op match {
-                case Some(p) => p
-            }
-          )
-        complete(products)
-      } ~
-      post {
-        entity(as[Product]) { p =>
-          complete {
-            repo.saveProduct(p)
-          }
-        }
-      }
-    }
+    val productRoutes  = new ProductRoutes(repo)
+    val productsRoutes = new ProductsRoutes(repo)
+    val routes         = productRoutes.routes ~ productsRoutes.routes
 
     val host       = system.settings.config.getString("api.host")
     val port       = system.settings.config.getInt("api.port")
-    val srv        = Http().bindAndHandle(route, host, port)
+    val srv        = Http().bindAndHandle(routes, host, port)
     val pressEnter = StdIn.readLine()
     srv.flatMap(_.unbind()).onComplete(_ => system.terminate())
   }
