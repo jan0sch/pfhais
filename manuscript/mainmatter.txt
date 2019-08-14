@@ -1452,6 +1452,16 @@ forAll("input") { t: Translation =>
 
 The test for valid input is very simple because we simply use the values from our automatically generated valid instances. :-)
 
+Q> So what is left to test?
+
+So far we have no tests for our `Repository` class which handles all the database work. Neither have we tests for our routes. We have several options for testing here but before can test either of them we have do to some refactoring. For starters we should move our routes out of our main application into separate classes to be able to test them more easily.
+
+Q> But should we refactor code only to gain better testability?
+
+Yes, we should. There are of course limits and pros and cons to that but in general this makes sense. Also this has nothing to do with being "impure" or "pure" but with clean structure.
+
+#### Some refactoring
+
 ### Integration Tests
 
 ## Testing the pure service
