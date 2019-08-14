@@ -1462,6 +1462,39 @@ Yes, we should. There are of course limits and pros and cons to that but in gene
 
 #### Some refactoring
 
+Moving the routes into separate classes poses no big problem we simply create a `ProductRoutes` and a `ProductsRoutes` class which will hold the appropriate routes. As a result our somewhat messy main application code becomes more readable.
+
+{caption: "New Impure main application"}
+```scala
+def main(args: Array[String]): Unit = {
+  implicit val system: ActorSystem    = ActorSystem()
+  implicit val mat: ActorMaterializer = ActorMaterializer()
+  implicit val ec: ExecutionContext   = system.dispatcher
+
+  val url = ???
+  val user           = ???
+  val pass           = ???
+  val flyway: Flyway = ???
+  val _              = flyway.migrate()
+
+  val dbConfig: DatabaseConfig[JdbcProfile] =
+    DatabaseConfig.forConfig("database", system.settings.config)
+  val repo = new Repository(dbConfig)
+
+  val productRoutes  = new ProductRoutes(repo)
+  val productsRoutes = new ProductsRoutes(repo)
+  val routes         = productRoutes.routes ~ productsRoutes.routes
+
+  val host       = system.settings.config.getString("api.host")
+  val port       = system.settings.config.getInt("api.port")
+  val srv        = Http().bindAndHandle(routes, host, port)
+  val pressEnter = StdIn.readLine()
+  srv.flatMap(_.unbind()).onComplete(_ => system.terminate())
+}
+```
+
+We simply create our instances from our routing classes and construct our global routes directly from them.
+
 ### Integration Tests
 
 ## Testing the pure service
