@@ -60,11 +60,11 @@ lazy val library =
       val circe        = "0.11.1"
       val doobie       = "0.7.0"
       val flyway       = "5.2.4"
-      val http4s       = "0.20.4"
+      val http4s       = "0.20.9"
       val logback      = "1.2.3"
       val postgresql   = "42.2.6"
       val pureConfig   = "0.11.1"
-      val refined      = "0.9.8"
+      val refined      = "0.9.9"
       val scalaCheck   = "1.14.0"
       val scalaTest    = "3.0.8"
     }
@@ -113,12 +113,12 @@ val licenseText = s"""CC0 1.0 Universal (CC0 1.0) - Public Domain Dedication
 
 lazy val commonSettings =
   Seq(
-    scalaVersion := "2.12.8",
+    scalaVersion := "2.12.9",
     organization := "com.wegtam",
     organizationName := "Jens Grassel",
     startYear := Some(2019),
     headerLicense := Some(HeaderLicense.Custom(licenseText)),
-    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.0"),
+    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
     scalacOptions ++= Seq(
       "-deprecation",
