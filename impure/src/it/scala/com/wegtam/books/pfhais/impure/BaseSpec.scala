@@ -24,21 +24,24 @@ import scala.concurrent.duration._
 /**
   * A base class for our integration tests.
   *
-  * It uses the akka testkit to provide an actor system with loaded 
+  * It uses the akka testkit to provide an actor system with loaded
   * configuration out of the box.
   */
 abstract class BaseSpec
-  extends TestKit(
-    ActorSystem("it-test",
-      ConfigFactory
-        .parseString(s"api.port=${BaseSpec.findAvailablePort()}")
-        .withFallback(ConfigFactory.load()))
+    extends TestKit(
+      ActorSystem(
+        "it-test",
+        ConfigFactory
+          .parseString(s"api.port=${BaseSpec.findAvailablePort()}")
+          .withFallback(ConfigFactory.load())
       )
-  with AsyncWordSpecLike
-  with MustMatchers
-  with ScalaCheckPropertyChecks
-  with BeforeAndAfterAll
-  with BeforeAndAfterEach {
+    )
+    with AsyncWordSpecLike
+    with MustMatchers
+    with ScalaCheckPropertyChecks
+    with BeforeAndAfterAll
+    with BeforeAndAfterEach {
+
   /**
     * Shutdown the actor system after the tests have run.
     * If the system does not terminate within the given time frame an error is thrown.
@@ -48,6 +51,7 @@ abstract class BaseSpec
 }
 
 object BaseSpec {
+
   /**
     * Start a server socket and close it. The port number used by
     * the socket is considered free and returned.

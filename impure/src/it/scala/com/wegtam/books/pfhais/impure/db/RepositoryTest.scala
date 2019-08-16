@@ -29,14 +29,17 @@ class RepositoryTest extends BaseSpec {
     */
   override protected def beforeEach(): Unit = {
     val url = "jdbc:postgresql://" +
-    system.settings.config.getString("database.db.properties.serverName") +
-    ":" + system.settings.config.getString("database.db.properties.portNumber") +
-    "/" + system.settings.config.getString("database.db.properties.databaseName")
-    val user           = system.settings.config.getString("database.db.properties.user")
-    val pass           = system.settings.config.getString("database.db.properties.password")
+      system.settings.config.getString("database.db.properties.serverName") +
+      ":" + system.settings.config
+        .getString("database.db.properties.portNumber") +
+      "/" + system.settings.config
+        .getString("database.db.properties.databaseName")
+    val user = system.settings.config.getString("database.db.properties.user")
+    val pass =
+      system.settings.config.getString("database.db.properties.password")
     val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
     flyway.clean()
-    val _              = flyway.migrate()
+    val _ = flyway.migrate()
     super.beforeEach()
   }
 
@@ -45,11 +48,14 @@ class RepositoryTest extends BaseSpec {
     */
   override protected def afterEach(): Unit = {
     val url = "jdbc:postgresql://" +
-    system.settings.config.getString("database.db.properties.serverName") +
-    ":" + system.settings.config.getString("database.db.properties.portNumber") +
-    "/" + system.settings.config.getString("database.db.properties.databaseName")
-    val user           = system.settings.config.getString("database.db.properties.user")
-    val pass           = system.settings.config.getString("database.db.properties.password")
+      system.settings.config.getString("database.db.properties.serverName") +
+      ":" + system.settings.config
+        .getString("database.db.properties.portNumber") +
+      "/" + system.settings.config
+        .getString("database.db.properties.databaseName")
+    val user = system.settings.config.getString("database.db.properties.user")
+    val pass =
+      system.settings.config.getString("database.db.properties.password")
     val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
     flyway.clean()
     super.afterEach()
@@ -61,12 +67,12 @@ class RepositoryTest extends BaseSpec {
         val dbConfig: DatabaseConfig[JdbcProfile] =
           DatabaseConfig.forConfig("database", system.settings.config)
         val repo = new Repository(dbConfig)
-        val id = UUID.randomUUID
+        val id   = UUID.randomUUID
         for {
           rows <- repo.loadProduct(id)
-          } yield {
-            rows must be(empty)
-          }
+        } yield {
+          rows must be(empty)
+        }
       }
     }
 
