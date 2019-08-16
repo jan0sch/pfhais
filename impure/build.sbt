@@ -38,7 +38,6 @@ lazy val impure =
         library.akkaHttpTestkit   % IntegrationTest,
         library.akkaStreamTestkit % IntegrationTest,
         library.akkaTestkit       % IntegrationTest,
-	library.h2Db              % IntegrationTest,
         library.refinedScalaCheck % IntegrationTest,
         library.scalaCheck        % IntegrationTest,
         library.scalaTest         % IntegrationTest,
@@ -64,7 +63,6 @@ lazy val library =
       val cats         = "1.6.1"
       val circe        = "0.11.1"
       val flyway       = "5.2.4"
-      val h2Db         = "1.4.199"
       val logback      = "1.2.3"
       val postgresql   = "42.2.6"
       val refined      = "0.9.9"
@@ -86,7 +84,6 @@ lazy val library =
     val circeRefined      = "io.circe"               %% "circe-refined"        % Version.circe
     val circeParser       = "io.circe"               %% "circe-parser"         % Version.circe
     val flywayCore        = "org.flywaydb"           %  "flyway-core"          % Version.flyway
-    val h2Db              = "com.h2database"         %  "h2"                   % Version.h2Db
     val logback           = "ch.qos.logback"         %  "logback-classic"      % Version.logback
     val postgresql        = "org.postgresql"         %  "postgresql"           % Version.postgresql
     val refinedCore       = "eu.timepit"             %% "refined"              % Version.refined

@@ -3,18 +3,62 @@
  *
  *                                No Copyright
  *
- * The person who associated a work with this deed has dedicated the work to 
+ * The person who associated a work with this deed has dedicated the work to
  * the public domain by waiving all of his or her rights to the work worldwide
- * under copyright law, including all related and neighboring rights, to the 
+ * under copyright law, including all related and neighboring rights, to the
  * extent allowed by law.
  */
 
 package com.wegtam.books.pfhais
 
+import java.net.ServerSocket
+
+import akka.actor.ActorSystem
+import akka.testkit.TestKit
+import com.typesafe.config._
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
+import scala.concurrent.duration._
+
 /**
-  * A base class for our tests.
+  * A base class for our integration tests.
+  *
+  * It uses the akka testkit to provide an actor system with loaded 
+  * configuration out of the box.
   */
-abstract class BaseSpec extends WordSpec with MustMatchers with ScalaCheckPropertyChecks with BeforeAndAfterEach {}
+abstract class BaseSpec
+  extends TestKit(
+    ActorSystem("it-test",
+      ConfigFactory
+        .parseString(s"api.port=${BaseSpec.findAvailablePort()}")
+        .withFallback(ConfigFactory.load()))
+      )
+  with AsyncWordSpecLike
+  with MustMatchers
+  with ScalaCheckPropertyChecks
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach {
+  /**
+    * Shutdown the actor system after the tests have run.
+    * If the system does not terminate within the given time frame an error is thrown.
+    */
+  override protected def afterAll(): Unit =
+    TestKit.shutdownActorSystem(system, FiniteDuration(5, SECONDS))
+}
+
+object BaseSpec {
+  /**
+    * Start a server socket and close it. The port number used by
+    * the socket is considered free and returned.
+    *
+    * @return A port number.
+    */
+  def findAvailablePort(): Int = {
+    val serverSocket = new ServerSocket(0)
+    val freePort     = serverSocket.getLocalPort
+    serverSocket.setReuseAddress(true) // Allow instant rebinding of the socket.
+    serverSocket.close()
+    freePort
+  }
+}
