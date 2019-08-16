@@ -1493,7 +1493,22 @@ def main(args: Array[String]): Unit = {
 }
 ```
 
-We simply create our instances from our routing classes and construct our global routes directly from them.
+We simply create our instances from our routing classes and construct our global routes directly from them. This is good but if we want to test the routes in isolation we still have the problem that they are hard-wired to our `Repository` class which is implemented via Slick. Several options exist to handle this:
+
+1. Use an in-memory test database with according configuration.
+2. Abstract further and use a trait instead of the concrete repository implementation.
+3. Write integration tests which will require a working database.
+
+Using option 1 is tempting but think about it some more. While the benefit is that we can use our actual implementation and just have to fire up an in-memory database (for example h2), there are also some drawbacks:
+
+1. You have to handle evolutions for the in-memory database.
+2. You're evolutions have to be completely portable SQL (read *ANSI SQL*). Otherwise you'll have to write each of your evolutions scripts two times (one for production, one for testing).
+3. You're code has to be database agnostic. This sounds easier than it is. Even the tools you're using may use database specific features under the hood.
+4. Several features are simply not implemented in some databases. Think of things like cascading deletion via foreign keys.
+
+Taking option 2 is a valid choice but it will result in more code. Also you must pay close attention to the "test repository" implementation to avoid introducing bugs there. Going for the most simple approach is usually feasible. Think of a simple test repository implementation that will just return hard coded values or values passed to it via constructor.
+
+However we will go with option 3 in this case. It has the drawback that you'll have to provide a real database environment (and maybe more) for testing. But it is as close to production as you can get. Also you will need these either way to test your actual repository implementation, so let's get going.
 
 ### Integration Tests
 
