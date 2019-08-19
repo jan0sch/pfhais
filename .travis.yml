@@ -3,12 +3,6 @@ scala:
   - 2.12.9
 jdk:
   - openjdk8
-addons:
-  postgresql: "10.0"
-  apt:
-    packages:
-      - postgresql-10
-      - postgresql-client-10
 services:
   - postgresql
 sudo: false

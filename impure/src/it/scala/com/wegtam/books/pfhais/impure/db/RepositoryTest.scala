@@ -88,7 +88,9 @@ class RepositoryTest extends BaseSpec {
               _    <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
             } yield {
-              Product.fromDatabase(rows) must contain(p)
+              Product.fromDatabase(rows) match {
+                case None => fail("No product created from database rows!")
+                case Some(c) => c must be(p)
             }
         }
       }
