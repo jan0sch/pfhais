@@ -25,7 +25,7 @@ object TypeGenerators {
 
   val genLanguageCode: Gen[LanguageCode] = Gen.oneOf(LanguageCodes.all)
 
-  def genUuid: Gen[UUID] = Gen.const(UUID.randomUUID)
+  def genUuid: Gen[UUID] = Gen.delay(UUID.randomUUID)
 
   val genProductId: Gen[ProductId] = genUuid
 
