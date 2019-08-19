@@ -17,6 +17,7 @@ import akka.actor._
 import akka.stream._
 import akka.testkit.TestKit
 import com.typesafe.config._
+import org.flywaydb.core.Flyway
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
@@ -51,6 +52,23 @@ abstract class BaseSpec
     */
   override protected def afterAll(): Unit =
     TestKit.shutdownActorSystem(system, FiniteDuration(5, SECONDS))
+
+  /**
+    * Initialise the database before any tests are run.
+    */
+  override protected def beforeAll(): Unit = {
+    val url = "jdbc:postgresql://" +
+      system.settings.config.getString("database.db.properties.serverName") +
+      ":" + system.settings.config
+        .getString("database.db.properties.portNumber") +
+      "/" + system.settings.config
+        .getString("database.db.properties.databaseName")
+    val user = system.settings.config.getString("database.db.properties.user")
+    val pass =
+      system.settings.config.getString("database.db.properties.password")
+    val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
+    val _ = flyway.migrate()
+  }
 }
 
 object BaseSpec {
