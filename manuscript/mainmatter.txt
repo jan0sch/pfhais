@@ -1220,12 +1220,11 @@ Using the `Gen.oneOf` helper from the library the code becomes dead simple. Gene
 
 {caption: "ScalaCheck generate UUID"}
 ```scala
-val genUuid: Gen[UUID] = Gen.oneOf(
-  List(UUID.randomUUID, UUID.randomUUID)
+val genUuid: Gen[UUID] = Gen.delay(UUID.randomUUID)
 )
 ```
 
-Instead of juggling with code to generate UUIDs we simply pick from a list. I agree that this code could be more sophisticated but for our intended usage it is enough.
+You might be tempted to use `Gen.const` here but please don't because that one will be memorized and thus never change. Another option is using a list of randomly generated UUID values from which we then chose one. That would be sufficient for generators which only generate a single product but if we want to generate lists of them we would have duplicate ids sooner than later.
 
 {caption: "ScalaCheck generate ProductName"}
 ```scala
