@@ -46,6 +46,17 @@ abstract class BaseSpec
 
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
+  private val url = "jdbc:postgresql://" +
+    system.settings.config.getString("database.db.properties.serverName") +
+    ":" + system.settings.config
+    .getString("database.db.properties.portNumber") +
+    "/" + system.settings.config
+    .getString("database.db.properties.databaseName")
+  private val user = system.settings.config.getString("database.db.properties.user")
+  private val pass =
+    system.settings.config.getString("database.db.properties.password")
+  protected val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
+
   /**
     * Shutdown the actor system after the tests have run.
     * If the system does not terminate within the given time frame an error is thrown.
@@ -57,16 +68,6 @@ abstract class BaseSpec
     * Initialise the database before any tests are run.
     */
   override protected def beforeAll(): Unit = {
-    val url = "jdbc:postgresql://" +
-      system.settings.config.getString("database.db.properties.serverName") +
-      ":" + system.settings.config
-        .getString("database.db.properties.portNumber") +
-      "/" + system.settings.config
-        .getString("database.db.properties.databaseName")
-    val user = system.settings.config.getString("database.db.properties.user")
-    val pass =
-      system.settings.config.getString("database.db.properties.password")
-    val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
     val _ = flyway.migrate()
   }
 }

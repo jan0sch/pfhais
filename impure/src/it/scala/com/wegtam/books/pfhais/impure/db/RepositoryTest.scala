@@ -20,7 +20,6 @@ import com.wegtam.books.pfhais.impure.db.Repository
 import com.wegtam.books.pfhais.impure.models._
 import com.wegtam.books.pfhais.impure.models.TypeGenerators._
 import eu.timepit.refined.auto._
-import org.flywaydb.core.Flyway
 import slick.basic._
 import slick.jdbc._
 
@@ -32,16 +31,6 @@ class RepositoryTest extends BaseSpec {
     * Before each test we clean and migrate the database.
     */
   override protected def beforeEach(): Unit = {
-    val url = "jdbc:postgresql://" +
-      system.settings.config.getString("database.db.properties.serverName") +
-      ":" + system.settings.config
-        .getString("database.db.properties.portNumber") +
-      "/" + system.settings.config
-        .getString("database.db.properties.databaseName")
-    val user = system.settings.config.getString("database.db.properties.user")
-    val pass =
-      system.settings.config.getString("database.db.properties.password")
-    val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
     flyway.clean()
     val _ = flyway.migrate()
     super.beforeEach()
@@ -51,16 +40,6 @@ class RepositoryTest extends BaseSpec {
     * After each test we clean the database again.
     */
   override protected def afterEach(): Unit = {
-    val url = "jdbc:postgresql://" +
-      system.settings.config.getString("database.db.properties.serverName") +
-      ":" + system.settings.config
-        .getString("database.db.properties.portNumber") +
-      "/" + system.settings.config
-        .getString("database.db.properties.databaseName")
-    val user = system.settings.config.getString("database.db.properties.user")
-    val pass =
-      system.settings.config.getString("database.db.properties.password")
-    val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
     flyway.clean()
     super.afterEach()
   }
