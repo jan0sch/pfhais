@@ -72,8 +72,10 @@ class RepositoryTest extends BaseSpec {
               rows <- repo.loadProduct(p.id)
             } yield {
               Product.fromDatabase(rows) match {
-                case None    => fail("No product created from database rows!")
-                case Some(c) => c must be(p)
+                case None => fail("No product created from database rows!")
+                case Some(c) =>
+                  c.id must be(p.id)
+                  c mustEqual p
               }
             }
         }
@@ -131,10 +133,12 @@ class RepositoryTest extends BaseSpec {
               cnts <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
             } yield {
-              cnts.fold(0)(_ + _) must be > 0
+              cnts.fold(0)(_ + _) must be(p.names.size + 1)
               Product.fromDatabase(rows) match {
-                case None    => fail("No product created from database rows!")
-                case Some(c) => c must be(p)
+                case None => fail("No product created from database rows!")
+                case Some(c) =>
+                  c.id must be(p.id)
+                  c mustEqual p
               }
             }
         }
@@ -143,7 +147,27 @@ class RepositoryTest extends BaseSpec {
 
     "the product does already exist" must {
       "return an error and not change the database" in {
-        fail("Not yet implemented!")
+        (genProduct.sample, genProduct.sample) match {
+          case (Some(a), Some(b)) =>
+            val dbConfig: DatabaseConfig[JdbcProfile] =
+              DatabaseConfig.forConfig("database", system.settings.config)
+            val repo = new Repository(dbConfig)
+            val p = b.copy(id = a.id)
+            for {
+              cnts <- repo.saveProduct(a)
+              _    <- repo.saveProduct(p)
+              rows <- repo.loadProduct(a.id)
+            } yield {
+              withClue("Already existing product was not be created!")(cnts.fold(0)(_ + _) must be(p.names.size + 1))
+              Product.fromDatabase(rows) match {
+                case None => fail("No product created from database rows!")
+                case Some(c) =>
+                  c.id must be(a.id)
+                  c mustEqual a
+              }
+            }
+          case _ => fail("Could not create data sample!")
+        }
       }
     }
   }
