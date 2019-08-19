@@ -19,6 +19,7 @@ import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.impure.db.Repository
 import com.wegtam.books.pfhais.impure.models._
 import com.wegtam.books.pfhais.impure.models.TypeGenerators._
+import eu.timepit.refined.auto._
 import org.flywaydb.core.Flyway
 import slick.basic._
 import slick.jdbc._
