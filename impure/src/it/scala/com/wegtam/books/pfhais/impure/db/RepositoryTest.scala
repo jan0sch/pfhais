@@ -97,4 +97,46 @@ class RepositoryTest extends BaseSpec {
       }
     }
   }
+
+  "#loadProducts" when {
+    "no products exist" must {
+      "return an empty stream" in {
+        fail("Not yet implemented!")
+      }
+    }
+
+    "some products exist" must {
+      "return a stream with all product rows" in {
+        fail("Not yet implemented!")
+      }
+    }
+  }
+
+  "#saveProduct" when {
+    "the product does not already exist" must {
+      "save the product to the database" in {
+        fail("Not yet implemented!")
+      }
+    }
+
+    "the product does already exist" must {
+      "return an error and not change the database" in {
+        fail("Not yet implemented!")
+      }
+    }
+  }
+
+  "#updateProduct" when {
+    "the product does exist" must {
+      "update the database" in {
+        fail("Not yet implemented!")
+      }
+    }
+
+    "the product does not exist" must {
+      "return an error and not change the database" in {
+        fail("Not yet implemented!")
+      }
+    }
+  }
 }
