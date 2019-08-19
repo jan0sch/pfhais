@@ -90,7 +90,8 @@ class RepositoryTest extends BaseSpec {
             } yield {
               Product.fromDatabase(rows) match {
                 case None => fail("No product created from database rows!")
-                case Some(c) => c must be(p)
+                case Some(c) => c.copy(names = c.names.sorted) must be(p.copy(names = names.sorted))
+              }
             }
         }
       }
