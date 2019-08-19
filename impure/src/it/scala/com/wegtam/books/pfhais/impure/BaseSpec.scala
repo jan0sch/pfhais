@@ -13,7 +13,8 @@ package com.wegtam.books.pfhais
 
 import java.net.ServerSocket
 
-import akka.actor.ActorSystem
+import akka.actor._
+import akka.stream._
 import akka.testkit.TestKit
 import com.typesafe.config._
 import org.scalatest._
@@ -41,6 +42,8 @@ abstract class BaseSpec
     with ScalaCheckPropertyChecks
     with BeforeAndAfterAll
     with BeforeAndAfterEach {
+
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   /**
     * Shutdown the actor system after the tests have run.
