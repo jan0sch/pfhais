@@ -149,10 +149,10 @@ class RepositoryTest extends BaseSpec {
               DatabaseConfig.forConfig("database", system.settings.config)
             val repo = new Repository(dbConfig)
             for {
-              cnt  <- repo.saveProduct(p)
+              cnts <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
             } yield {
-              cnt must be > 0
+              cnts.fold(0)(_ + _) must be > 0
               Product.fromDatabase(rows) match {
                 case None    => fail("No product created from database rows!")
                 case Some(c) => c must be(p)
