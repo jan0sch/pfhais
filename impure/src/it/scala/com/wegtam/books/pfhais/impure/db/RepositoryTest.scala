@@ -14,6 +14,7 @@ package com.wegtam.books.pfhais.db
 
 import java.util.UUID
 
+import akka.stream.scaladsl._
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.impure.db.Repository
 import com.wegtam.books.pfhais.impure.models._
@@ -101,7 +102,15 @@ class RepositoryTest extends BaseSpec {
   "#loadProducts" when {
     "no products exist" must {
       "return an empty stream" in {
-        fail("Not yet implemented!")
+        val dbConfig: DatabaseConfig[JdbcProfile] =
+          DatabaseConfig.forConfig("database", system.settings.config)
+        val repo = new Repository(dbConfig)
+        val src = Source.fromPublisher(repo.loadProducts())
+        for {
+          ps <- src.runWith(Sink.seq)
+        } yield {
+          ps must be(empty)
+        }
       }
     }
 
