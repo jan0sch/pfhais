@@ -20,7 +20,6 @@ import org.scalacheck.{ Arbitrary, Gen }
 
 object TypeGenerators {
 
-  val DefaultProductId: ProductId     = UUID.randomUUID
   val DefaultProductName: ProductName = "I am a product name!"
 
   val genLanguageCode: Gen[LanguageCode] = Gen.oneOf(LanguageCodes.all)
