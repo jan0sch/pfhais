@@ -23,6 +23,8 @@ import org.flywaydb.core.Flyway
 import slick.basic._
 import slick.jdbc._
 
+import scala.concurrent.Future
+
 class RepositoryTest extends BaseSpec {
 
   /**
@@ -116,7 +118,22 @@ class RepositoryTest extends BaseSpec {
 
     "some products exist" must {
       "return a stream with all product rows" in {
-        fail("Not yet implemented!")
+        genProducts.sample match {
+          case None => fail("Could not generate data sample!")
+          case Some(ps) =>
+            val expected = ps.flatMap(p => p.names.toList.map(n => (p.id, n.lang, n.name)))
+            val dbConfig: DatabaseConfig[JdbcProfile] =
+              DatabaseConfig.forConfig("database", system.settings.config)
+            val repo = new Repository(dbConfig)
+            for {
+              _ <- Future.sequence(ps.map(p => repo.saveProduct(p)))
+              src = Source.fromPublisher(repo.loadProducts())
+              rows <- src.runWith(Sink.seq)
+            } yield {
+              expected.foreach(e => rows must contain(e))
+              rows must not be(empty)
+            }
+        }
       }
     }
   }
