@@ -15,6 +15,7 @@ package com.wegtam.books.pfhais.db
 import java.util.UUID
 
 import akka.stream.scaladsl._
+import cats.implicits._
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.impure.db.Repository
 import com.wegtam.books.pfhais.impure.models._
@@ -58,7 +59,7 @@ class RepositoryTest extends BaseSpec {
   "#loadProduct" when {
     "the ID does not exist" must {
       "return an empty list of rows" in {
-        val id   = UUID.randomUUID
+        val id = UUID.randomUUID
         for {
           rows <- repo.loadProduct(id)
         } yield {
@@ -108,11 +109,30 @@ class RepositoryTest extends BaseSpec {
             val expected = ps.flatMap(p => p.names.toNonEmptyList.toList.map(n => (p.id, n.lang, n.name)))
             for {
               _ <- Future.sequence(ps.map(p => repo.saveProduct(p)))
-              src = Source.fromPublisher(repo.loadProducts())
+              src = Source
+                .fromPublisher(repo.loadProducts())
+                .collect(
+                  cs =>
+                    Product.fromDatabase(Seq(cs)) match {
+                      case Some(p) => p
+                    }
+                )
+                .groupBy(Int.MaxValue, _.id)
+                .fold(Option.empty[Product])(
+                  (op, x) => op.fold(x.some)(p => p.copy(names = p.names ++ x.names).some)
+                )
+                .mergeSubstreams
+                .collect(
+                  op =>
+                    op match {
+                      case Some(p) => p
+                    }
+                )
               rows <- src.runWith(Sink.seq)
             } yield {
-              expected.foreach(e => rows must contain(e))
-              rows must not be(empty)
+              rows must not be (empty)
+              rows.size mustEqual ps.size
+              rows.toList.sorted mustEqual ps.sorted
             }
         }
       }
@@ -178,7 +198,9 @@ class RepositoryTest extends BaseSpec {
               upds <- repo.updateProduct(p)
               rows <- repo.loadProduct(a.id)
             } yield {
-              withClue("Already existing product was not created!")(cnts.fold(0)(_ + _) must be(a.names.toNonEmptyList.size + 1))
+              withClue("Already existing product was not created!")(
+                cnts.fold(0)(_ + _) must be(a.names.toNonEmptyList.size + 1)
+              )
               Product.fromDatabase(rows) match {
                 case None => fail("No product created from database rows!")
                 case Some(c) =>
