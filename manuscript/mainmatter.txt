@@ -451,11 +451,13 @@ import cats.syntax.order._
 implicit val orderLanguageCode: Order[LanguageCode] = 
   new Order[LanguageCode] {
     def compare(x: LanguageCode, y: LanguageCode): Int =
-      x.compare(y)
+      x.value.compare(y.value)
   }
 ```
 
 I> Please note that you will need to import either the `syntax.order._` package or the `implicits` package from Cats.
+
+You might have noticed the explicit call to `.value` to get the underlying string instance of our refined type. This is needed because the other option (using `x.compare(y)`) will compile but bless you with stack overflow errors. The reason is probably that the latter is compiled into code calling `OrderOps#compare` which is recursive.
 
 {caption: "Providing Order for Translation"}
 ```scala
