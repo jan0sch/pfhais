@@ -34,11 +34,11 @@ package object models {
   object ProductName extends RefinedTypeOps[ProductName, String] with CatsRefinedTypeOpsSyntax
 
   implicit val orderLanguageCode: Order[LanguageCode] = new Order[LanguageCode] {
-    def compare(x: LanguageCode, y: LanguageCode): Int = x.compare(y)
+    def compare(x: LanguageCode, y: LanguageCode): Int = x.value.compare(y.value)
   }
 
   implicit val orderProductName: Order[ProductName] = new Order[ProductName] {
-    def compare(x: ProductName, y: ProductName): Int = x.compare(y)
+    def compare(x: ProductName, y: ProductName): Int = x.value.compare(y.value)
   }
 
 }
