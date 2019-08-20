@@ -237,7 +237,18 @@ object Product {
 }
 ```
 
-We kept the type name `ProductId` by using a type alias. This is convenient but remember that a type alias does not add extra type safety (e.g. `type Foo = String` will be a `String`).
+We kept the type name `ProductId` by using a type alias. This is convenient but remember that a type alias does not add extra type safety (e.g. `type Foo = String` will be a `String`).
+
+Q> Why do I have a bad feeling about this?
+
+Well, maybe because a list may contain duplicate entries but the database will surely not because of unique constraints! So, let's switch to a `NonEmptySet` which is also provided by Cats.
+
+{caption: "Product model using UUID and NeS"}
+```scala
+type ProductId = java.util.UUID
+final case class Product(id: ProductId, names: NonEmptySet[Translation])
+```
+
 Now we have the models covered and can move on to the database layer.
 
 ## Database layer
@@ -402,18 +413,60 @@ def fromDatabase(rows: Seq[(UUID, String, String)]): Option[Product] = {
   val po = for {
     (id, c, n) <- rows.headOption
     t          <- Translation.fromUnsafe(c)(n)
-    p          <- Product(id = id, names = NonEmptyList.one(t)).some
+    p          <- Product(
+                    id = id,
+                    names = NonEmptySet.one[Translation](t)
+                  ).some
   } yield p
   po.map(
     p =>
       rows.drop(1).foldLeft(p) { (a, cols) =>
 	val (id, c, n) = cols
 	Translation.fromUnsafe(c)(n).fold(a)(t =>
-	  a.copy(names = a.names :+ t)
-	)
+          a.copy(names = a.names.add(t))
+        )
     }
   )
 }
+```
+
+But oh no! The compiler refuses to build it:
+
+{caption: "Missing cats.Order"}
+```text
+[error] .../impure/models/Product.scala:45:74:
+  could not find implicit value for parameter A: 
+    cats.kernel.Order[com.wegtam.books.pfhais.impure.models.Translation]
+[error] p <- Product(id = id, names = NonEmptySet.one[Translation](t)).some
+[error]                                                            ^
+```
+
+It seems we have to provide an instance of `Order` for our `Translation` model to make Cats happy. So we have think of an ordering for our model. A simple approach would be to simply order by the language code. Let's try this:
+
+{caption: "Providing Order for LanguageCode"}
+```scala
+import cats._
+import cats.syntax.order._
+
+implicit val orderLanguageCode: Order[LanguageCode] = 
+  new Order[LanguageCode] {
+    def compare(x: LanguageCode, y: LanguageCode): Int =
+      x.compare(y)
+  }
+```
+
+I> Please note that you will need to import either the `syntax.order._` package or the `implicits` package from Cats.
+
+{caption: "Providing Order for Translation"}
+```scala
+import cats._
+import cats.syntax.order._
+
+implicit val order: Order[Translation] =
+  new Order[Translation] {
+    def compare(x: Translation, y: Translation): Int =
+      x.lang.compare(y.lang)
+  }
 ```
 
 So far we should have everything in place to make use of our database. Now we need to wire it all together.
