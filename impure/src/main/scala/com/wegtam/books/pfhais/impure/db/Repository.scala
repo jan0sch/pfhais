@@ -60,6 +60,11 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
   val namesTable = TableQuery[Names]
 
   /**
+    * Close the underlying database connection.
+    */
+  def close(): Unit = dbConfig.db.close
+
+  /**
     * Load a product from the database repository.
     *
     * @param id The unique ID of the product.
