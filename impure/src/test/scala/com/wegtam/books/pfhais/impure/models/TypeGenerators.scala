@@ -13,10 +13,12 @@ package com.wegtam.books.pfhais.impure.models
 
 import java.util.UUID
 
-import cats.data.NonEmptyList
+import cats.data._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.api._
 import org.scalacheck.{ Arbitrary, Gen }
+
+import scala.collection.immutable._
 
 object TypeGenerators {
 
@@ -48,11 +50,11 @@ object TypeGenerators {
     ts <- Gen.nonEmptyListOf(genTranslation)
   } yield ts
 
-  val genNonEmptyTranslationList: Gen[NonEmptyList[Translation]] = for {
+  val genNonEmptyTranslationList: Gen[NonEmptySet[Translation]] = for {
     t  <- genTranslation
     ts <- genTranslationList
-    ns = NonEmptyList.fromList(ts)
-  } yield ns.getOrElse(NonEmptyList.of(t))
+    ns = NonEmptyList.fromList(ts).map(_.toNes)
+  } yield ns.getOrElse(NonEmptySet.one(t))
 
   val genProduct: Gen[Product] = for {
     id <- genProductId

@@ -13,7 +13,7 @@ package com.wegtam.books.pfhais.impure.db
 
 import java.util.UUID
 
-import cats.data.NonEmptyList
+import cats.data._
 import com.wegtam.books.pfhais.impure.models._
 import eu.timepit.refined.auto._
 import slick.basic._
@@ -117,11 +117,11 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
     * possibly existing ones.
     *
     * @param p A product which must already exist in the database.
-    * @return A nonempty list of composable sql queries for Slick.
+    * @return A list of composable sql queries for Slick.
     */
   protected def saveTranslations(p: Product): NonEmptyList[DBIO[Int]] = {
     val save = saveTranslation(p.id)(_)
-    p.names.map(t => save(t))
+    p.names.toNonEmptyList.map(t => save(t))
   }
 
   /**

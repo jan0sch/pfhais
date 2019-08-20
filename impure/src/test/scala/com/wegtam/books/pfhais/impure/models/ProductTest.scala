@@ -78,7 +78,7 @@ class ProductTest extends BaseSpec {
     "#fromDatabase" must {
       "create correct results" in {
         forAll("input") { p: Product =>
-          val rows = p.names.map(t => (p.id, t.lang.value, t.name.value)).toList
+          val rows = p.names.toNonEmptyList.map(t => (p.id, t.lang.value, t.name.value)).toList
           Product.fromDatabase(rows) must contain(p)
         }
       }

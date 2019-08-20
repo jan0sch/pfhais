@@ -13,7 +13,7 @@ package com.wegtam.books.pfhais.impure.models
 
 import java.util.UUID
 
-import cats.data.NonEmptyList
+import cats.data._
 import cats.implicits._
 import eu.timepit.refined.auto._
 import io.circe._
@@ -24,7 +24,7 @@ import io.circe._
   * @param id    The unique ID of the product.
   * @param names A list of translations of the product name.
   */
-final case class Product(id: ProductId, names: NonEmptyList[Translation])
+final case class Product(id: ProductId, names: NonEmptySet[Translation])
 
 object Product {
 
@@ -42,13 +42,13 @@ object Product {
     val po = for {
       (id, c, n) <- rows.headOption
       t          <- Translation.fromUnsafe(c)(n)
-      p          <- Product(id = id, names = NonEmptyList.one(t)).some
+      p          <- Product(id = id, names = NonEmptySet.one[Translation](t)).some
     } yield p
     po.map(
       p =>
         rows.drop(1).foldLeft(p) { (a, cols) =>
           val (id, c, n) = cols
-          Translation.fromUnsafe(c)(n).fold(a)(t => a.copy(names = a.names :+ t))
+          Translation.fromUnsafe(c)(n).fold(a)(t => a.copy(names = a.names.add(t)))
       }
     )
   }
