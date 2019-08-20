@@ -13,6 +13,7 @@ package com.wegtam.books.pfhais.impure.models
 
 import java.util.UUID
 
+import cats._
 import cats.data._
 import cats.implicits._
 import eu.timepit.refined.auto._
@@ -51,6 +52,10 @@ object Product {
           Translation.fromUnsafe(c)(n).fold(a)(t => a.copy(names = a.names.add(t)))
       }
     )
+  }
+
+  implicit val order: Order[Product] = new Order[Product] {
+    def compare(x: Product, y: Product): Int = x.id.compare(y.id)
   }
 
 }

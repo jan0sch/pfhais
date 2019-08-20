@@ -67,4 +67,8 @@ object TypeGenerators {
 
   implicit val arbitraryProduct: Arbitrary[Product] = Arbitrary(genProduct)
 
+  val genProducts: Gen[List[Product]] = Gen.nonEmptyListOf(genProduct)
+
+  implicit val arbitraryProducts: Arbitrary[List[Product]] = Arbitrary(genProducts)
+
 }

@@ -11,6 +11,7 @@
 
 package com.wegtam.books.pfhais.impure.models
 
+import cats.implicits._
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.impure.models.TypeGenerators._
 import io.circe.parser._
@@ -80,6 +81,16 @@ class ProductTest extends BaseSpec {
         forAll("input") { p: Product =>
           val rows = p.names.toNonEmptyList.map(t => (p.id, t.lang.value, t.name.value)).toList
           Product.fromDatabase(rows) must contain(p)
+        }
+      }
+    }
+
+    "ordering" must {
+      "sort by ID" in {
+        forAll("products") { ps: List[Product] =>
+          val expected = ps.map(_.id).sorted
+          val sorted   = ps.sorted.map(_.id)
+          sorted mustEqual expected
         }
       }
     }
