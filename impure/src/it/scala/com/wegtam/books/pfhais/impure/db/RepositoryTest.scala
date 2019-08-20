@@ -26,6 +26,9 @@ import slick.jdbc._
 import scala.concurrent.Future
 
 class RepositoryTest extends BaseSpec {
+  private val dbConfig: DatabaseConfig[JdbcProfile] =
+    DatabaseConfig.forConfig("database", system.settings.config)
+  private val repo = new Repository(dbConfig)
 
   /**
     * Before each test we clean and migrate the database.
@@ -44,12 +47,17 @@ class RepositoryTest extends BaseSpec {
     super.afterEach()
   }
 
+  /**
+    * Close the database connection after the tests.
+    */
+  override protected def afterAll(): Unit = {
+    repo.close()
+    super.afterAll()
+  }
+
   "#loadProduct" when {
     "the ID does not exist" must {
       "return an empty list of rows" in {
-        val dbConfig: DatabaseConfig[JdbcProfile] =
-          DatabaseConfig.forConfig("database", system.settings.config)
-        val repo = new Repository(dbConfig)
         val id   = UUID.randomUUID
         for {
           rows <- repo.loadProduct(id)
@@ -64,9 +72,6 @@ class RepositoryTest extends BaseSpec {
         genProduct.sample match {
           case None => fail("Could not generate data sample!")
           case Some(p) =>
-            val dbConfig: DatabaseConfig[JdbcProfile] =
-              DatabaseConfig.forConfig("database", system.settings.config)
-            val repo = new Repository(dbConfig)
             for {
               _    <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
@@ -86,9 +91,6 @@ class RepositoryTest extends BaseSpec {
   "#loadProducts" when {
     "no products exist" must {
       "return an empty stream" in {
-        val dbConfig: DatabaseConfig[JdbcProfile] =
-          DatabaseConfig.forConfig("database", system.settings.config)
-        val repo = new Repository(dbConfig)
         val src = Source.fromPublisher(repo.loadProducts())
         for {
           ps <- src.runWith(Sink.seq)
@@ -104,9 +106,6 @@ class RepositoryTest extends BaseSpec {
           case None => fail("Could not generate data sample!")
           case Some(ps) =>
             val expected = ps.flatMap(p => p.names.toNonEmptyList.toList.map(n => (p.id, n.lang, n.name)))
-            val dbConfig: DatabaseConfig[JdbcProfile] =
-              DatabaseConfig.forConfig("database", system.settings.config)
-            val repo = new Repository(dbConfig)
             for {
               _ <- Future.sequence(ps.map(p => repo.saveProduct(p)))
               src = Source.fromPublisher(repo.loadProducts())
@@ -126,9 +125,6 @@ class RepositoryTest extends BaseSpec {
         genProduct.sample match {
           case None => fail("Could not generate data sample!")
           case Some(p) =>
-            val dbConfig: DatabaseConfig[JdbcProfile] =
-              DatabaseConfig.forConfig("database", system.settings.config)
-            val repo = new Repository(dbConfig)
             for {
               cnts <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
@@ -146,12 +142,9 @@ class RepositoryTest extends BaseSpec {
     }
 
     "the product does already exist" must {
-      "return an error and not change the database" ignore {
+      "return an error and not change the database" in {
         (genProduct.sample, genProduct.sample) match {
           case (Some(a), Some(b)) =>
-            val dbConfig: DatabaseConfig[JdbcProfile] =
-              DatabaseConfig.forConfig("database", system.settings.config)
-            val repo = new Repository(dbConfig)
             val p = b.copy(id = a.id)
             for {
               cnts <- repo.saveProduct(a)
@@ -160,7 +153,6 @@ class RepositoryTest extends BaseSpec {
               }
               rows <- repo.loadProduct(a.id)
             } yield {
-              withClue("Already existing product was not created!")(cnts.fold(0)(_ + _) must be(p.names.toNonEmptyList.size + 1))
               withClue("Saving a duplicate product must fail!")(nosv must be(0))
               Product.fromDatabase(rows) match {
                 case None => fail("No product created from database rows!")
@@ -178,13 +170,42 @@ class RepositoryTest extends BaseSpec {
   "#updateProduct" when {
     "the product does exist" must {
       "update the database" in {
-        fail("Not yet implemented!")
+        (genProduct.sample, genProduct.sample) match {
+          case (Some(a), Some(b)) =>
+            val p = b.copy(id = a.id)
+            for {
+              cnts <- repo.saveProduct(a)
+              upds <- repo.updateProduct(p)
+              rows <- repo.loadProduct(a.id)
+            } yield {
+              withClue("Already existing product was not created!")(cnts.fold(0)(_ + _) must be(a.names.toNonEmptyList.size + 1))
+              Product.fromDatabase(rows) match {
+                case None => fail("No product created from database rows!")
+                case Some(c) =>
+                  c.id must be(a.id)
+                  c mustEqual p
+              }
+            }
+          case _ => fail("Could not create data sample!")
+        }
       }
     }
 
     "the product does not exist" must {
       "return an error and not change the database" in {
-        fail("Not yet implemented!")
+        genProduct.sample match {
+          case None => fail("Could not generate data sample!")
+          case Some(p) =>
+            for {
+              nosv <- repo.updateProduct(p).recover {
+                case _ => 0
+              }
+              rows <- repo.loadProduct(p.id)
+            } yield {
+              withClue("Updating a not existing product must fail!")(nosv must be(1))
+              withClue("Product must not exist in database!")(rows must be(empty))
+            }
+        }
       }
     }
   }
