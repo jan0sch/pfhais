@@ -39,7 +39,7 @@ final class ProductsRoutes(repo: Repository)(implicit ec: ExecutionContext) {
         )
         .groupBy(Int.MaxValue, _.id)
         .fold(Option.empty[Product])(
-          (op, x) => op.fold(x.some)(p => p.copy(names = p.names ::: x.names).some)
+          (op, x) => op.fold(x.some)(p => p.copy(names = p.names ++ x.names).some)
         )
         .mergeSubstreams
         .collect(
