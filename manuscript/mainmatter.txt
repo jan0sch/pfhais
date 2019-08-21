@@ -374,37 +374,48 @@ def loadProduct(id: ProductId): Future[Seq[(UUID, String, String)]] = {
   dbConfig.db.run(program.result)
 }
 
-def loadProducts(): Future[Seq[(UUID, String, String)]] = {
+def loadProducts(): DatabasePublisher[(UUID, String, String)] = {
   val program = for {
-    (p, ns) <- productsTable join namesTable on (_.id === _.productId)
+    (p, ns) <- productsTable.join(namesTable)
+                 .on(_.id === _.productId).sortBy(_._1.id)
   } yield (p.id, ns.langCode, ns.name)
-  dbConfig.db.run(program.result)
+  dbConfig.db.stream(program.result)
 }
 
 def saveProduct(p: Product): Future[List[Int]] = {
   val cp      = productsTable += (p.id)
-  val program = DBIO.sequence(cp :: saveTranslations(p).toList)
-    .transactionally
+  val program = DBIO.sequence(
+    cp :: saveTranslations(p).toList
+  ).transactionally
   dbConfig.db.run(program)
 }
 
 def updateProduct(p: Product): Future[List[Int]] = {
-  val deleteOld = namesTable.filter(_.productId === p.id).delete
-  val program   = DBIO.sequence(deleteOld :: saveTranslations(p).toList)
+  val program = namesTable
+    .filter(_.productId === p.id)
+    .delete
+    .andThen(DBIO.sequence(saveTranslations(p).toList))
     .transactionally
   dbConfig.db.run(program)
 }
 
 protected def saveTranslations(p: Product): NonEmptyList[DBIO[Int]] = {
   val save = saveTranslation(p.id)(_)
-  p.names.map(t => save(t))
+  p.names.toNonEmptyList.map(t => save(t))
 }
 
+/**
+  * Create a query to insert or update a given translation in the database.
+  *
+  * @param id The unique ID of the product.
+  * @param t  The translation to be saved.
+  * @return A composable sql query for Slick.
+  */
 protected def saveTranslation(id: ProductId)(t: Translation): DBIO[Int] =
   namesTable.insertOrUpdate((id, t.lang, t.name))
 ```
 
-The last two functions are helpers to enable us to create a load queries which we can compose. They are used in the `saveProduct` and `updateProduct` functions to create a list of queries that are executed as bulk while the call to `transactionally` ensures that they will run within a transaction. When updating a product we first delete all existing translations to allow the removal of existing translations via an update.
+The last two functions are helpers to enable us to create a load queries which we can compose. They are used in the `saveProduct` and `updateProduct` functions to create a list of queries that are executed as bulk while the call to `transactionally` ensures that they will run within a transaction. When updating a product we first delete all existing translations to allow the removal of existing translations via an update. To be able to do so we use the `andThen` helper from Slick.
 The `loadProduct` function simply returns a list of database rows from the needed join. Therefore we need a function which builds a `Product` type out of that.
 
 {caption: "Helper function to create a Product"}
@@ -1566,6 +1577,119 @@ However we will go with option 3 in this case. It has the drawback that you'll h
 
 ### Integration Tests
 
+First we need to configure our test database because we do not want to accidentally wipe a production database. For our case we leave everything as is and just change the database name.
+
+{caption: "Configuration file for integration tests"}
+```text
+api {
+  host = "localhost"
+  port = 49152
+}
+
+database {
+  profile = "slick.jdbc.PostgresProfile$"
+  db {
+    connectionPool = "HikariCP"
+    dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
+    properties {
+      serverName = "localhost"
+      portNumber = "5432"
+      databaseName = "impure_test"
+      user = "impure"
+      password = "secret"
+    }
+    numThreads = 10
+  }
+}
+```
+
+Another thing we should do is provide a test configuration for our logging framework. We use the logback library and Slick will produce a lot of logging output on the `DEBUG` level so we should fix that. It is nice to have logging if you need it but it also clutters up your log files. We create a file `logback-test.xml` in the directory `src/it/resources` which should look like this:
+
+{caption: "Logging configuration for integration tests"}
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>WARN</level>
+    </filter>
+    <encoder>
+      <pattern>%date %highlight(%-5level) %cyan(%logger{0}) - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="async-console" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="console"/>
+    <queueSize>5000</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+  </appender>
+
+  <logger name="com.wegtam.books.pfhais.impure" level="INFO" additivity="false">
+    <appender-ref ref="console"/>
+  </logger>
+
+  <root>
+    <appender-ref ref="console"/>
+  </root>
+</configuration>
+```
+
+Due to the nature of integration tests we want to use production or "production like" settings and environment. But really starting our application or service for each test will be quite cumbersome so we should provide a base class for our tests. In this class we will start our service, migrate our database and provide an opportunity to shut it down properly after testing.
+
+Because we do not want to get into trouble when running an Akka-HTTP on the same port, we first create a helper function which will determine a free port number.
+
+{caption: "Finding a free port number for tests"}
+```scala
+import java.net.ServerSocket
+
+def findAvailablePort(): Int = {
+  val serverSocket = new ServerSocket(0)
+  val freePort     = serverSocket.getLocalPort
+  serverSocket.setReuseAddress(true)
+  serverSocket.close()
+  freePort
+}
+```
+
+The code is quite simple and very useful for such cases. Please not that it is important use `setReuseAddress` because otherwise the found socket will be blocked for a certain amount of time. But now let us continue with our base test class.
+
+{caption: "BaseSpec for integration tests"}
+```scala
+abstract class BaseSpec
+    extends TestKit(
+      ActorSystem(
+        "it-test",
+        ConfigFactory
+          .parseString(s"api.port=${BaseSpec.findAvailablePort()}")
+          .withFallback(ConfigFactory.load())
+      )
+    )
+    with AsyncWordSpecLike
+    with MustMatchers
+    with ScalaCheckPropertyChecks
+    with BeforeAndAfterAll
+    with BeforeAndAfterEach {
+
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
+
+  private val url  = ???
+  private val user = ???
+  private val pass = ???
+  protected val flyway: Flyway = 
+    Flyway.configure().dataSource(url, user, pass).load()
+
+  override protected def afterAll(): Unit =
+    TestKit.shutdownActorSystem(system, FiniteDuration(5, SECONDS))
+
+  override protected def beforeAll(): Unit = {
+    val _ = flyway.migrate()
+  }
+}
+```
+
+As you can see we are using the Akka-Testkit to initialise an actor system. This is useful because there are several helpers available which you might need. We configure the actor system with our free port using the loaded configuration as fallback. Next we globally create an actor materializer which is needed by Akka-HTTP and Akka-Streams. Also we create a globally available Flyway instance to make cleaning and migrating the database easier.
+The base class also implements the `beforeAll` and `afterAll` methods which will be run before and after all tests. They are used to initially migrate the database and to shut down the actor system properly in the end.
+
 ## Testing the pure service
 
 ### Unit Tests
@@ -1579,6 +1703,8 @@ TODO
 # Comparison
 
 TODO
+
+[^10]: http://www.scalacheck.org/
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
