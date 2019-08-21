@@ -432,8 +432,8 @@ def fromDatabase(rows: Seq[(UUID, String, String)]): Option[Product] = {
   po.map(
     p =>
       rows.drop(1).foldLeft(p) { (a, cols) =>
-	val (id, c, n) = cols
-	Translation.fromUnsafe(c)(n).fold(a)(t =>
+        val (id, c, n) = cols
+        Translation.fromUnsafe(c)(n).fold(a)(t =>
           a.copy(names = a.names.add(t))
         )
     }
@@ -619,23 +619,23 @@ path("products") {
     val src = Source.fromPublisher(repo.loadProducts())
     val products: Source[Product, NotUsed] = src
       .collect(
-	cs =>
-	  Product.fromDatabase(Seq(cs)) match {
-	    case Some(p) => p
-	}
+        cs =>
+          Product.fromDatabase(Seq(cs)) match {
+            case Some(p) => p
+        }
       )
       .groupBy(Int.MaxValue, _.id)
       .fold(Option.empty[Product])(
-	(op, x) => op.fold(x.some)(p =>
-	  p.copy(names = p.names ::: x.names).some
-	)
+        (op, x) => op.fold(x.some)(p =>
+          p.copy(names = p.names ::: x.names).some
+        )
       )
       .mergeSubstreams
       .collect(
-	op =>
-	  op match {
-	    case Some(p) => p
-	}
+        op =>
+          op match {
+            case Some(p) => p
+        }
       )
     complete(products)
   }
@@ -730,7 +730,7 @@ For the sake of simplicity we will stick to Flyway for our database migrations. 
 trait DatabaseMigrator[F[_]] {
   def migrate(url: DatabaseUrl,
               user: DatabaseLogin,
-	      pass: DatabasePassword): F[Int]
+              pass: DatabasePassword): F[Int]
 }
 ```
 
@@ -741,11 +741,11 @@ We define a trait which describes the functionality desired by our interpreter a
 final class FlywayDatabaseMigrator extends DatabaseMigrator[IO] {
   override def migrate(url: DatabaseUrl,
                        user: DatabaseLogin,
-		       pass: DatabasePassword): IO[Int] =
+                       pass: DatabasePassword): IO[Int] =
     IO {
       val flyway: Flyway = Flyway.configure()
         .dataSource(url, user, pass)
-	.load()
+        .load()
       flyway.migrate()
     }
 }
@@ -843,9 +843,9 @@ We won't discuss the benefits or drawbacks here but in general I also lean towar
 ```scala
 override def loadProduct(id: ProductId) = 
   sql"""SELECT products.id, names.lang_code, names.name 
-	FROM products
-	JOIN names ON products.id = names.product_id
-	WHERE products.id = $id"""
+        FROM products
+        JOIN names ON products.id = names.product_id
+        WHERE products.id = $id"""
     .query[(ProductId, LanguageCode, ProductName)]
     .to[Seq]
     .transact(tx)
@@ -1233,7 +1233,7 @@ val program = for {
   routes         = productRoutes.routes <+> productsRoutes.routes
   httpApp        = Router("/" -> routes).orNotFound
   server         = BlazeServerBuilder[IO].bindHttp(apiConfig.port,
-		     apiConfig.host).withHttpApp(httpApp)
+                     apiConfig.host).withHttpApp(httpApp)
   fiber          = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
 } yield fiber
 ```
@@ -1247,7 +1247,7 @@ program.attempt.unsafeRunSync match {
     IO {
       println("*** An error occured! ***")
       if (e != null) {
-	println(e.getMessage)
+        println(e.getMessage)
       }
       ExitCode.Error
     }
@@ -1690,6 +1690,237 @@ abstract class BaseSpec
 As you can see we are using the Akka-Testkit to initialise an actor system. This is useful because there are several helpers available which you might need. We configure the actor system with our free port using the loaded configuration as fallback. Next we globally create an actor materializer which is needed by Akka-HTTP and Akka-Streams. Also we create a globally available Flyway instance to make cleaning and migrating the database easier.
 The base class also implements the `beforeAll` and `afterAll` methods which will be run before and after all tests. They are used to initially migrate the database and to shut down the actor system properly in the end.
 
+#### Testing the repository
+
+Now that we our parts in place we can write an integration test for our repository implementation.
+
+I> Please ensure that you have a properly configured database running!
+
+First we need to do some things globally for the test scope.
+
+{caption: "Repository test: global stuff"}
+```scala
+private val dbConfig: DatabaseConfig[JdbcProfile] =
+  DatabaseConfig.forConfig("database", system.settings.config)
+private val repo = new Repository(dbConfig)
+
+override protected def beforeEach(): Unit = {
+  flyway.clean()
+  val _ = flyway.migrate()
+  super.beforeEach()
+}
+
+override protected def afterEach(): Unit = {
+  flyway.clean()
+  super.afterEach()
+}
+
+override protected def afterAll(): Unit = {
+  repo.close()
+  super.afterAll()
+}
+```
+
+We create one `Repository` instance for all our tests here. The downside is that if one test crashes it then the other will be affected too. On the other hand we avoid running into database connection limits and severe code limbo to ensure closing a repository connection after each test no matter the result.
+Also we clean and migrate before each test and clean also after each test. This ensures having a clean environment.
+
+D> However, not cleaning your database between tests might be an even more thorough test. ;-)
+
+Onwards to the test for loading a single product.
+
+{caption: "Repository test: loadProduct"}
+```scala
+"#loadProduct" when {
+  "the ID does not exist" must {
+    "return an empty list of rows" in {
+      val id = UUID.randomUUID
+      for {
+        rows <- repo.loadProduct(id)
+      } yield {
+        rows must be(empty)
+      }
+    }
+  }
+
+  "the ID exists" must {
+    "return a list with all product rows" in {
+      genProduct.sample match {
+        case None => fail("Could not generate data sample!")
+        case Some(p) =>
+          for {
+            _    <- repo.saveProduct(p)
+            rows <- repo.loadProduct(p.id)
+          } yield {
+            Product.fromDatabase(rows) match {
+              case None => fail("No product created from database rows!")
+              case Some(c) =>
+                c.id must be(p.id)
+                c mustEqual p
+            }
+          }
+      }
+    }
+  }
+}
+```
+
+Loading a non existing product must not produce any result and is simple to test if our database is empty. Testing the loading of a real product is not that much more complicated. We use the ScalaCheck generators to create one, save it and load it again. The loaded product must of course be equal to the saved one.
+
+I> You might have noticed that we do not use `forAll` here and thus are testing only one case.
+I> This is due an issue which has yet to be fixed[^23] in ScalaTest.
+
+{caption: "Repository test: loadProducts"}
+```scala
+"#loadProducts" when {
+  "no products exist" must {
+    "return an empty stream" in {
+      val src = Source.fromPublisher(repo.loadProducts())
+      for {
+        ps <- src.runWith(Sink.seq)
+      } yield {
+        ps must be(empty)
+      }
+    }
+  }
+
+  "some products exist" must {
+    "return a stream with all product rows" in {
+      genProducts.sample match {
+        case None => fail("Could not generate data sample!")
+        case Some(ps) =>
+          val expected = ps.flatMap(
+          p => p.names.toNonEmptyList.toList.map(
+            n => (p.id, n.lang, n.name)
+            )
+          )
+          for {
+            _ <- Future.sequence(ps.map(p => repo.saveProduct(p)))
+            src = Source
+              .fromPublisher(repo.loadProducts())
+              // more code omitted here
+            rows <- src.runWith(Sink.seq)
+          } yield {
+            rows must not be (empty)
+            rows.size mustEqual ps.size
+            rows.toList.sorted mustEqual ps.sorted
+          }
+      }
+    }
+  }
+}
+```
+
+Testing the loading of all products if none exit is trivial like the one for a non existing single product. For the case of multiple products we generate a list of them which we save. Afterwards we load them and use the same transformation logic like in the routes to be able to construct proper `Product` instances. One thing you might notice is the explicit sorting which is due to the fact that we want to ensure that our product lists are both sorted before comparing them.
+
+{caption: "Repository test: saveProduct"}
+```scala
+"#saveProduct" when {
+  "the product does not already exist" must {
+    "save the product to the database" in {
+      genProduct.sample match {
+        case None => fail("Could not generate data sample!")
+        case Some(p) =>
+          for {
+            cnts <- repo.saveProduct(p)
+            rows <- repo.loadProduct(p.id)
+          } yield {
+            withClue("Data missing from database!")(
+              cnts.fold(0)(_ + _) must be(p.names.toNonEmptyList.size + 1))
+            Product.fromDatabase(rows) match {
+              case None => fail("No product created from database rows!")
+              case Some(c) =>
+                c.id must be(p.id)
+                c mustEqual p
+            }
+          }
+      }
+    }
+  }
+
+  "the product does already exist" must {
+    "return an error and not change the database" in {
+      (genProduct.sample, genProduct.sample) match {
+        case (Some(a), Some(b)) =>
+          val p = b.copy(id = a.id)
+          for {
+            cnts <- repo.saveProduct(a)
+            nosv <- repo.saveProduct(p).recover {
+              case _ => 0
+            }
+            rows <- repo.loadProduct(a.id)
+          } yield {
+            withClue("Saving a duplicate product must fail!")(nosv must be(0))
+            Product.fromDatabase(rows) match {
+              case None => fail("No product created from database rows!")
+              case Some(c) =>
+                c.id must be(a.id)
+                c mustEqual a
+            }
+          }
+        case _ => fail("Could not create data sample!")
+      }
+    }
+  }
+}
+```
+
+Here we test the saving which in the first case should simply write the appropriate data into the database. If the product already exists however this should not happen. Our database constraints will ensure that this does not happen (or so we hope ;-)). Slick will throw an exception which we catch in the test code using the `recover` method from `Future` to return a zero indicating no affected database rows. In the end we test for this zero and also check if the originally saved product has not been changed.
+
+{caption: "Repository test: updateProduct"}
+```scala
+"#updateProduct" when {
+  "the product does exist" must {
+    "update the database" in {
+      (genProduct.sample, genProduct.sample) match {
+        case (Some(a), Some(b)) =>
+          val p = b.copy(id = a.id)
+          for {
+            cnts <- repo.saveProduct(a)
+            upds <- repo.updateProduct(p)
+            rows <- repo.loadProduct(a.id)
+          } yield {
+            withClue("Already existing product was not created!")(
+              cnts.fold(0)(_ + _) must be(a.names.toNonEmptyList.size + 1)
+            )
+            Product.fromDatabase(rows) match {
+              case None => fail("No product created from database rows!")
+              case Some(c) =>
+                c.id must be(a.id)
+                c mustEqual p
+            }
+          }
+        case _ => fail("Could not create data sample!")
+      }
+    }
+  }
+
+  "the product does not exist" must {
+    "return an error and not change the database" in {
+      genProduct.sample match {
+        case None => fail("Could not generate data sample!")
+        case Some(p) =>
+          for {
+            nosv <- repo.updateProduct(p).recover {
+              case _ => 0
+            }
+            rows <- repo.loadProduct(p.id)
+          } yield {
+            withClue("Updating a not existing product must fail!")
+              (nosv must be(0))
+            withClue("Product must not exist in database!")
+              (rows must be(empty))
+          }
+      }
+    }
+  }
+}
+```
+
+For testing an update we generate two samples, save one to the database, change the id of the other to the one from the first and execute an update. This update should proceed without problems and the data in the database must have been changed correctly.
+If the product does not exist then we use the same `recover` technique like in the `saveProduct` test.
+
+Congratulations, we have made a check mark on our first integration test using a real database using randomly generated data!
+
 ## Testing the pure service
 
 ### Unit Tests
@@ -1729,3 +1960,5 @@ TODO
 [^21]: http://www.scalatest.org/user_guide/selecting_a_style
 
 [^22]: https://rspec.info/
+
+[^23]: https://github.com/scalatest/scalatest/issues/1370
