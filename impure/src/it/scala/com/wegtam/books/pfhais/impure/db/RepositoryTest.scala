@@ -56,36 +56,6 @@ class RepositoryTest extends BaseSpec {
     super.afterAll()
   }
 
-  "#deleteProduct" when {
-    "the ID does not exist" must {
-      "return a 0" in {
-        val id = UUID.randomUUID
-        for {
-          cnt <- repo.deleteProduct(id)
-        } yield {
-          cnt must be(0)
-        }
-      }
-    }
-
-    "the ID exists" must {
-      "delete the product and translations" in {
-        genProduct.sample match {
-          case None => fail("Could not generate data sample!")
-          case Some(p) =>
-            for {
-              _    <- repo.saveProduct(p)
-              cnt  <- repo.deleteProduct(p.id)
-              rows <- repo.loadProduct(p.id)
-            } yield {
-              cnt must be > 1
-              Product.fromDatabase(rows) must be(empty)
-            }
-        }
-      }
-    }
-  }
-
   "#loadProduct" when {
     "the ID does not exist" must {
       "return an empty list of rows" in {

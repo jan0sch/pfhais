@@ -65,18 +65,6 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
   def close(): Unit = dbConfig.db.close
 
   /**
-    * Delete the product with the given id from the database.
-    *
-    * @param id The id of the product to be deleted.
-    * @return A future holding the number of affected database rows.
-    */
-  def deleteProduct(id: ProductId): Future[Int] = {
-    val program =
-      namesTable.filter(_.productId === id).delete.andThen(productsTable.filter(_.id === id).delete)
-    dbConfig.db.run(program)
-  }
-
-  /**
     * Load a product from the database repository.
     *
     * @param id The unique ID of the product.
@@ -124,8 +112,11 @@ final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
     * @return A future holding a list of affected database rows.
     */
   def updateProduct(p: Product): Future[List[Int]] = {
-    val deleteOld = namesTable.filter(_.productId === p.id).delete
-    val program   = DBIO.sequence(deleteOld :: saveTranslations(p).toList).transactionally
+    val program = namesTable
+      .filter(_.productId === p.id)
+      .delete
+      .andThen(DBIO.sequence(saveTranslations(p).toList))
+      .transactionally
     dbConfig.db.run(program)
   }
 
