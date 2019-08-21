@@ -224,7 +224,7 @@ class RepositoryTest extends BaseSpec {
               }
               rows <- repo.loadProduct(p.id)
             } yield {
-              withClue("Updating a not existing product must fail!")(nosv must be(1))
+              withClue("Updating a not existing product must fail!")(nosv must be(0))
               withClue("Product must not exist in database!")(rows must be(empty))
             }
         }
