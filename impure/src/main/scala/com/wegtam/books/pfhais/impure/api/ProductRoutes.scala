@@ -22,11 +22,13 @@ import scala.concurrent.{ ExecutionContext, Future }
 final class ProductRoutes(repo: Repository)(implicit ec: ExecutionContext) {
   val routes = path("product" / JavaUUID) { id: ProductId =>
     get {
-      complete {
-        for {
-          rows <- repo.loadProduct(id)
-          prod <- Future { Product.fromDatabase(rows) }
-        } yield prod
+      rejectEmptyResponse {
+        complete {
+          for {
+            rows <- repo.loadProduct(id)
+            prod <- Future { Product.fromDatabase(rows) }
+          } yield prod
+        }
       }
     } ~ put {
       entity(as[Product]) { p =>
