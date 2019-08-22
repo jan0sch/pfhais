@@ -490,7 +490,7 @@ Defining the routes is pretty simple if you're used to the Akka-HTTP routing DSL
 
 {caption: "Basic routes with Akka-HTTP"}
 ```scala
-val route = path("product" / ProductIdSegment) { id: ProductId =>
+val route = path("product" / JavaUUID) { id: ProductId =>
   get {
     ???
   } ~ put {
@@ -521,7 +521,7 @@ The code will fire up a server using the defined routes and hostname and port fr
 
 {caption: "Returning a single product"}
 ```scala
-path("product" / ProductIdSegment) { id: ProductId =>
+path("product" / JavaUUID) { id: ProductId =>
   get {
     complete {
       for {
@@ -537,7 +537,7 @@ We load the raw product data from the repository and convert it into a proper pr
 
 {caption: "Updating a single product"}
 ```scala
-val route = path("product" / ProductIdSegment) { id: ProductId =>
+val route = path("product" / JavaUUID) { id: ProductId =>
   put {
     entity(as[Product]) { p =>
       complete {

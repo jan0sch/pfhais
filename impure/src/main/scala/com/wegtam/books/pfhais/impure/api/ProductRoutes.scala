@@ -25,11 +25,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 final class ProductRoutes(repo: Repository)(implicit ec: ExecutionContext) {
-  // Custom path matcher to extract product ids from the akka http path.
-  val ProductIdSegment: PathMatcher1[ProductId] =
-    PathMatcher("^$".r).flatMap(s => Try(UUID.fromString(s)).toOption)
-
-  val routes = path("product" / ProductIdSegment) { id: ProductId =>
+  val routes = path("product" / JavaUUID) { id: ProductId =>
     get {
       complete {
         for {
