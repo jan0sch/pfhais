@@ -11,18 +11,13 @@
 
 package com.wegtam.books.pfhais.impure.api
 
-import java.util.UUID
-
-import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
-import cats.implicits._
 import com.wegtam.books.pfhais.impure.db._
 import com.wegtam.books.pfhais.impure.models._
 import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
 import eu.timepit.refined.auto._
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Try
 
 final class ProductRoutes(repo: Repository)(implicit ec: ExecutionContext) {
   val routes = path("product" / JavaUUID) { id: ProductId =>
