@@ -53,6 +53,10 @@ abstract class BaseUseCaseSpec
 
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
+  final val baseUrl: String = s"""http://${system.settings.config
+    .getString("api.host")}:${system.settings.config
+    .getInt("api.port")}"""
+
   private val url = "jdbc:postgresql://" +
     system.settings.config.getString("database.db.properties.serverName") +
     ":" + system.settings.config
