@@ -1921,6 +1921,200 @@ If the product does not exist then we use the same `recover` technique like in t
 
 Congratulations, we have made a check mark on our first integration test using a real database using randomly generated data!
 
+#### Testing the routes
+
+Regarding the route testing there several options as always. For this one we will define some use cases and then develop some more helper code which will allow us to fire up our routes and do real HTTP requests and then check the database and the responses. We build upon our `BaseSpec` class and call it `BaseUseCaseSpec`. In it we will do some more things like define a global base URL which can be used from the tests to make correct requests. Additionally we will write a small actor which simply starts an Akka-HTTP server.
+
+{caption: "An actor for starting our routes"}
+```scala
+final class BaseUseCaseActor(repo: Repository, mat: ActorMaterializer)
+  extends Actor with ActorLogging {
+  import context.dispatcher
+
+  implicit val system: ActorSystem             = context.system
+  implicit val materializer: ActorMaterializer = mat
+
+  override def receive: Receive = {
+    case BaseUseCaseActorCmds.Start =>
+      val productRoutes  = new ProductRoutes(repo)
+      val productsRoutes = new ProductsRoutes(repo)
+      val routes         = productRoutes.routes ~ productsRoutes.routes
+      val host           = context.system.settings.config.getString("api.host")
+      val port           = context.system.settings.config.getInt("api.port")
+      val _              = Http().bindAndHandle(routes, host, port)
+    case BaseUseCaseActorCmds.Stop =>
+      context.stop(self)
+  }
+}
+
+object BaseUseCaseActor {
+  def props(repo: Repository, mat: ActorMaterializer): Props =
+    Props(new BaseUseCaseActor(repo, mat))
+
+  sealed trait BaseUseCaseActorCmds
+
+  object BaseUseCaseActorCmds {
+    case object Start extends BaseUseCaseActorCmds
+    case object Stop extends BaseUseCaseActorCmds
+  }
+}
+```
+
+As you can see, the actor is quite simple. Upon receiving the `Start` command it will initialise the routes and start an Akka-HTTP server. To be able to do this it needs the database repository and an actor materializer which are passed via the constructor. Regarding the `BaseUseCaseSpec` we will concentrate on the code that differs from the base class.
+
+{caption: "Base class for use case testing"}
+```scala
+abstract class BaseUseCaseSpec
+  extends TestKit(
+    ActorSystem(
+      "it-test",
+      ConfigFactory
+        .parseString(s"api.port=${BaseUseCaseSpec.findAvailablePort()}")
+        .withFallback(ConfigFactory.load())
+    )
+  )
+  with AsyncWordSpecLike
+  with MustMatchers
+  with ScalaCheckPropertyChecks
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach {
+  // ...
+  final val baseUrl: String = s"""http://${system.settings.config
+    .getString("api.host")}:${system.settings.config
+    .getInt("api.port")}"""
+
+  protected val dbConfig: DatabaseConfig[JdbcProfile] =
+    DatabaseConfig.forConfig("database", system.settings.config)
+  protected val repo = new Repository(dbConfig)
+
+  override protected def beforeAll(): Unit = {
+    val _ = flyway.migrate()
+    val a = system.actorOf(BaseUseCaseActor.props(repo, materializer))
+    a ! BaseUseCaseActorCmds.Start
+  }
+  // ...
+}
+```
+
+Here we create our base URL and our database repository while we use the `beforeAll` function to initialise our actor before any test is run. Please note that this has the same drawback like sharing the repository across tests: If a test crashes your service then the others will be affected too.
+But let's write a test for our first use case: loading a product!
+
+Again we will use the `beforeEach` and `afterEach` helpers to clean up our database. Now let's take a look at a test for loading a product that does not exist.
+
+{caption: "Use case: load a non existing product"}
+```scala
+"Loading a Product by ID" when {
+  "the ID does not exist" must {
+    val expectedStatus = StatusCodes.NotFound
+
+    s"return $expectedStatus" in {
+      val id = UUID.randomUUID
+
+      for {
+        resp <- http.singleRequest(
+                  HttpRequest(
+                    method = HttpMethods.GET,
+                    uri = s"$baseUrl/product/$id",
+                    headers = Seq(),
+                    entity = HttpEntity(
+                      contentType = ContentTypes.`application/json`,
+                      data = ByteString("")
+                    )
+                  )
+                )
+      } yield {
+        resp.status must be(expectedStatus)
+      }
+    }
+  }
+}
+```
+
+Maybe a bit verbose but we do a real HTTP request here and check the response status code. So how does it look if we run it?
+
+```text
+[info] LoadProduct:
+[info] Loading a Product by ID
+[info]   when the ID does not exist
+[info]   - must return 404 Not Found *** FAILED ***
+[info]     200 OK was not equal to 404 Not Found (LoadProduct.scala:88)
+```
+
+That is not cool. What happened? Let's take a look at the code.
+
+```scala
+get {
+  complete {
+    for {
+      rows <- repo.loadProduct(id)
+      prod <- Future { Product.fromDatabase(rows) }
+    } yield prod
+  }
+}
+```
+
+Well, no wonder - we are simply returning the output of our `fromDatabase` helper function which may be empty. This will result in an HTTP status code 200 with an empty body. If you don't believe me just fire up the service and do a request by hand via curl or httpie.
+
+Q> But how do we fix it?
+
+Luckily for us Akka-HTTP has us covered with the `rejectEmptyResponse` directive which we can use.
+
+```scala
+get {
+  rejectEmptyResponse {
+    complete {
+      for {
+        rows <- repo.loadProduct(id)
+        prod <- Future { Product.fromDatabase(rows) }
+      } yield prod
+    }
+  }
+}
+```
+
+Cool, it seems we're set with this one. So onward to testing to load an existing product via the API.
+
+{caption: "Use case: load a product"}
+```scala
+"Loading a Product by ID" when {
+  "the ID does exist" must {
+    val expectedStatus = StatusCodes.OK
+
+    s"return $expectedStatus and the Product" in {
+      genProduct.sample match {
+        case None => fail("Could not generate data sample!")
+        case Some(p) =>
+          for {
+            _    <- repo.saveProduct(p)
+            rows <- repo.loadProduct(p.id)
+            resp <- http.singleRequest(
+                      HttpRequest(
+                        method = HttpMethods.GET,
+                        uri = s"$baseUrl/product/${p.id}",
+                        headers = Seq(),
+                        entity = HttpEntity(
+                          contentType = ContentTypes.`application/json`,
+                          data = ByteString("")
+                        )
+                      )
+                    )
+            body <- resp.entity.dataBytes.runFold(ByteString(""))(_ ++ _)
+          } yield {
+            withClue("Seeding product data failed!")(rows must not be(empty))
+            resp.status must be(expectedStatus)
+            decode[Product](body.utf8String) match {
+              case Left(e)  => fail(s"Could not decode response: $e")
+              case Right(d) => d mustEqual p
+            }
+          }
+      }
+    }
+  }
+}
+```
+
+Here we simple save our generated product into the database before executing our request. We also check if the product has actually been written to be on the safe side. Additionally we also check if the decoded response body matches the product we expect. In contrast to our first test this one works instantly so not all hope is lost for our coding skills. ;-)
+
 ## Testing the pure service
 
 ### Unit Tests
