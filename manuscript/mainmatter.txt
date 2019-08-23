@@ -2280,7 +2280,45 @@ s"return $expectedStatus and a list with all products" in {
 }
 ```
 
-This one is also straight forward: We save our generated list of products to the database and query the API which must return a "200 OK" status code and a correct list of products in JSON format.
+This one is also straight forward: We save our generated list of products to the database and query the API which must return a "200 OK" status code and a correct list of products in JSON format. Looks like we have one more use case to tackle: Updating a product via the API.
+
+{caption: "Use case: update a product (1)"}
+```scala
+val expectedStatus = StatusCodes.BadRequest
+
+s"return $expectedStatus" in {
+  genProduct.sample match {
+    case None => fail("Could not generate data sample!")
+    case Some(p) =>
+      for {
+        _    <- repo.saveProduct(p)
+        rows <- repo.loadProduct(p.id)
+        resp <- http.singleRequest(
+          HttpRequest(
+            method = HttpMethods.PUT,
+            uri = s"$baseUrl/product/${p.id}",
+            headers = Seq(),
+            entity = HttpEntity(
+              contentType = ContentTypes.`application/json`,
+              data = ByteString(scala.util.Random.alphanumeric.take(256).mkString)
+            )
+          )
+        )
+        rows2 <- repo.loadProduct(p.id)
+      } yield {
+        withClue("Seeding product data failed!")(rows must not be(empty))
+        resp.status must be(expectedStatus)
+        Product.fromDatabase(rows2) match {
+          case None    =>
+            fail("Seeding product was not saved to database!")
+          case Some(s) =>
+            withClue("Existing product must not be changed!")(s mustEqual p)
+        }
+      }
+  }
+```
+
+First we test with garbage JSON in the request. Before doing the request we actually create a product to avoid getting a "404 Not Found" error. Afterwards we check for the expected "400 Bad Request" status code and verify that our product has not been updated.
 
 ## Testing the pure service
 
