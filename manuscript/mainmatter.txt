@@ -2114,6 +2114,108 @@ Cool, it seems we're set with this one. So onward to testing to load an existing
 ```
 
 Here we simple save our generated product into the database before executing our request. We also check if the product has actually been written to be on the safe side. Additionally we also check if the decoded response body matches the product we expect. In contrast to our first test this one works instantly so not all hope is lost for our coding skills. ;-)
+We'll continue with the use case of saving (or creating) a product via the API. This time we will make the code snippets shorter.
+
+{caption: "Use case: save a product (1)"}
+```scala
+val expectedStatus = StatusCodes.BadRequest
+
+s"return $expectedStatus" in {
+  for {
+    resp <- http.singleRequest(
+      HttpRequest(
+        method = HttpMethods.POST,
+        uri = s"$baseUrl/products",
+        headers = Seq(),
+        entity = HttpEntity(
+          contentType = ContentTypes.`application/json`,
+          data = ByteString(
+            scala.util.Random.alphanumeric.take(256).mkString
+          )
+        )
+      )
+    )
+  } yield {
+    resp.status must be(expectedStatus)
+  }
+}
+```
+
+Here we test posting garbage instead of valid JSON to the endpoint which must result in a "400 Bad Request" returned to us.
+
+{caption: "Use case: save a product (2)"}
+```scala
+val expectedStatus = StatusCodes.InternalServerError
+
+s"return $expectedStatus and not save the Product" in {
+  (genProduct.sample, genProduct.sample) match {
+    case (Some(a), Some(b)) =>
+      val p = b.copy(id = a.id)
+      for {
+        _    <- repo.saveProduct(a)
+        rows <- repo.loadProduct(a.id)
+        resp <- http.singleRequest(
+          HttpRequest(
+            method = HttpMethods.POST,
+            uri = s"$baseUrl/products",
+            headers = Seq(),
+            entity = HttpEntity(
+              contentType = ContentTypes.`application/json`,
+              data = ByteString(p.asJson.noSpaces)
+            )
+          )
+        )
+        rows2 <- repo.loadProduct(a.id)
+      } yield {
+        withClue("Seeding product data failed!")(rows must not be(empty))
+        resp.status must be(expectedStatus)
+        Product.fromDatabase(rows2) match {
+          case None    =>
+            fail("Seeding product was not saved to database!")
+          case Some(s) =>
+            withClue("Existing product must not be changed!")(s mustEqual a)
+        }
+      }
+    case _ => fail("Could not generate data sample!")
+  }
+}
+```
+
+This one executes it bit more but basically we try to save (or better create) an already existing product. Therefore the constraints of our database should product an error which in turn must return a "500 Internal Server Error" to use. Additionally we verify that the existing product in the database was not changed.
+
+{caption: "Use case: save a product (3)"}
+```scala
+val expectedStatus = StatusCodes.OK
+
+s"return $expectedStatus and save the Product" in {
+  genProduct.sample match {
+    case None => fail("Could not generate data sample!")
+    case Some(p) =>
+      for {
+        resp <- http.singleRequest(
+          HttpRequest(
+            method = HttpMethods.POST,
+            uri = s"$baseUrl/products",
+            headers = Seq(),
+            entity = HttpEntity(
+              contentType = ContentTypes.`application/json`,
+              data = ByteString(p.asJson.noSpaces)
+            )
+          )
+        )
+        rows <- repo.loadProduct(p.id)
+      } yield {
+        resp.status must be(expectedStatus)
+        Product.fromDatabase(rows) match {
+          case None    => fail("Product was not saved to database!")
+          case Some(s) => s mustEqual p
+        }
+      }
+  }
+}
+```
+
+Last but not least we are testing to save a not already existing valid product into the database. Again we check for the expected status code of "200 OK" and verify that the product saved into the database is the one we sent to the API.
 
 ## Testing the pure service
 
