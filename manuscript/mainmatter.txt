@@ -2215,7 +2215,72 @@ s"return $expectedStatus and save the Product" in {
 }
 ```
 
-Last but not least we are testing to save a not already existing valid product into the database. Again we check for the expected status code of "200 OK" and verify that the product saved into the database is the one we sent to the API.
+Last but not least we are testing to save a not already existing valid product into the database. Again we check for the expected status code of "200 OK" and verify that the product saved into the database is the one we sent to the API. Let's move on to testing the loading of all products now.
+
+{caption: "Use case: load all products (1)"}
+```scala
+val expectedStatus = StatusCodes.OK
+
+s"return $expectedStatus and an empty list" in {
+  for {
+    resp <- http.singleRequest(
+              HttpRequest(
+                method = HttpMethods.GET,
+                uri = s"$baseUrl/products",
+                headers = Seq(),
+                entity = HttpEntity(
+                  contentType = ContentTypes.`application/json`,
+                  data = ByteString("")
+                )
+              )
+            )
+    body <- resp.entity.dataBytes.runFold(ByteString(""))(_ ++ _)
+  } yield {
+    resp.status must be(expectedStatus)
+    decode[List[Product]](body.utf8String) match {
+      case Left(e)  => fail(s"Could not decode response: $e")
+      case Right(d) => d must be(empty)
+    }
+  }
+}
+```
+
+Our first test case is loading all products if no product exists so we expect an empty list here and the appropriate status code.
+
+{caption: "Use case: load all products (2)"}
+```scala
+val expectedStatus = StatusCodes.OK
+
+s"return $expectedStatus and a list with all products" in {
+  genProducts.sample match {
+    case None => fail("Could not generate data sample!")
+    case Some(ps) =>
+      for {
+        _    <- Future.sequence(ps.map(p => repo.saveProduct(p)))
+        resp <- http.singleRequest(
+                  HttpRequest(
+                    method = HttpMethods.GET,
+                    uri = s"$baseUrl/products",
+                    headers = Seq(),
+                    entity = HttpEntity(
+                      contentType = ContentTypes.`application/json`,
+                      data = ByteString("")
+                    )
+                  )
+                )
+        body <- resp.entity.dataBytes.runFold(ByteString(""))(_ ++ _)
+      } yield {
+        resp.status must be(expectedStatus)
+        decode[List[Product]](body.utf8String) match {
+          case Left(e)  => fail(s"Could not decode response: $e")
+          case Right(d) => d.sorted mustEqual ps.sorted
+        }
+      }
+  }
+}
+```
+
+This one is also straight forward: We save our generated list of products to the database and query the API which must return a "200 OK" status code and a correct list of products in JSON format.
 
 ## Testing the pure service
 
