@@ -38,11 +38,10 @@ object TypeGenerators {
   val genTranslation: Gen[Translation] = for {
     c <- genLanguageCode
     n <- genProductName
-  } yield
-    Translation(
-      lang = c,
-      name = n
-    )
+  } yield Translation(
+    lang = c,
+    name = n
+  )
 
   implicit val arbitraryTranslation: Arbitrary[Translation] = Arbitrary(genTranslation)
 
@@ -59,11 +58,10 @@ object TypeGenerators {
   val genProduct: Gen[Product] = for {
     id <- genProductId
     ts <- genNonEmptyTranslationList
-  } yield
-    Product(
-      id = id,
-      names = ts
-    )
+  } yield Product(
+    id = id,
+    names = ts
+  )
 
   implicit val arbitraryProduct: Arbitrary[Product] = Arbitrary(genProduct)
 

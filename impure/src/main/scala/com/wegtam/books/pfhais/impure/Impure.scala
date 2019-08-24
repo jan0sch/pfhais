@@ -39,9 +39,9 @@ object Impure {
     implicit val ec: ExecutionContext   = system.dispatcher
 
     val url = "jdbc:postgresql://" +
-    system.settings.config.getString("database.db.properties.serverName") +
-    ":" + system.settings.config.getString("database.db.properties.portNumber") +
-    "/" + system.settings.config.getString("database.db.properties.databaseName")
+      system.settings.config.getString("database.db.properties.serverName") +
+      ":" + system.settings.config.getString("database.db.properties.portNumber") +
+      "/" + system.settings.config.getString("database.db.properties.databaseName")
     val user           = system.settings.config.getString("database.db.properties.user")
     val pass           = system.settings.config.getString("database.db.properties.password")
     val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()

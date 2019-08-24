@@ -35,7 +35,7 @@ final class ProductsRoutes(repo: Repository)(implicit ec: ExecutionContext) {
           cs =>
             Product.fromDatabase(Seq(cs)) match {
               case Some(p) => p
-          }
+            }
         )
         .groupBy(Int.MaxValue, _.id)
         .fold(Option.empty[Product])(
@@ -46,7 +46,7 @@ final class ProductsRoutes(repo: Repository)(implicit ec: ExecutionContext) {
           op =>
             op match {
               case Some(p) => p
-          }
+            }
         )
       complete(products)
     } ~

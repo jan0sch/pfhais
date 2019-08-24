@@ -50,7 +50,7 @@ object Product {
         rows.drop(1).foldLeft(p) { (a, cols) =>
           val (id, c, n) = cols
           Translation.fromUnsafe(c)(n).fold(a)(t => a.copy(names = a.names.add(t)))
-      }
+        }
     )
   }
 
