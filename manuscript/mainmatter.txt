@@ -2318,7 +2318,76 @@ s"return $expectedStatus" in {
   }
 ```
 
-First we test with garbage JSON in the request. Before doing the request we actually create a product to avoid getting a "404 Not Found" error. Afterwards we check for the expected "400 Bad Request" status code and verify that our product has not been updated.
+First we test with garbage JSON in the request. Before doing the request we actually create a product to avoid getting an error caused by a possibly missing product. Afterwards we check for the expected "400 Bad Request" status code and verify that our product has not been updated.
+
+{caption: "Use case: update product (2)"}
+```scala
+val expectedStatus = StatusCodes.OK
+
+s"return $expectedStatus and update the Product" in {
+  (genProduct.sample, genProduct.sample) match {
+    case (Some(a), Some(b)) =>
+      val p = b.copy(id = a.id)
+      for {
+        _    <- repo.saveProduct(a)
+        rows <- repo.loadProduct(a.id)
+        resp <- http.singleRequest(
+          HttpRequest(
+            method = HttpMethods.PUT,
+            uri = s"$baseUrl/product/${p.id}",
+            headers = Seq(),
+            entity = HttpEntity(
+              contentType = ContentTypes.`application/json`,
+              data = ByteString(p.asJson.noSpaces)
+            )
+          )
+        )
+        rows2 <- repo.loadProduct(p.id)
+      } yield {
+        withClue("Seeding product data failed!")(rows must not be(empty))
+        resp.status must be(expectedStatus)
+        Product.fromDatabase(rows2) match {
+          case None    => fail("Seeding product was not saved to database!")
+          case Some(s) => s mustEqual p
+        }
+      }
+    case _ => fail("Could not generate data sample!")
+  }
+}
+```
+
+Next we test updating an existing product using valid JSON. We check the status code and if the product has been correctly updated within the database.
+
+{caption: "Use case: update product (3)"}
+```scala
+val expectedStatus = StatusCodes.InternalServerError
+
+s"return $expectedStatus" in {
+  genProduct.sample match {
+    case None => fail("Could not generate data sample!")
+    case Some(p) =>
+      for {
+        resp <- http.singleRequest(
+          HttpRequest(
+            method = HttpMethods.PUT,
+            uri = s"$baseUrl/product/${p.id}",
+            headers = Seq(),
+            entity = HttpEntity(
+              contentType = ContentTypes.`application/json`,
+              data = ByteString(p.asJson.noSpaces)
+            )
+          )
+        )
+        rows <- repo.loadProduct(p.id)
+      } yield {
+        resp.status must be(expectedStatus)
+        rows must be(empty)
+      }
+  }
+}
+```
+
+Finally we test updating a non existing product which should produce the expected status code and not save into the database.
 
 ## Testing the pure service
 
