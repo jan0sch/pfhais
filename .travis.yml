@@ -21,3 +21,6 @@ before_script:
 script:
   - cd ${TEST_DIR} && sbt clean coverage test it:test coverageReport
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
