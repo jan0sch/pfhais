@@ -1567,8 +1567,8 @@ We simply create our instances from our routing classes and construct our global
 Using option 1 is tempting but think about it some more. While the benefit is that we can use our actual implementation and just have to fire up an in-memory database (for example h2), there are also some drawbacks:
 
 1. You have to handle evolutions for the in-memory database.
-2. You're evolutions have to be completely portable SQL (read *ANSI SQL*). Otherwise you'll have to write each of your evolutions scripts two times (one for production, one for testing).
-3. You're code has to be database agnostic. This sounds easier than it is. Even the tools you're using may use database specific features under the hood.
+2. Your evolutions have to be completely portable SQL (read *ANSI SQL*). Otherwise you'll have to write each of your evolutions scripts two times (one for production, one for testing).
+3. Your code has to be database agnostic. This sounds easier than it is. Even the tools you're using may use database specific features under the hood.
 4. Several features are simply not implemented in some databases. Think of things like cascading deletion via foreign keys.
 
 Taking option 2 is a valid choice but it will result in more code. Also you must pay close attention to the "test repository" implementation to avoid introducing bugs there. Going for the most simple approach is usually feasible. Think of a simple test repository implementation that will just return hard coded values or values passed to it via constructor.
