@@ -19,5 +19,5 @@ before_script:
   - psql -c "CREATE DATABASE pure_test WITH OWNER pure;" -U postgres
 
 script:
-  - cd ${TEST_DIR} && sbt clean test it:test
+  - cd ${TEST_DIR} && sbt clean coverage test it:test coverageReport
 
