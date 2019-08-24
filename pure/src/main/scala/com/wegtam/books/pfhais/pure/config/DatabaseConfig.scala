@@ -25,10 +25,12 @@ import pureconfig.generic.semiauto._
   * @param user   The username for the database connection.
   * @param pass   The password for the database connection.
   */
-final case class DatabaseConfig(driver: NonEmptyString,
-                                url: DatabaseUrl,
-                                user: DatabaseLogin,
-                                pass: DatabasePassword)
+final case class DatabaseConfig(
+    driver: NonEmptyString,
+    url: DatabaseUrl,
+    user: DatabaseLogin,
+    pass: DatabasePassword
+)
 
 object DatabaseConfig {
 
