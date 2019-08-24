@@ -18,3 +18,6 @@ This book uses the Creative Commons Attribution ShareAlike 4.0 International
 CC0 which means you can use them without restriction. 
 Excerpts from libraries maintain their license.
 
+## Code Coverage ##
+
+[![codecov](https://codecov.io/gh/jan0sch/pfhais/branch/master/graphs/sunburst.svg)](https://codecov.io/gh/jan0sch/pfhais)
