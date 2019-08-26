@@ -2387,7 +2387,10 @@ s"return $expectedStatus" in {
 }
 ```
 
-Finally we test updating a non existing product which should produce the expected status code and not save into the database.
+Finally we test updating a non existing product which should produce the expected status code and not save into the database. Wow, it seems we done for good with our impure implementation. Well except for some benchmarking but let's save that for later.
+If we look onto our test code coverage (which is a metric that you should use) then things look pretty good. We are missing some parts but in general we should have things covered.
+
+I> Regarding the "optimal" code coverage metric... I won't give any advice here. With time you'll develop a good sense for these things and it will vary between projects depending on what you do.
 
 ## Testing the pure service
 
