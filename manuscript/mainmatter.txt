@@ -2394,15 +2394,33 @@ I> Regarding the "optimal" code coverage metric... I won't give any advice here.
 
 ## Testing the pure service
 
+TODO
+
 ### Unit Tests
 
+TODO
+
 ### Integration Tests
+
+TODO
 
 # Adding benchmarks
 
 TODO
 
 # Comparison
+
+TODO
+
+# Documenting your API
+
+TODO
+
+## The lay of the land
+
+TODO
+
+## Using types to describe an API
 
 TODO
 
