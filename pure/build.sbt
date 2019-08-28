@@ -32,6 +32,7 @@ lazy val pure =
 	library.http4sBlazeServer,
 	library.http4sCirce,
 	library.http4sDsl,
+	library.kittens,
         library.logback,
 	library.postgresql,
 	library.pureConfig,
@@ -61,6 +62,7 @@ lazy val library =
       val doobie       = "0.7.0"
       val flyway       = "6.0.0"
       val http4s       = "0.20.9"
+      val kittens      = "1.2.1"
       val logback      = "1.2.3"
       val postgresql   = "42.2.6"
       val pureConfig   = "0.11.1"
@@ -83,6 +85,7 @@ lazy val library =
     val http4sBlazeClient = "org.http4s"             %% "http4s-blaze-client"  % Version.http4s
     val http4sCirce       = "org.http4s"             %% "http4s-circe"         % Version.http4s
     val http4sDsl         = "org.http4s"             %% "http4s-dsl"           % Version.http4s
+    val kittens           = "org.typelevel"          %% "kittens"              % Version.kittens
     val logback           = "ch.qos.logback"         %  "logback-classic"      % Version.logback
     val postgresql        = "org.postgresql"         %  "postgresql"           % Version.postgresql
     val pureConfig        = "com.github.pureconfig"  %% "pureconfig"           % Version.pureConfig
