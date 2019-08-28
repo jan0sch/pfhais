@@ -11,7 +11,8 @@
 
 package com.wegtam.books.pfhais.pure.models
 
-import cats.data.NonEmptyList
+import cats.Order
+import cats.data.NonEmptySet
 import cats.implicits._
 import eu.timepit.refined.auto._
 import io.circe._
@@ -23,13 +24,17 @@ import io.circe.generic.semiauto._
   * @param id    The unique ID of the product.
   * @param names A list of translations of the product name.
   */
-final case class Product(id: ProductId, names: NonEmptyList[Translation])
+final case class Product(id: ProductId, names: NonEmptySet[Translation])
 
 object Product {
 
   implicit val decode: Decoder[Product] = deriveDecoder[Product]
 
   implicit val encode: Encoder[Product] = deriveEncoder[Product]
+
+  implicit val order: Order[Product] = new Order[Product] {
+    def compare(x: Product, y: Product): Int = x.id.compare(y.id)
+  }
 
   /**
     * Try to create a Product from the given list of database rows.
@@ -41,13 +46,13 @@ object Product {
     val po = for {
       (id, c, n) <- rows.headOption
       t = Translation(lang = c, name = n)
-      p <- Product(id = id, names = NonEmptyList.one(t)).some
+      p <- Product(id = id, names = NonEmptySet.one(t)).some
     } yield p
     po.map(
       p =>
         rows.drop(1).foldLeft(p) { (a, cols) =>
           val (id, c, n) = cols
-          a.copy(names = a.names :+ Translation(lang = c, name = n))
+          a.copy(names = a.names.add(Translation(lang = c, name = n)))
         }
     )
   }

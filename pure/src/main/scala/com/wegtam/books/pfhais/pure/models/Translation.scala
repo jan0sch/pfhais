@@ -11,6 +11,8 @@
 
 package com.wegtam.books.pfhais.pure.models
 
+import cats._
+import cats.derived
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.refined._
@@ -28,5 +30,10 @@ object Translation {
   implicit val decode: Decoder[Translation] = deriveDecoder[Translation]
 
   implicit val encode: Encoder[Translation] = deriveEncoder[Translation]
+
+  implicit val order: Order[Translation] = {
+    import derived.auto.order._
+    derived.semi.order[Translation]
+  }
 
 }

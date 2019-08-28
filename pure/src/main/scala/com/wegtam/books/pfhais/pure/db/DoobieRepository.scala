@@ -66,7 +66,7 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     */
   override def saveProduct(p: Product): F[Int] = {
     val namesSql    = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
-    val namesValues = p.names.map(t => (p.id, t.lang, t.name))
+    val namesValues = p.names.toNonEmptyList.map(t => (p.id, t.lang, t.name))
     val program = for {
       pi <- sql"INSERT INTO products (id) VALUES(${p.id})".update.run
       ni <- Update[(ProductId, LanguageCode, ProductName)](namesSql).updateMany(namesValues)
@@ -82,7 +82,7 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     */
   override def updateProduct(p: Product): F[Int] = {
     val namesSql    = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
-    val namesValues = p.names.map(t => (p.id, t.lang, t.name))
+    val namesValues = p.names.toNonEmptyList.map(t => (p.id, t.lang, t.name))
     val program = for {
       dl <- sql"DELETE FROM names WHERE product_id = ${p.id}".update.run
       ts <- Update[(ProductId, LanguageCode, ProductName)](namesSql).updateMany(namesValues)

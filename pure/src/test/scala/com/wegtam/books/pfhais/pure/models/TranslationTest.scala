@@ -11,19 +11,20 @@
 
 package com.wegtam.books.pfhais.pure.models
 
-import cats.implicits._
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.pure.models.TypeGenerators._
+import eu.timepit.refined.api._
 import io.circe.parser._
+import io.circe.refined._
 import io.circe.syntax._
 
-class ProductTest extends BaseSpec {
-  "Product" when {
+class TranslationTest extends BaseSpec {
+  "Translation" when {
     "decoding from JSON" when {
       "JSON format is invalid" must {
         "return an error" in {
           forAll("input") { s: String =>
-            decode[Product](s).isLeft must be(true)
+            decode[Translation](s).isLeft must be(true)
           }
         }
       }
@@ -31,22 +32,29 @@ class ProductTest extends BaseSpec {
       "JSON format is valid" when {
         "data is invalid" must {
           "return an error" in {
-            forAll("id", "names") { (id: String, ns: List[String]) =>
-              val json = """{"id":""" + id.asJson.noSpaces + ""","names":""" + ns.asJson.noSpaces + """}"""
-              decode[Product](json).isLeft must be(true)
+            forAll("lang", "name") { (l: String, n: String) =>
+              whenever(
+                RefType
+                  .applyRef[LanguageCode](l)
+                  .toOption
+                  .isEmpty || RefType.applyRef[ProductName](n).toOption.isEmpty
+              ) {
+                val json = """{"lang":""" + l.asJson.noSpaces + ""","name":""" + n.asJson.noSpaces + """}"""
+                decode[Translation](json).isLeft must be(true)
+              }
             }
           }
         }
 
         "data is valid" must {
           "return the correct types" in {
-            forAll("input") { i: Product =>
+            forAll("input") { i: Translation =>
               val json = s"""{
-                |"id": ${i.id.asJson.noSpaces},
-                |"names": ${i.names.asJson.noSpaces}
+                |"lang": ${i.lang.asJson.noSpaces},
+                |"name": ${i.name.asJson.noSpaces}
                 |}""".stripMargin
               withClue(s"Unable to decode JSON: $json") {
-                decode[Product](json) match {
+                decode[Translation](json) match {
                   case Left(e)  => fail(e.getMessage)
                   case Right(v) => v must be(i)
                 }
@@ -59,38 +67,19 @@ class ProductTest extends BaseSpec {
 
     "encoding to JSON" must {
       "return correct JSON" in {
-        forAll("input") { i: Product =>
+        forAll("input") { i: Translation =>
           val json = i.asJson.noSpaces
-          json must include(s""""id":${i.id.asJson.noSpaces}""")
-          json must include(s""""names":${i.names.asJson.noSpaces}""")
+          json must include(s""""lang":${i.lang.asJson.noSpaces}""")
+          json must include(s""""name":${i.name.asJson.noSpaces}""")
         }
       }
 
       "return decodeable JSON" in {
-        forAll("input") { p: Product =>
-          decode[Product](p.asJson.noSpaces) match {
+        forAll("input") { i: Translation =>
+          decode[Translation](i.asJson.noSpaces) match {
             case Left(_)  => fail("Must be able to decode encoded JSON!")
-            case Right(d) => withClue("Must decode the same product!")(d must be(p))
+            case Right(d) => withClue("Must decode the same product!")(d must be(i))
           }
-        }
-      }
-    }
-
-    "#fromDatabase" must {
-      "create correct results" in {
-        forAll("input") { p: Product =>
-          val rows = p.names.toNonEmptyList.map(t => (p.id, t.lang, t.name)).toList
-          Product.fromDatabase(rows) must contain(p)
-        }
-      }
-    }
-
-    "ordering" must {
-      "sort by ID" in {
-        forAll("products") { ps: List[Product] =>
-          val expected = ps.map(_.id).sorted
-          val sorted   = ps.sorted.map(_.id)
-          sorted mustEqual expected
         }
       }
     }

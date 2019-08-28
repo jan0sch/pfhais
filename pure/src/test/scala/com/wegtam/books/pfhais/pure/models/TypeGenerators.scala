@@ -13,24 +13,22 @@ package com.wegtam.books.pfhais.pure.models
 
 import java.util.UUID
 
-import cats.data.NonEmptyList
+import cats.data._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.api._
 import org.scalacheck.{ Arbitrary, Gen }
+
+import scala.collection.immutable._
 
 object TypeGenerators {
 
   val DefaultProductName: ProductName = "I am a product name!"
 
-  val genLanguageCode: Gen[LanguageCode] = for {
-    lc <- Gen.oneOf(LanguageCodes.all)
-  } yield lc
+  val genLanguageCode: Gen[LanguageCode] = Gen.oneOf(LanguageCodes.all)
 
   val genUuid: Gen[UUID] = Gen.delay(UUID.randomUUID)
 
-  val genProductId: Gen[ProductId] = for {
-    uuid <- genUuid
-  } yield uuid
+  val genProductId: Gen[ProductId] = genUuid
 
   val genProductName: Gen[ProductName] = for {
     cs <- Gen.nonEmptyListOf(Gen.alphaNumChar)
@@ -51,20 +49,24 @@ object TypeGenerators {
     ts <- Gen.nonEmptyListOf(genTranslation)
   } yield ts
 
-  val genNonEmptyTranslationList: Gen[NonEmptyList[Translation]] = for {
+  val genNonEmptyTranslationSet: Gen[NonEmptySet[Translation]] = for {
     t  <- genTranslation
     ts <- genTranslationList
-    ns = NonEmptyList.fromList(ts)
-  } yield ns.getOrElse(NonEmptyList.of(t))
+    ns = NonEmptyList.fromList(ts).map(_.toNes)
+  } yield ns.getOrElse(NonEmptySet.one(t))
 
   val genProduct: Gen[Product] = for {
     id <- genProductId
-    ts <- genNonEmptyTranslationList
+    ts <- genNonEmptyTranslationSet
   } yield Product(
     id = id,
     names = ts
   )
 
   implicit val arbitraryProduct: Arbitrary[Product] = Arbitrary(genProduct)
+
+  val genProducts: Gen[List[Product]] = Gen.nonEmptyListOf(genProduct)
+
+  implicit val arbitraryProducts: Arbitrary[List[Product]] = Arbitrary(genProducts)
 
 }
