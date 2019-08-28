@@ -699,6 +699,19 @@ I> In general we always want the compiler to derive stuff automatically because 
 I> As always there is a cost and sometimes a rather big one (compile time). Therefore you should not use fully automatic derivation but the semi automatic variant instead. The latter will let you chose what to derive explicitly.
 I> In some circumstances it may even be better to generate a codec manually (complex, deeply nested models).
 
+Below is an example of deriving a `Order` instance using the kittens [^24]library. It uses shapeless under the hood and provides automatic and semi automatic derivation for a lot of type class instances from Cats like `Eq`, `Order`, `Show`, `Functor` and so on.
+
+{caption: "Deriving Order via kittens"}
+```scala
+import cats._
+import cats.derived
+
+implicit val order: Order[Translation] = {
+  import derived.auto.order._
+  derived.semi.order[Translation]
+}
+```
+
 ## Models
 
 Because we have already written our models we just re-use them here. The only thing we change is the semi automatic derivation of the JSON codecs. We just need to import the appropriate circe package and call the derive functions.
@@ -2449,3 +2462,5 @@ TODO
 [^22]: https://rspec.info/
 
 [^23]: https://github.com/scalatest/scalatest/issues/1370
+
+[^24]: https://github.com/typelevel/kittens
