@@ -29,7 +29,12 @@ import scala.io.StdIn
 
 object Pure extends IOApp {
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  @SuppressWarnings(
+    Array(
+      "org.wartremover.warts.Any",
+      "scalafix:DisableSyntax.null"
+    )
+  )
   def run(args: List[String]): IO[ExitCode] = {
     val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
 
@@ -57,7 +62,7 @@ object Pure extends IOApp {
       case Left(e) =>
         IO {
           println("*** An error occured! ***")
-          if (e != null) {
+          if (e ne null) {
             println(e.getMessage)
           }
           ExitCode.Error
