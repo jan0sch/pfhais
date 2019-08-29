@@ -2615,6 +2615,8 @@ case req @ PUT -> Root / "product" / UUIDVar(id) =>
 
 Now we explicitly handle any error which occurs when decoding the request entity. But in fact: I am lying to you. We only handle the invalid message body failure here. On the other hand it is enough to make our test happy. :-)
 
+I> In case you are wondering what the `*>` operator means, here a short (hopefully not wrong) explanation:
+I> The operator is defined on `Apply` in Cats and in our (monadic) context it is a shorter way for writing `repo.updateProduct(p).flatMap(_ => NoContent())`.
 
 ### Integration Tests
 
