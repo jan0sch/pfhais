@@ -33,11 +33,14 @@ final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] 
         resp <- Product.fromDatabase(rows).fold(NotFound())(p => Ok(p))
       } yield resp
     case req @ PUT -> Root / "product" / UUIDVar(id) =>
-      for {
-        p <- req.as[Product]
-        _ <- repo.updateProduct(p)
-        r <- NoContent()
-      } yield r
+      req
+        .as[Product]
+        .flatMap { p =>
+          repo.updateProduct(p) *> NoContent()
+        }
+        .handleErrorWith {
+          case InvalidMessageBodyFailure(_, _) => BadRequest()
+        }
   }
 
 }

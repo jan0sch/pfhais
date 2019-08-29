@@ -2552,6 +2552,70 @@ s"return $expectedStatusCode and the product" in {
 
 This time we generate a whole product, again try to create a valid URI and continue as before. But this time we inject our `TestRepository` containing a list with our generated product. In the end we test our expected status code and the response body must contain our product. For the last part to work we must have an implicit `EntityDecoder` in scope.
 
+{caption: "Unit test: Product routes (3)"}
+```scala
+val expectedStatusCode = Status.BadRequest
+
+s"return $expectedStatusCode" in {
+  forAll("id") { id: ProductId =>
+    Uri.fromString("/product/" + id.toString) match {
+      case Left(_) => fail("Could not generate valid URI!")
+      case Right(u) =>
+	def service: HttpRoutes[IO] =
+	  Router("/" -> new ProductRoutes(emptyRepository).routes)
+	val payload = scala.util.Random.alphanumeric.take(256).mkString
+	val response: IO[Response[IO]] = service.orNotFound.run(
+	  Request(method = Method.PUT, uri = u)
+	    .withEntity(payload.asJson.noSpaces)
+	)
+	val result = response.unsafeRunSync
+	result.status must be(expectedStatusCode)
+	result.body.compile.toVector.unsafeRunSync must be(empty)
+    }
+  }
+}
+```
+
+Here we are trying to update a product which doesn't have to exist because we send totally garbage JSON with the request which should result in a "400 Bad Request" status code. However if we run our test we get an exception instead:
+
+```text
+[info]   when PUT /product/ID
+[info]     when request body is invalid
+[info]     - must return 400 Bad Request *** FAILED ***
+[info]       InvalidMessageBodyFailure was thrown during property
+[info]         Occurred when passed generated values (
+[info]           id = 932682c9-1f9a-463a-84db-a0992d466aa3
+[info]         )
+```
+
+So let's take a deep breath and look at our code:
+
+```scala
+case req @ PUT -> Root / "product" / UUIDVar(id) =>
+  for {
+    p <- req.as[Product]
+    _ <- repo.updateProduct(p)
+    r <- NoContent()
+  } yield r
+```
+
+As we can see we do no error handling at all. So maybe we can rewrite this a little bit.
+
+```scala
+case req @ PUT -> Root / "product" / UUIDVar(id) =>
+  req
+    .as[Product]
+    .flatMap { p =>
+      repo.updateProduct(p) *> NoContent()
+    }
+    .handleErrorWith {
+      case InvalidMessageBodyFailure(_, _) => BadRequest()
+    }
+```
+
+Now we explicitly handle any error which occurs when decoding the request entity. But in fact: I am lying to you. We only handle the invalid message body failure here. On the other hand it is enough to make our test happy. :-)
+
+
 ### Integration Tests
 
 TODO
