@@ -2407,11 +2407,124 @@ I> Regarding the "optimal" code coverage metric... I won't give any advice here.
 
 ## Testing the pure service
 
-TODO
+While testing the pure implementation of our service we will see and highlight some differences. We will skip the explanation of the ScalaCheck generators because they only differ slightly from the ones used in the impure part.
 
 ### Unit Tests
 
 TODO
+
+#### Testing our routes
+
+To be able to test our routes we will have to implement a `TestRepository` first which we will use instead of the concrete implementation which is wired to a database.
+
+{caption: "TestRepository implementation - take 1"}
+```scala
+class TestRepository[F[_]: Effect](data: Seq[Product]) extends Repository[F] {
+  override def loadProduct(id: ProductId) = {
+    data.find(_.id === id) match {
+      case None => Seq.empty.pure[F]
+      case Some(p) =>
+        val ns = p.names.toNonEmptyList.toList.to[Seq]
+        ns.map(n => (p.id, n.lang, n.name)).pure[F]
+    }
+  }
+
+  override def loadProducts() = {
+    Stream.empty
+  }
+
+  override def saveProduct(p: Product): F[Int] =
+    data.find(_.id === p.id).fold(0.pure[F])(_ => 1.pure[F])
+
+  override def updateProduct(p: Product): F[Int] =
+    data.find(_.id === p.id).fold(0.pure[F])(_ => 1.pure[F])
+
+}
+```
+
+As you can see we try to stay abstract (using our HKT `F[_]` here) and we have basically left out the implementation of `loadProducts` because it will just return an empty stream. We will get back to it later on. Aside from that the class can be initialised with a (potentially empty) list of `Product` entities which will be used as a "database". The save and update functions won't change any data, they will just return a `0` or a `1` depending on the product being present in the seed data list.
+
+{caption: "Unit test: Product Routes (1)"}
+```scala
+val emptyRepository: Repository[IO] = new TestRepository[IO](Seq.empty)
+val expectedStatusCode = Status.NotFound
+
+s"return $expectedStatusCode" in {
+  forAll("id") { id: ProductId =>
+    Uri.fromString("/product/" + id.toString) match {
+      case Left(_) => fail("Could not generate valid URI!")
+      case Right(u) =>
+	def service: HttpRoutes[IO] =
+	  Router("/" -> new ProductRoutes(emptyRepository).routes)
+	val response: IO[Response[IO]] = service.orNotFound.run(
+	  Request(method = Method.GET, uri = u)
+	)
+	val result = response.unsafeRunSync
+	result.status must be(expectedStatusCode)
+	result.body.compile.toVector.unsafeRunSync must be(empty)
+    }
+  }
+}
+```
+
+Above you can see the test for querying a non existing product which must return an empty response using a "404 Not Found" status code. First we try to create a valid URI from our generated `ProductId`. If that succeeds we create a small service wrapper for our routes in which we inject our empty `TestRepository`. Finally we create a response using this service and a request that we construct. Because we are in the land of `IO` we have to actually execute it (via `unsafeRunSync`) to get any results back. Finally we validate the status code and the response body.
+
+Q> But what do we have here?
+
+```text
+[info]   when GET /product/ID
+[info]     when product does not exist
+[info]     - must return 404 Not Found *** FAILED ***
+[info]       TestFailedException was thrown during property evaluation.
+[info]         Message: 200 OK was not equal to 404 Not Found
+[info]         Location: (ProductRoutesTest.scala:46)
+[info]         Occurred when passed generated values (
+[info]           id = 3f298ae4-4f7b-415b-9888-c2e9b34a4883
+[info]         )
+```
+
+It seems that we just pass an empty response if we do not find the product. This is not nice, so let's fix this. The culprit is the following line in our `ProductRoutes` file:
+
+```scala
+for {
+  // ...
+  resp <- Ok(Product.fromDatabase(rows))
+} yield resp
+```
+
+Okay, this looks easy. Let's try this one:
+
+```scala
+for {
+  // ...
+  resp <- Product.fromDatabase(rows).fold(NotFound())(p => Ok(p))
+} yield resp
+```
+
+Oh no, the compiler complains:
+
+```text
+Cannot convert from Product to an Entity, because no 
+  EntityEncoder[F, com.wegtam.books.pfhais.pure.models.Product] 
+  instance could be found.
+```
+
+Right, before we had an `Option[Product]` here for which we created an implicit JSON encoder. So if we create one for the `Product` itself then we should be fine.
+
+```scala
+implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = 
+  jsonEncoderOf
+```
+
+Now back to our test:
+
+```text
+[info]   when GET /product/ID
+[info]     when product does not exist
+[info]     - must return 404 Not Found
+```
+
+Great! Seems like we are doing fine, so let's continue.
 
 ### Integration Tests
 

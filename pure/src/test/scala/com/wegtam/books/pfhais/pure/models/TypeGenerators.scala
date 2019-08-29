@@ -30,6 +30,8 @@ object TypeGenerators {
 
   val genProductId: Gen[ProductId] = genUuid
 
+  implicit val arbitraryProductId: Arbitrary[ProductId] = Arbitrary(genProductId)
+
   val genProductName: Gen[ProductName] = for {
     cs <- Gen.nonEmptyListOf(Gen.alphaNumChar)
     name = RefType.applyRef[ProductName](cs.mkString).getOrElse(DefaultProductName)
