@@ -2444,7 +2444,7 @@ class TestRepository[F[_]: Effect](data: Seq[Product]) extends Repository[F] {
 
 As you can see we try to stay abstract (using our HKT `F[_]` here) and we have basically left out the implementation of `loadProducts` because it will just return an empty stream. We will get back to it later on. Aside from that the class can be initialised with a (potentially empty) list of `Product` entities which will be used as a "database". The save and update functions won't change any data, they will just return a `0` or a `1` depending on the product being present in the seed data list.
 
-{caption: "Unit test: Product Routes (1)"}
+{caption: "Unit test: Product routes (1)"}
 ```scala
 val emptyRepository: Repository[IO] = new TestRepository[IO](Seq.empty)
 val expectedStatusCode = Status.NotFound
@@ -2524,7 +2524,33 @@ Now back to our test:
 [info]     - must return 404 Not Found
 ```
 
-Great! Seems like we are doing fine, so let's continue.
+Great! Seems like we are doing fine, so let's continue. Next in line is testing a query for an existing product.
+
+{caption: "Unit test: Product routes (2)"}
+```scala
+implicit def decodeProduct: EntityDecoder[IO, Product] = jsonOf
+val expectedStatusCode = Status.Ok
+
+s"return $expectedStatusCode and the product" in {
+  forAll("product") { p: Product =>
+    Uri.fromString("/product/" + p.id.toString) match {
+      case Left(_) => fail("Could not generate valid URI!")
+      case Right(u) =>
+	val repo: Repository[IO] = new TestRepository[IO](Seq(p))
+	def service: HttpRoutes[IO] =
+	  Router("/" -> new ProductRoutes(repo).routes)
+	val response: IO[Response[IO]] = service.orNotFound.run(
+	  Request(method = Method.GET, uri = u)
+	)
+	val result = response.unsafeRunSync
+	result.status must be(expectedStatusCode)
+	result.as[Product].unsafeRunSync must be(p)
+    }
+  }
+}
+```
+
+This time we generate a whole product, again try to create a valid URI and continue as before. But this time we inject our `TestRepository` containing a list with our generated product. In the end we test our expected status code and the response body must contain our product. For the last part to work we must have an implicit `EntityDecoder` in scope.
 
 ### Integration Tests
 
