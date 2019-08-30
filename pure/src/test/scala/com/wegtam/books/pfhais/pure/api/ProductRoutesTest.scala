@@ -112,7 +112,7 @@ final class ProductRoutesTest extends BaseSpec {
                   def service: HttpRoutes[IO] =
                     Router("/" -> new ProductRoutes(emptyRepository).routes)
                   val response: IO[Response[IO]] = service.orNotFound.run(
-                    Request(method = Method.GET, uri = u)
+                    Request(method = Method.PUT, uri = u)
                       .withEntity(p)
                   )
                   val result = response.unsafeRunSync
@@ -135,7 +135,7 @@ final class ProductRoutesTest extends BaseSpec {
                   def service: HttpRoutes[IO] =
                     Router("/" -> new ProductRoutes(repo).routes)
                   val response: IO[Response[IO]] = service.orNotFound.run(
-                    Request(method = Method.GET, uri = u)
+                    Request(method = Method.PUT, uri = u)
                       .withEntity(p)
                   )
                   val result = response.unsafeRunSync

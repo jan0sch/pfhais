@@ -2618,6 +2618,85 @@ Now we explicitly handle any error which occurs when decoding the request entity
 I> In case you are wondering what the `*>` operator means, here a short (hopefully not wrong) explanation:
 I> The operator is defined on `Apply` in Cats and in our (monadic) context it is a shorter way for writing `repo.updateProduct(p).flatMap(_ => NoContent())`.
 
+Onwards to our next test cases in which we use a valid JSON payload for our request.
+
+{caption: "Unit test: Product routes (4)"}
+```scala
+val expectedStatusCode = Status.NotFound
+
+s"return $expectedStatusCode" in {
+  forAll("product") { p: Product =>
+    Uri.fromString("/product/" + p.id.toString) match {
+      case Left(_) => fail("Could not generate valid URI!")
+      case Right(u) =>
+	def service: HttpRoutes[IO] =
+	  Router("/" -> new ProductRoutes(emptyRepository).routes)
+	val response: IO[Response[IO]] = service.orNotFound.run(
+	  Request(method = Method.PUT, uri = u)
+	    .withEntity(p)
+	)
+	val result = response.unsafeRunSync
+	result.status must be(expectedStatusCode)
+	result.body.compile.toVector.unsafeRunSync must be(empty)
+    }
+  }
+}
+```
+
+We expect a "404 Not Found" if we try to update a valid product which does not exist. But what do we get in the tests?
+
+```text
+Message: 204 No Content was not equal to 404 Not Found
+```
+
+Well not exactly what we planned for but it is our own fault. We used the `*>` opeator which ignores the value from the previous operation. So we need to fix that.
+
+```scala
+case req @ PUT -> Root / "product" / UUIDVar(id) =>
+  req
+    .as[Product]
+    .flatMap { p =>
+      for {
+	cnt <- repo.updateProduct(p)
+	res <- cnt match {
+	  case 0 => NotFound()
+	  case _ => NoContent()
+	}
+      } yield res
+    }
+    .handleErrorWith {
+      case InvalidMessageBodyFailure(_, _) => BadRequest()
+    }
+```
+
+We rely on the return value of our update function which contains the number of affected database rows. If it is zero then nothing has been done implying that the product was not found. Otherwise we return our "204 No Content" response as before. Still we miss one last test for our product routes.
+
+{caption: "Unit test: Product routes (5)"}
+```scala
+val expectedStatusCode = Status.NoContent
+
+s"return $expectedStatusCode" in {
+  forAll("product") { p: Product =>
+    Uri.fromString("/product/" + p.id.toString) match {
+      case Left(_) => fail("Could not generate valid URI!")
+      case Right(u) =>
+	val repo: Repository[IO] = new TestRepository[IO](Seq(p))
+	def service: HttpRoutes[IO] =
+	  Router("/" -> new ProductRoutes(repo).routes)
+	val response: IO[Response[IO]] = service.orNotFound.run(
+	  Request(method = Method.PUT, uri = u)
+	    .withEntity(p)
+	)
+	val result = response.unsafeRunSync
+	result.status must be(expectedStatusCode)
+	result.body.compile.toVector.unsafeRunSync must be(empty)
+    }
+  }
+}
+```
+
+Basically this is the same test as before with the exception that we now give our routes a properly seeded test repository.
+
 ### Integration Tests
 
 TODO

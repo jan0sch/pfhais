@@ -36,7 +36,13 @@ final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] 
       req
         .as[Product]
         .flatMap { p =>
-          repo.updateProduct(p) *> NoContent()
+          for {
+            cnt <- repo.updateProduct(p)
+            res <- cnt match {
+              case 0 => NotFound()
+              case _ => NoContent()
+            }
+          } yield res
         }
         .handleErrorWith {
           case InvalidMessageBodyFailure(_, _) => BadRequest()
