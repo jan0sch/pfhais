@@ -2854,7 +2854,69 @@ It seems the only parts left to test are the `FlywayDatabaseMigrator` and our `D
 
 ### Integration Tests
 
-TODO
+As usual we start up by implementing a base class that we can use to provide common settings and functions across our tests.
+
+{caption: "BaseSpec for pure integration tests"}
+```scala
+abstract class BaseSpec extends WordSpec 
+    with MustMatchers
+    with ScalaCheckPropertyChecks
+    with BeforeAndAfterAll
+    with BeforeAndAfterEach {
+
+  protected val config = ConfigFactory.load()
+  protected val dbConfig = loadConfig[DatabaseConfig](config, "database")
+
+  override def beforeAll(): Unit = {
+    val _ = withClue("Database configuration could not be loaded!") {
+      dbConfig.isRight must be(true)
+    }
+  }
+}
+```
+
+You can see that we keep it simple here and only load the database configuration and ensure that is has been indeed loaded correctly in the `beforeAll` function.
+
+#### Testing the FlywayDatabaseMigrator
+
+To ensure the basic behaviour of our `FlywayDatabaseMigrator` we write a simple test.
+
+{caption: "Integration test: database migrator (1)"}
+```scala
+"the database is not available" must {
+  "throw an exception" in {
+    val cfg = DatabaseConfig(
+      driver = "This is no driver name!",
+      url = "jdbc://some.host/whatever",
+      user = "no-user",
+      pass = "no-password"
+    )
+    val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
+    val program = migrator.migrate(cfg.url, cfg.user, cfg.pass)
+    an[FlywayException] must be thrownBy program.unsafeRunSync
+  }
+}
+```
+
+Within this test we construct an invalid database configuration and expect that the call to `migrate` throws an exception. If you remember, we had this issue already and chose not to handle any exceptions but let the calling site do this - for example via a `MonadError` instance.
+
+{caption: "Integration test: database migrator (2)"}
+```scala
+dbConfig.map { cfg =>
+  val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
+  val program = migrator.migrate(cfg.url, cfg.user, cfg.pass)
+  program.unsafeRunSync must be > 0
+}
+// ---
+dbConfig.map { cfg =>
+  val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
+  val program = migrator.migrate(cfg.url, cfg.user, cfg.pass)
+  val _ = program.unsafeRunSync
+  program.unsafeRunSync must be(0)
+}
+```
+
+The other two tests are also quite simple, we just expect it to return either zero or the number of applied migrations depending on the state of the database. It goes without saying that we of course use the `beforeEach` and `afterEach` helpers within the test to prepare and clean our database properly.
 
 # Adding benchmarks
 

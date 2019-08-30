@@ -11,10 +11,28 @@
 
 package com.wegtam.books.pfhais
 
-import org.scalatest.{ MustMatchers, WordSpec }
+import com.typesafe.config._
+import com.wegtam.books.pfhais.pure.config._
+import eu.timepit.refined.auto._
+import pureconfig.loadConfig
+import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 /**
-  * A base class for our tests.
+  * A base class for our integration tests.
   */
-abstract class BaseSpec extends WordSpec with MustMatchers with ScalaCheckPropertyChecks {}
+abstract class BaseSpec extends WordSpec 
+    with MustMatchers
+    with ScalaCheckPropertyChecks
+    with BeforeAndAfterAll
+    with BeforeAndAfterEach {
+
+  protected val config = ConfigFactory.load()
+  protected val dbConfig = loadConfig[DatabaseConfig](config, "database")
+
+  override def beforeAll(): Unit = {
+    val _ = withClue("Database configuration could not be loaded!") {
+      dbConfig.isRight must be(true)
+    }
+  }
+}
