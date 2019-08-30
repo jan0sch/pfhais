@@ -2407,11 +2407,11 @@ I> Regarding the "optimal" code coverage metric... I won't give any advice here.
 
 ## Testing the pure service
 
-While testing the pure implementation of our service we will see and highlight some differences. We will skip the explanation of the ScalaCheck generators because they only differ slightly from the ones used in the impure part.
+We will skip the explanation of the ScalaCheck generators because they only differ slightly from the ones used in the impure part.
 
 ### Unit Tests
 
-TODO
+The model tests are omitted here because they are basically the same as in the impure section. If you are interested in them just look at the source code. In contrast to the impure part we will now write unit tests for our routes. Meaning we will be able to test our routing logic without spinning up a database.
 
 #### Testing our routes
 
@@ -2847,6 +2847,10 @@ s"return $expectedStatusCode and a list of products" in {
 ```
 
 To decode the response correctly an implicit `EntityDecoder` of the appropriate type is needed in scope. But the rest of the test should look pretty familiar to you by now.
+
+Q> So what do have left to do?
+
+It seems the only parts left to test are the `FlywayDatabaseMigrator` and our `DoobieRepository` classes. Testing them will require a running database so we are leaving the cosy world of unit tests behind and venture forth into integration test land. But fear not, we already have some - albeit impure - experience here.
 
 ### Integration Tests
 
