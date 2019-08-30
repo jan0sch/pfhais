@@ -45,11 +45,20 @@ final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F]
       val result: Stream[F, String] = prefix ++ ps ++ suffix
       Ok(result)
     case req @ POST -> Root / "products" =>
-      for {
-        p <- req.as[Product]
-        _ <- repo.saveProduct(p)
-        r <- NoContent()
-      } yield r
+      req
+        .as[Product]
+        .flatMap { p =>
+          for {
+            cnt <- repo.saveProduct(p)
+            res <- cnt match {
+              case 0 => InternalServerError()
+              case _ => NoContent()
+            }
+          } yield res
+        }
+        .handleErrorWith {
+          case InvalidMessageBodyFailure(_, _) => BadRequest()
+        }
   }
 
 }

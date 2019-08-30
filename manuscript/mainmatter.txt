@@ -2649,7 +2649,7 @@ We expect a "404 Not Found" if we try to update a valid product which does not e
 Message: 204 No Content was not equal to 404 Not Found
 ```
 
-Well not exactly what we planned for but it is our own fault. We used the `*>` opeator which ignores the value from the previous operation. So we need to fix that.
+Well not exactly what we planned for but it is our own fault. We used the `*>` operator which ignores the value from the previous operation. So we need to fix that.
 
 ```scala
 case req @ PUT -> Root / "product" / UUIDVar(id) =>
@@ -2695,7 +2695,158 @@ s"return $expectedStatusCode" in {
 }
 ```
 
-Basically this is the same test as before with the exception that we now give our routes a properly seeded test repository.
+Basically this is the same test as before with the exception that we now give our routes a properly seeded test repository. Great, we have tested our `ProductRoutes` and without having to spin up a database! But we still have work to do, so let's move on to testing the `ProductsRoutes` implementation. Before we do that we adapt the code for creating a product using our gained knowledge from our update test.
+
+{caption: "ProductsRoutes: adapted create endpoint"}
+```scala
+case req @ POST -> Root / "products" =>
+  req
+    .as[Product]
+    .flatMap { p =>
+      for {
+	cnt <- repo.saveProduct(p)
+	res <- cnt match {
+	  case 0 => NotFound()
+	  case _ => InternalServerError()
+	}
+      } yield res
+    }
+    .handleErrorWith {
+      case InvalidMessageBodyFailure(_, _) => BadRequest()
+    }
+```
+
+Now to our tests, we will start with sending garbage JSON via the POST request.
+
+{caption: "Unit test: Products routes (1)"}
+```scala
+val expectedStatusCode = Status.BadRequest
+
+s"return $expectedStatusCode" in {
+  def service: HttpRoutes[IO] =
+    Router("/" -> new ProductsRoutes(emptyRepository).routes)
+  val payload = scala.util.Random.alphanumeric.take(256).mkString
+  val response: IO[Response[IO]] = service.orNotFound.run(
+    Request(method = Method.POST, uri = Uri.uri("/products"))
+      .withEntity(payload.asJson.noSpaces)
+  )
+  val result = response.unsafeRunSync
+  result.status must be(expectedStatusCode)
+  result.body.compile.toVector.unsafeRunSync must be(empty)
+}
+```
+
+There is nothing special here, the test is same as for the `ProductRoutes` except for the changed URI and HTTP method. Also the code is a bit simpler because we do not need to generate a dynamic request URI like before.
+
+{caption: "Unit test: Products routes (2)"}
+```scala
+val expectedStatusCode = Status.NoContent
+
+s"return $expectedStatusCode" in {
+  forAll("product") { p: Product =>
+    val repo: Repository[IO] = new TestRepository[IO](Seq(p))
+    def service: HttpRoutes[IO] =
+      Router("/" -> new ProductsRoutes(repo).routes)
+    val response: IO[Response[IO]] = service.orNotFound.run(
+      Request(method = Method.POST, uri = Uri.uri("/products"))
+	.withEntity(p)
+    )
+    val result = response.unsafeRunSync
+    result.status must be(expectedStatusCode)
+    result.body.compile.toVector.unsafeRunSync must be(empty)
+  }
+}
+```
+
+Saving a product using valid JSON payload should succeed and in fact it does because of the code we have in our `TestRepository` instance. If you remember we use the following code for `saveProduct`:
+
+```scala
+override def saveProduct(p: Product): F[Int] =
+  data.find(_.id === p.id).fold(0.pure[F])(_ => 1.pure[F])
+```
+
+This code will return a `0` if the product we try to save does not exist in the seed data set and only a `1` if it can be found within aforementioned set. This code clearly doesn't make any sense except for our testing. This way we can ensure the behaviour of the save function without having to create a new `Repository` instance with hard coded behaviour. :-)
+
+{caption: "Unit test: Products routes (3)"}
+```scala
+val expectedStatusCode = Status.InternalServerError
+
+s"return $expectedStatusCode" in {
+  forAll("product") { p: Product =>
+    def service: HttpRoutes[IO] =
+      Router("/" -> new ProductsRoutes(emptyRepository).routes)
+    val response: IO[Response[IO]] = service.orNotFound.run(
+      Request(method = Method.POST, uri = Uri.uri("/products"))
+	.withEntity(p)
+    )
+    val result = response.unsafeRunSync
+    result.status must be(expectedStatusCode)
+    result.body.compile.toVector.unsafeRunSync must be(empty)
+  }
+}
+```
+
+We use the empty repository this time to ensure that the `saveProduct` function will return a zero, triggering the desired logic in our endpoint. Almost done, so let's check the endpoint for returning all products.
+
+{caption: "Unit test: Products routes (4)"}
+```scala
+val expectedStatusCode = Status.Ok
+
+s"return $expectedStatusCode and an empty list" in {
+  def service: HttpRoutes[IO] =
+    Router("/" -> new ProductsRoutes(emptyRepository).routes)
+  val response: IO[Response[IO]] = service.orNotFound.run(
+    Request(method = Method.GET, uri = Uri.uri("/products"))
+  )
+  val result = response.unsafeRunSync
+  result.status must be(expectedStatusCode)
+  result.as[List[Product]].unsafeRunSync mustEqual List.empty[Product]
+}
+```
+
+We simply expect an empty list if no products exist. It is as simple as that and works right out of the box. Last but not least we need to test the return of existing products. But before we do this let's take a look at our `TestRepository` implementation.
+
+{caption: "TestRepository: stubbed loadProducts"}
+```scala
+override def loadProducts() = Stream.empty
+```
+
+Uh, oh, that does not bode well! So we will need to fix that first. Because we were wise to chose fs2 as our streaming library of choice the solution is as simple as this.
+
+{caption: "TestRepository: fixed loadProducts"}
+```scala
+override def loadProducts() = {
+  val rows = data.flatMap { p =>
+    val ns = p.names.toNonEmptyList.toList.to[Seq]
+    ns.map(n => (p.id, n.lang, n.name))
+  }
+  Stream.emits(rows)
+}
+```
+
+Now we can write our last test.
+
+{caption: "Unit test: Products routes (5)"}
+```scala
+implicit def decodeProducts: EntityDecoder[IO, List[Product]] = jsonOf
+val expectedStatusCode = Status.Ok
+
+s"return $expectedStatusCode and a list of products" in {
+  forAll("products") { ps: List[Product] =>
+    val repo: Repository[IO] = new TestRepository[IO](ps)
+    def service: HttpRoutes[IO] =
+      Router("/" -> new ProductsRoutes(repo).routes)
+    val response: IO[Response[IO]] = service.orNotFound.run(
+      Request(method = Method.GET, uri = Uri.uri("/products"))
+    )
+    val result = response.unsafeRunSync
+    result.status must be(expectedStatusCode)
+    result.as[List[Product]].unsafeRunSync mustEqual ps
+  }
+}
+```
+
+To decode the response correctly an implicit `EntityDecoder` of the appropriate type is needed in scope. But the rest of the test should look pretty familiar to you by now.
 
 ### Integration Tests
 

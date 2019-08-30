@@ -28,11 +28,11 @@ class TestRepository[F[_]: Effect](data: Seq[Product]) extends Repository[F] {
     }
 
   override def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)] = {
-    val rows = data.map { p =>
+    val rows = data.flatMap { p =>
       val ns = p.names.toNonEmptyList.toList.to[Seq]
       ns.map(n => (p.id, n.lang, n.name))
     }
-    Stream.empty
+    Stream.emits(rows)
   }
 
   override def saveProduct(p: Product): F[Int] =
