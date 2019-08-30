@@ -22,9 +22,8 @@ import org.http4s.circe._
 import org.http4s.dsl._
 
 final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
-  implicit def decodeProduct: EntityDecoder[F, Product]                             = jsonOf
-  implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product]          = jsonEncoderOf
-  implicit def encodeProductO[A[_]: Applicative]: EntityEncoder[A, Option[Product]] = jsonEncoderOf
+  implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
+  implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
 
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / "product" / UUIDVar(id) =>

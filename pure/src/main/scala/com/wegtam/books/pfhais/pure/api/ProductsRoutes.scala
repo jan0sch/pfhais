@@ -11,7 +11,6 @@
 
 package com.wegtam.books.pfhais.pure.api
 
-import cats.Applicative
 import cats.effect.Sync
 import cats.implicits._
 import com.wegtam.books.pfhais.pure.db._
@@ -24,8 +23,7 @@ import org.http4s.circe._
 import org.http4s.dsl._
 
 final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
-  implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
-  implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
+  implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
 
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / "products" =>
