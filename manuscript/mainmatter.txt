@@ -2918,6 +2918,130 @@ dbConfig.map { cfg =>
 
 The other two tests are also quite simple, we just expect it to return either zero or the number of applied migrations depending on the state of the database. It goes without saying that we of course use the `beforeEach` and `afterEach` helpers within the test to prepare and clean our database properly.
 
+Last but not least we take a look at testing our actual repository implementation which uses Doobie. To avoid trouble we need to define a globally available `ContextShift` in our test which is as simple as this:
+
+```scala
+implicit val cs = IO.contextShift(ExecutionContexts.synchronous)
+```
+
+Now we can start writing our tests.
+
+{caption: "Integration test: repository (1)"}
+```scala
+val tx = Transactor
+  .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
+val repo = new DoobieRepository(tx)
+forAll("ID") { id: ProductId =>
+  for {
+    rows <- repo.loadProduct(id)
+  } yield {
+    rows must be(empty)
+  }
+}
+```
+
+Here we simply test that the `loadProduct` function returns an empty list if the requested product does not exist in the database.
+
+{caption: "Integration test: repository (2)"}
+```scala
+forAll("product") { p: Product =>
+  for {
+    _    <- repo.saveProduct(p)
+    rows <- repo.loadProduct(p.id)
+  } yield {
+    rows must not be(empty)
+    Product.fromDatabase(rows) must contain(p)
+  }
+}
+```
+
+From now on we'll omit the transactor and repository creation from the code examples. As you can see a generated product is saved to the database and loaded again and verified in the end.
+
+{caption: "Integration test: repository (3)"}
+```scala
+val rows = repo.loadProducts().compile.toList
+rows.unsafeRunSync must be(empty)
+```
+
+Testing that `loadProducts` returns an empty stream if no products exist is as simple as the code above. :-)
+
+{caption: "Integration test: repository (4)"}
+```scala
+forAll("products") { ps: List[Product] =>
+  for {
+    _    <- ps.traverse(repo.saveProduct)
+    rows = repo.loadProducts()
+      .groupAdjacentBy(_._1)
+      .map {
+        case (id, rows) => Product.fromDatabase(rows.toList)
+      }
+      .collect {
+        case Some(p) => p
+      }
+      .compile
+      .toList
+  } yield {
+    val products = rows.unsafeRunSync
+    products must not be(empty)
+    products mustEqual ps
+  }
+}
+```
+
+In contrast the test code for checking the return of existing products is a bit more involving. But let's step through it together. First we save the list of generated products to the database which we do using the `traverse` function provided by Cats. In impure land we used `Future.sequence` here if you remember - but now we want to stay pure. ;-)
+Next we call our `loadProducts` function and apply a part of the logic from our `ProductsRoutes` to it, namely we construct a proper stream of products which we turn into a list via `compile` and `list` in the end. Finally we check that the list is not empty and equal to our generated list.
+
+{caption: "Integration test: repository (5)"}
+```scala
+forAll("product") { p: Product =>
+  for {
+    cnt  <- repo.saveProduct(p)
+    rows <- repo.loadProduct(p.id)
+  } yield {
+    cnt must be > 0
+    rows must not be(empty)
+    Product.fromDatabase(rows) must contain(p)
+  }
+}
+```
+
+The code for testing `saveProduct` is nearly identical to the `loadProduct` test as you can see. We simply check additionally that the function returns the number of affected database rows.
+
+{caption: "Integration test: repository (6)"}
+```scala
+forAll("product") { p: Product =>
+  for {
+    cnt  <- repo.updateProduct(p)
+    rows <- repo.loadProduct(p.id)
+  } yield {
+    cnt must be(0)
+    rows must be(empty)
+  }
+}
+```
+
+Updating a non existing product must return a zero and save nothing to the database, which is what we test above.
+
+{caption: "Integration test: repository (7)"}
+```scala
+forAll("productA", "productB") { (a: Product, b: Product) =>
+  val p = b.copy(id = a.id)
+  for {
+    _    <- repo.saveProduct(a)
+    cnt  <- repo.updateProduct(p)
+    rows <- repo.loadProduct(p.id)
+  } yield {
+    cnt must be > 0
+    rows must not be(empty)
+    Product.fromDatabase(rows) must contain(p)
+  }
+}
+```
+
+Finally we test updating a concrete product by generating two of them, saving the first into the database and running an update using the second with the id from the first.
+
+Wow, it seems we are finished! Congratulations, we can now check mark the point "write a pure http service in Scala" on our list. :-)
+
 # Adding benchmarks
 
 TODO
