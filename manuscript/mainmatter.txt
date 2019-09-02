@@ -2454,14 +2454,14 @@ s"return $expectedStatusCode" in {
     Uri.fromString("/product/" + id.toString) match {
       case Left(_) => fail("Could not generate valid URI!")
       case Right(u) =>
-	def service: HttpRoutes[IO] =
-	  Router("/" -> new ProductRoutes(emptyRepository).routes)
-	val response: IO[Response[IO]] = service.orNotFound.run(
-	  Request(method = Method.GET, uri = u)
-	)
-	val result = response.unsafeRunSync
-	result.status must be(expectedStatusCode)
-	result.body.compile.toVector.unsafeRunSync must be(empty)
+        def service: HttpRoutes[IO] =
+          Router("/" -> new ProductRoutes(emptyRepository).routes)
+        val response: IO[Response[IO]] = service.orNotFound.run(
+          Request(method = Method.GET, uri = u)
+        )
+        val result = response.unsafeRunSync
+        result.status must be(expectedStatusCode)
+        result.body.compile.toVector.unsafeRunSync must be(empty)
     }
   }
 }
@@ -2536,15 +2536,15 @@ s"return $expectedStatusCode and the product" in {
     Uri.fromString("/product/" + p.id.toString) match {
       case Left(_) => fail("Could not generate valid URI!")
       case Right(u) =>
-	val repo: Repository[IO] = new TestRepository[IO](Seq(p))
-	def service: HttpRoutes[IO] =
-	  Router("/" -> new ProductRoutes(repo).routes)
-	val response: IO[Response[IO]] = service.orNotFound.run(
-	  Request(method = Method.GET, uri = u)
-	)
-	val result = response.unsafeRunSync
-	result.status must be(expectedStatusCode)
-	result.as[Product].unsafeRunSync must be(p)
+        val repo: Repository[IO] = new TestRepository[IO](Seq(p))
+        def service: HttpRoutes[IO] =
+          Router("/" -> new ProductRoutes(repo).routes)
+        val response: IO[Response[IO]] = service.orNotFound.run(
+          Request(method = Method.GET, uri = u)
+        )
+        val result = response.unsafeRunSync
+        result.status must be(expectedStatusCode)
+        result.as[Product].unsafeRunSync must be(p)
     }
   }
 }
@@ -2561,16 +2561,16 @@ s"return $expectedStatusCode" in {
     Uri.fromString("/product/" + id.toString) match {
       case Left(_) => fail("Could not generate valid URI!")
       case Right(u) =>
-	def service: HttpRoutes[IO] =
-	  Router("/" -> new ProductRoutes(emptyRepository).routes)
-	val payload = scala.util.Random.alphanumeric.take(256).mkString
-	val response: IO[Response[IO]] = service.orNotFound.run(
-	  Request(method = Method.PUT, uri = u)
-	    .withEntity(payload.asJson.noSpaces)
-	)
-	val result = response.unsafeRunSync
-	result.status must be(expectedStatusCode)
-	result.body.compile.toVector.unsafeRunSync must be(empty)
+        def service: HttpRoutes[IO] =
+          Router("/" -> new ProductRoutes(emptyRepository).routes)
+        val payload = scala.util.Random.alphanumeric.take(256).mkString
+        val response: IO[Response[IO]] = service.orNotFound.run(
+          Request(method = Method.PUT, uri = u)
+            .withEntity(payload.asJson.noSpaces)
+        )
+        val result = response.unsafeRunSync
+        result.status must be(expectedStatusCode)
+        result.body.compile.toVector.unsafeRunSync must be(empty)
     }
   }
 }
@@ -2629,15 +2629,15 @@ s"return $expectedStatusCode" in {
     Uri.fromString("/product/" + p.id.toString) match {
       case Left(_) => fail("Could not generate valid URI!")
       case Right(u) =>
-	def service: HttpRoutes[IO] =
-	  Router("/" -> new ProductRoutes(emptyRepository).routes)
-	val response: IO[Response[IO]] = service.orNotFound.run(
-	  Request(method = Method.PUT, uri = u)
-	    .withEntity(p)
-	)
-	val result = response.unsafeRunSync
-	result.status must be(expectedStatusCode)
-	result.body.compile.toVector.unsafeRunSync must be(empty)
+        def service: HttpRoutes[IO] =
+          Router("/" -> new ProductRoutes(emptyRepository).routes)
+        val response: IO[Response[IO]] = service.orNotFound.run(
+          Request(method = Method.PUT, uri = u)
+            .withEntity(p)
+        )
+        val result = response.unsafeRunSync
+        result.status must be(expectedStatusCode)
+        result.body.compile.toVector.unsafeRunSync must be(empty)
     }
   }
 }
@@ -2657,11 +2657,11 @@ case req @ PUT -> Root / "product" / UUIDVar(id) =>
     .as[Product]
     .flatMap { p =>
       for {
-	cnt <- repo.updateProduct(p)
-	res <- cnt match {
-	  case 0 => NotFound()
-	  case _ => NoContent()
-	}
+        cnt <- repo.updateProduct(p)
+        res <- cnt match {
+          case 0 => NotFound()
+          case _ => NoContent()
+        }
       } yield res
     }
     .handleErrorWith {
@@ -2680,16 +2680,16 @@ s"return $expectedStatusCode" in {
     Uri.fromString("/product/" + p.id.toString) match {
       case Left(_) => fail("Could not generate valid URI!")
       case Right(u) =>
-	val repo: Repository[IO] = new TestRepository[IO](Seq(p))
-	def service: HttpRoutes[IO] =
-	  Router("/" -> new ProductRoutes(repo).routes)
-	val response: IO[Response[IO]] = service.orNotFound.run(
-	  Request(method = Method.PUT, uri = u)
-	    .withEntity(p)
-	)
-	val result = response.unsafeRunSync
-	result.status must be(expectedStatusCode)
-	result.body.compile.toVector.unsafeRunSync must be(empty)
+        val repo: Repository[IO] = new TestRepository[IO](Seq(p))
+        def service: HttpRoutes[IO] =
+          Router("/" -> new ProductRoutes(repo).routes)
+        val response: IO[Response[IO]] = service.orNotFound.run(
+          Request(method = Method.PUT, uri = u)
+            .withEntity(p)
+        )
+        val result = response.unsafeRunSync
+        result.status must be(expectedStatusCode)
+        result.body.compile.toVector.unsafeRunSync must be(empty)
     }
   }
 }
@@ -2704,11 +2704,11 @@ case req @ POST -> Root / "products" =>
     .as[Product]
     .flatMap { p =>
       for {
-	cnt <- repo.saveProduct(p)
-	res <- cnt match {
-	  case 0 => NotFound()
-	  case _ => InternalServerError()
-	}
+        cnt <- repo.saveProduct(p)
+        res <- cnt match {
+          case 0 => NotFound()
+          case _ => InternalServerError()
+        }
       } yield res
     }
     .handleErrorWith {
@@ -2749,7 +2749,7 @@ s"return $expectedStatusCode" in {
       Router("/" -> new ProductsRoutes(repo).routes)
     val response: IO[Response[IO]] = service.orNotFound.run(
       Request(method = Method.POST, uri = Uri.uri("/products"))
-	.withEntity(p)
+        .withEntity(p)
     )
     val result = response.unsafeRunSync
     result.status must be(expectedStatusCode)
@@ -2777,7 +2777,7 @@ s"return $expectedStatusCode" in {
       Router("/" -> new ProductsRoutes(emptyRepository).routes)
     val response: IO[Response[IO]] = service.orNotFound.run(
       Request(method = Method.POST, uri = Uri.uri("/products"))
-	.withEntity(p)
+        .withEntity(p)
     )
     val result = response.unsafeRunSync
     result.status must be(expectedStatusCode)
