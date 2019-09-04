@@ -3042,6 +3042,8 @@ Finally we test updating a concrete product by generating two of them, saving th
 
 Wow, it seems we are finished! Congratulations, we can now check mark the point "write a pure http service in Scala" on our list. :-)
 
+X> Please feel free to implement some complete integration tests (like in the impure section) against the API as an exercise.
+
 # Adding benchmarks
 
 TODO
