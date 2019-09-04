@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="2.6" jmeter="2.11 r1554548">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Testplan" enabled="true">
+      <stringProp name="TestPlan.comments"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="Benutzer definierte Variablen" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread-Group" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Schleifen-Controller (Loop Controller)" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1000</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">10</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">2</stringProp>
+        <longProp name="ThreadGroup.start_time">1567623430000</longProp>
+        <longProp name="ThreadGroup.end_time">1567623430000</longProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Product-IDS" enabled="true">
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="filename">/tmp/product-ids.csv</stringProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <stringProp name="shareMode">shareMode.group</stringProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">PRODUCTID</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Content-Type</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Accept</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create-Product" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&quot;id&quot;:&quot;${PRODUCTID}&quot;,&quot;names&quot;:[{&quot;lang&quot;:&quot;am&quot;,&quot;name&quot;:&quot;bZgxemlzKynuCmNCdqdeqnmlQr5drmAqb&quot;},{&quot;lang&quot;:&quot;as&quot;,&quot;name&quot;:&quot;fkyotdyzsf8djeasu7dbwqgoBvlvnok9fxpcl&quot;},{&quot;lang&quot;:&quot;at&quot;,&quot;name&quot;:&quot;tlfnohufgaqoog&quot;},{&quot;lang&quot;:&quot;be&quot;,&quot;name&quot;:&quot;zpufdlfgjUds&quot;},{&quot;lang&quot;:&quot;bg&quot;,&quot;name&quot;:&quot;fvpzuvwyDbgyiLv2umaf5rj4cxytfrkhbvkjgiPmcJziI2qtezeusWsyum&quot;},{&quot;lang&quot;:&quot;bi&quot;,&quot;name&quot;:&quot;xShBgvxTergdzqUh2gxznkqKbrbaucyNdkjfAgqxp&quot;},{&quot;lang&quot;:&quot;bl&quot;,&quot;name&quot;:&quot;owq23gwSRcHyosAnnlmkp94nyaef2kuzut17i9jpTc7vacmXrmagdgfcwugKgtdwi&quot;},{&quot;lang&quot;:&quot;bq&quot;,&quot;name&quot;:&quot;z9ms3wkdy5lmhuwrdByuszyhmbgsxmvl&quot;},{&quot;lang&quot;:&quot;cf&quot;,&quot;name&quot;:&quot;wzhxmknywhytwwfoeayYhkiikvrnyzivagvwthsghppdFnKniuwujlfj&quot;},{&quot;lang&quot;:&quot;ci&quot;,&quot;name&quot;:&quot;cd&quot;},{&quot;lang&quot;:&quot;cv&quot;,&quot;name&quot;:&quot;eleuefLzvnb6wxnqw5jh3roaq19qvvlhw10qpxltwbaAn6zwv3xIbj8O&quot;},{&quot;lang&quot;:&quot;cz&quot;,&quot;name&quot;:&quot;dww6e&quot;},{&quot;lang&quot;:&quot;dk&quot;,&quot;name&quot;:&quot;yynqxtjstvwilgeuibrptdwEdcocBvjoIvhjbucbcjyef7eqp1ncjfkdpsKnsixxyn2psGudciUs4zx&quot;},{&quot;lang&quot;:&quot;dm&quot;,&quot;name&quot;:&quot;jmrbtljkwhfs1mdyTgjghgdfpicptclulPrwYsewwedmmPfmicpbupJv3dzpltxpxqjrJGsppldpz4xpgGpvc&quot;},{&quot;lang&quot;:&quot;eg&quot;,&quot;name&quot;:&quot;slaqvmftqvxkexsim4Snsr0nnqfom70jynurvu5o7phvjStskoUqulzspdxJb0rlilvot8a9azklrckgjKc9i7mmcJfxhorrj&quot;},{&quot;lang&quot;:&quot;eh&quot;,&quot;name&quot;:&quot;wrdrlcvkgouGqkpew1mr4ijxwba5ccdop3uopjwdvlsEjdrrfcJFlLlgjucpwbqwfjycklhss28uyfU2ot&quot;},{&quot;lang&quot;:&quot;fk&quot;,&quot;name&quot;:&quot;xxktopuRdjefvvbyh7k&quot;},{&quot;lang&quot;:&quot;gd&quot;,&quot;name&quot;:&quot;ecb9pdhhayzZluicczjgUGzziaqmp5bqyvrkepucwpgffpbxrl6HAoi9smmDvrlfefbzmtrnulnWM8Lgyrcjaad&quot;},{&quot;lang&quot;:&quot;gs&quot;,&quot;name&quot;:&quot;sfydLjphqimN0ewpkvhyfyejisazgpQump40aF6zcXjcxTx6hucpucHtgwkVsu51lpZqogll5gd6Slug9&quot;},{&quot;lang&quot;:&quot;hm&quot;,&quot;name&quot;:&quot;hniwoxvarykZziolbiuxdQAmHg9hmeaHpLrgvs&quot;},{&quot;lang&quot;:&quot;id&quot;,&quot;name&quot;:&quot;aflvxFZrhlber2Dqpkekodsnxg4prakezf8YOpvscy64pngueiUuxyFlAyvdbghapacagffizwecdnYly5g9oegGmlXfb2&quot;},{&quot;lang&quot;:&quot;jp&quot;,&quot;name&quot;:&quot;ix3jmhqizyyegl1ra5xmewu8krldbncqsibpTfEoBdrknttd&quot;},{&quot;lang&quot;:&quot;kh&quot;,&quot;name&quot;:&quot;33ilnplirsptn2kxolrAtnwIpbcsDgedSzxsrlghSfbkf8ublrgmqwtlocckItrzusnkwUcK&quot;},{&quot;lang&quot;:&quot;ky&quot;,&quot;name&quot;:&quot;acb2zbgufnsLy9tkgalexh5sbsyyy05gxccevogaqecz9bhgCwkppfibygm7lopre8xlkqOrrwbddhnage9xhLQ9p7st&quot;},{&quot;lang&quot;:&quot;kz&quot;,&quot;name&quot;:&quot;bCqux8gsopnpmbnxiiydlv&quot;},{&quot;lang&quot;:&quot;lb&quot;,&quot;name&quot;:&quot;ddwptqwm9wfLhxokjwzezpWxbghsmcgelllgeoN9&quot;},{&quot;lang&quot;:&quot;lu&quot;,&quot;name&quot;:&quot;efdTqd33bcvDyma5pqgm8lrdsxq3dozrircvbatblqzoixvdqniwGzcumL1nv&quot;},{&quot;lang&quot;:&quot;ma&quot;,&quot;name&quot;:&quot;y0vmecxsuf2c9ugaib8g0ffLjqhrm&quot;},{&quot;lang&quot;:&quot;mh&quot;,&quot;name&quot;:&quot;QtyfaqbttgIq2lxubfrgnRhugMg59c6fzkne8nvhksMkqe5hjxhitfuhddiy648qhu&quot;},{&quot;lang&quot;:&quot;ml&quot;,&quot;name&quot;:&quot;ymlpPWgtge0Uhy4rdgpjrrdndbjdofzheatIfcazjphmcoidXuh1t2kirlxdlk6LjiStv2scjksYkfvu9gfvfamn&quot;},{&quot;lang&quot;:&quot;ms&quot;,&quot;name&quot;:&quot;ymphagyewrz6svjwpsjchvgIaaxgkngeiejgihpeNvpvspiypbapry0wynvrKzRkSkwnxrkqe77whyxgoxgmRpxdutqpi0ho&quot;},{&quot;lang&quot;:&quot;mw&quot;,&quot;name&quot;:&quot;lgeh0anTvyMeRtj7nKflkqitmutdlveboa5jMC1wz9notzAzSxvifyh18m6g&quot;},{&quot;lang&quot;:&quot;nf&quot;,&quot;name&quot;:&quot;vddj6qea7pzblptwvhnlmoik6r8xmnnxsmiigbxyu0k2z7z3xkdSY&quot;},{&quot;lang&quot;:&quot;ng&quot;,&quot;name&quot;:&quot;rrI8ayikDktqhdvenCyh3mvetryedw4dmuxbelqm8lpdivtywqrmmKyjzjh6&quot;},{&quot;lang&quot;:&quot;nr&quot;,&quot;name&quot;:&quot;7b7rKtPdov7gvtmshxqiqfrazgepumqzyjqxagtnjssyrxhvowgzlqnf4ryxhgvvg9CFrjen9jzuzylvq0d&quot;},{&quot;lang&quot;:&quot;om&quot;,&quot;name&quot;:&quot;Ecyz4y7u7JV6navwcd2rbj4RvddtwilfupqbyP4i7xeeg6yjw5nktotkqqG&quot;},{&quot;lang&quot;:&quot;pa&quot;,&quot;name&quot;:&quot;epSc2vxsghzukrpeyCkvFbfgyyhliuwskdocxbk4r&quot;},{&quot;lang&quot;:&quot;pl&quot;,&quot;name&quot;:&quot;p9pejbtRt2trqwgfo1cko75igmfc8mw9ps2Di4w5ksyqvcnfywdpnfruLwd5jdhus&quot;},{&quot;lang&quot;:&quot;pn&quot;,&quot;name&quot;:&quot;yUAEeeiC1c1skKasaMIlxafqcgsxj1aayqnJva7qKxiebn7hyrNi3ewthtcqqiwusktxzjj&quot;},{&quot;lang&quot;:&quot;pr&quot;,&quot;name&quot;:&quot;Yvnoywn4vahsxeaaja5ywy1hozr9anjlinmefrmgNmrtxaetygmqz3ruyveu9y9oynvMs74tjhymrO&quot;},{&quot;lang&quot;:&quot;ps&quot;,&quot;name&quot;:&quot;gtTjzrndZqnjljjrfipwj6fgsv&quot;},{&quot;lang&quot;:&quot;pt&quot;,&quot;name&quot;:&quot;ytmro0mGaulhAg&quot;},{&quot;lang&quot;:&quot;py&quot;,&quot;name&quot;:&quot;r6nq5ein5gjEOqp3rxdpDbbiyakwpd3nwd3fumd4y9oimp7v&quot;},{&quot;lang&quot;:&quot;re&quot;,&quot;name&quot;:&quot;ixkzolmcRolrp8cuoMczux1gpa2yanwx9HhPwopHxuvr6lfyxgldahwcz&quot;},{&quot;lang&quot;:&quot;ro&quot;,&quot;name&quot;:&quot;hewotVwb8srAiexn4yCbfrp&quot;},{&quot;lang&quot;:&quot;rs&quot;,&quot;name&quot;:&quot;FpZxc5eyr9n6dnveaTcpoofvsv8BhW4z&quot;},{&quot;lang&quot;:&quot;rw&quot;,&quot;name&quot;:&quot;r9tbdvmacychilpoxm1fwfxafocCwhgen9sjucqo5papd0vfz23mfzdw2ydcgpltRxpnrtwa8drakxg9p0ciajp&quot;},{&quot;lang&quot;:&quot;sc&quot;,&quot;name&quot;:&quot;qoapxsdx4uaaodhruvvotcro6ubog9iza&quot;},{&quot;lang&quot;:&quot;sn&quot;,&quot;name&quot;:&quot;j&quot;},{&quot;lang&quot;:&quot;ss&quot;,&quot;name&quot;:&quot;Kzcwv6vibuupDewdmkpbx&quot;},{&quot;lang&quot;:&quot;sx&quot;,&quot;name&quot;:&quot;WupWnwmimxm2nScvo5TckcnmxqqFEymxoqs&quot;},{&quot;lang&quot;:&quot;sz&quot;,&quot;name&quot;:&quot;ooey2h&quot;},{&quot;lang&quot;:&quot;tj&quot;,&quot;name&quot;:&quot;pdp7ecz6iqcrunxme&quot;},{&quot;lang&quot;:&quot;tk&quot;,&quot;name&quot;:&quot;w9x3t3afjo&quot;},{&quot;lang&quot;:&quot;tl&quot;,&quot;name&quot;:&quot;ncqvtgggwhakIw6phao&quot;},{&quot;lang&quot;:&quot;tn&quot;,&quot;name&quot;:&quot;cflmnvq0hxwLzByGm08atqfq8agsbbZkkpehuBthUzhxeczQbaitgc5hlonaewr8nijjpgUgascdiu9vw&quot;},{&quot;lang&quot;:&quot;ug&quot;,&quot;name&quot;:&quot;k4uloUvvbBlpb&quot;},{&quot;lang&quot;:&quot;vg&quot;,&quot;name&quot;:&quot;7lpmrWkprcneczjrrfmkmte3uwd7tgw3ypcv8ilfcpmfbu0bsQtlqwanpzpBhpbllvuxX5rvrtvff7xpjg9cyepbAsY7BQqjamnx&quot;},{&quot;lang&quot;:&quot;vu&quot;,&quot;name&quot;:&quot;yorjarrbeUva&quot;},{&quot;lang&quot;:&quot;wf&quot;,&quot;name&quot;:&quot;olhtshgdaqzlo8l3ltuhv7iraeqHhLelsffnc&quot;},{&quot;lang&quot;:&quot;zw&quot;,&quot;name&quot;:&quot;sviur0ajQl5sxfmilanvbmfpRtmyn89loIhcgsqyYgrsgjqCtwfaacAXb06qmejixsWgwaynpvxvLpljtrexZgbKqacP03hQbc&quot;}]}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">49152</stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+          <stringProp name="HTTPSampler.path">/products</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
+          <boolProp name="HTTPSampler.monitor">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>false</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <ResultCollector guiclass="StatGraphVisualizer" testclass="ResultCollector" testname="Graph" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>false</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
