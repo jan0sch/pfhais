@@ -1,0 +1,59 @@
+# Benchmarks
+
+## Conditions
+
+Service and testing software (Apache jmeter) were run on different 
+workstations connected via 100 MBit/s network connection.
+
+### Service workstation
+
+CPU : Core i5-9600K, 6 Cores, 3,7 GHz
+RAM : 32 GB
+HDD : 2x Samsung SSD 860 PRO 512GB, SATA
+OS  : FreeBSD 12 (HT disabled)
+JDK : 11.0.4+11-2
+
+### Client workstation
+
+CPU : AMD Ryzen Threadripper 2950X
+RAM : 32 GB
+HDD : 2x Samsung SSD 970 PRO 512GB, M.2
+OS  : FreeBSD 12 (HT disabled)
+JDK : 11.0.4+11-2
+
+## Impure runs
+
+### 1 - Create 100.000 products
+
+#### Response times (ms)
+
+AVG :  101
+MED :   94
+90% :  139
+MIN :   55
+MAX : 1379
+
+94.8 requests/s
+
+average system load : 14
+
+max memory : 1089 MB
+
+## Pure runs
+
+### 1 - Create 100.000 products
+
+#### Response times (ms)
+
+AVG :    9
+MED :    8
+90% :   13
+MIN :    4
+MAX : 1854
+
+435,9 requests/s
+
+average system load : 4
+
+max memory : 1240 MB
+
