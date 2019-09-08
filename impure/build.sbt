@@ -57,7 +57,7 @@ lazy val impure =
 lazy val library =
   new {
     object Version {
-      val akka         = "2.5.24"
+      val akka         = "2.5.25"
       val akkaHttp     = "10.1.9"
       val akkaHttpJson = "1.27.0"
       val cats         = "1.6.1"
