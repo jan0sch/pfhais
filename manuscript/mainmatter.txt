@@ -3046,7 +3046,9 @@ X> Please feel free to implement some complete integration tests (like in the im
 
 # Adding benchmarks
 
-TODO
+Now that we have our implementations in place we can start comparing them. We will start with implementing some benchmarks to test the performance of both implementations.
+
+I> Please do not confuse a benchmark with a load test. While the latter is intended to push a system or application to its limits, the former is intended to gather performance statistics for a specified set of conditions.
 
 # Comparison
 
