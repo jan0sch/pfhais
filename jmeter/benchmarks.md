@@ -30,6 +30,8 @@ Apache JMeter 5.1.1 was used to run the benchmark.
 
 #### Measurements
 
+|     |        |        |        |
+|-----|--------|--------|--------|
 | AVG |   98   |   98   |   98   |
 | MED |   95   |   95   |   95   |
 | 90% |  129   |  129   |  129   |
