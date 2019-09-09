@@ -12,6 +12,7 @@ RAM : 32 GB
 HDD : 2x Samsung SSD 860 PRO 512GB, SATA
 OS  : FreeBSD 12 (HT disabled)
 JDK : 11.0.4+11-2
+DB  : PostgreSQL 11.3
 
 ### Client workstation
 
