@@ -76,17 +76,17 @@ LD  = average system load
 
 |     |        |        |        |
 |-----|--------|--------|--------|
-| AVG |   76   |   75   |   75   |
-| MED |   73   |   72   |   72   |
-| 90% |  100   |   99   |  100   |
-| 95% |  112   |  110   |  111   |
-| 99% |  139   |  136   |  137   |
-| MIN |   40   |   40   |   41   |
-| MAX | 1644   |  502   | 1054   |
+| AVG |   78   |   78   |   78   |
+| MED |   76   |   75   |   75   |
+| 90% |  104   |  104   |  104   |
+| 95% |  115   |  116   |  115   |
+| 99% |  140   |  141   |  140   |
+| MIN |   42   |   42   |   42   |
+| MAX |  941   | 1074   |  380   |
 | ERR |    0%  |    0%  |    0%  |
-| R/S |  129.5 |  130.9 |  130.8 |
-| MEM | 1161   | 1226   | 1271   |
-|  LD |   16   |   16   |   16   |
+| R/S |  125.5 |  125.5 |  126.0 |
+| MEM | 1107   | 1180   | 1240   |
+| LD  |   16   |   16   |   16   |
 
 R/S = requests per second
 MEM = max. memory in MB
@@ -144,19 +144,64 @@ LD  = average system load
 
 |     |        |        |        |
 |-----|--------|--------|--------|
-| AVG |        |        |        |
-| MED |        |        |        |
-| 90% |        |        |        |
-| 95% |        |        |        |
-| 99% |        |        |        |
-| MIN |        |        |        |
-| MAX |        |        |        |
+| AVG |   12   |   12   |   12   |
+| MED |   11   |   11   |   11   |
+| 90% |   16   |   16   |   16   |
+| 95% |   19   |   21   |   21   |
+| 99% |   34   |   34   |   34   |
+| MIN |    5   |    5   |    5   |
+| MAX | 1899   |  108   |  114   |
 | ERR |    0%  |    0%  |    0%  |
-| R/S |        |        |        |
-| MEM |        |        |        |
-|  LD |        |        |        |
+| R/S |  771.8 |  763.7 |  760.3 |
+| MEM | 1237   | 1274   | 1327   |
+|  LD |    9   |    9   |    9   |
 
 R/S = requests per second
 MEM = max. memory in MB
 LD  = average system load
 
+Stacktrace 1:
+```text
+ERROR NIO1SocketServerGroup - Error handling client channel. Closing.
+java.util.concurrent.RejectedExecutionException: This SelectorLoop is closed.
+        at org.http4s.blaze.channel.nio1.SelectorLoop.enqueueTask(SelectorLoop.scala:118)
+        at org.http4s.blaze.channel.nio1.SelectorLoop.initChannel(SelectorLoop.scala:139)
+        at org.http4s.blaze.channel.nio1.NIO1SocketServerGroup.org$http4s$blaze$channel$nio1$NIO1SocketServerGroup$$handleClientChannel(NIO1SocketServerGroup.scala:290)
+        at org.http4s.blaze.channel.nio1.NIO1SocketServerGroup$SocketAcceptor.acceptNewConnections(NIO1SocketServerGroup.scala:148)
+        at org.http4s.blaze.channel.nio1.NIO1SocketServerGroup$SocketAcceptor.opsReady(NIO1SocketServerGroup.scala:119)
+        at org.http4s.blaze.channel.nio1.SelectorLoop.processKeys(SelectorLoop.scala:200)
+        at org.http4s.blaze.channel.nio1.SelectorLoop.org$http4s$blaze$channel$nio1$SelectorLoop$$runLoop(SelectorLoop.scala:171)
+        at org.http4s.blaze.channel.nio1.SelectorLoop$$anon$1.run(SelectorLoop.scala:68)
+        at java.base/java.lang.Thread.run(Thread.java:834)
+```
+
+Stacktrace 2:
+```text
+ERROR SelectorLoop - Unhandled exception in selector loop
+java.io.IOException: Connection reset by peer
+        at java.base/sun.nio.ch.FileDispatcherImpl.close0(Native Method)
+        at java.base/sun.nio.ch.SocketDispatcher.close(SocketDispatcher.java:55)
+        at java.base/sun.nio.ch.SocketChannelImpl.kill(SocketChannelImpl.java:907)
+        at java.base/sun.nio.ch.SelectorImpl.processDeregisterQueue(SelectorImpl.java:267)
+        at java.base/sun.nio.ch.KQueueSelectorImpl.doSelect(KQueueSelectorImpl.java:116)
+        at java.base/sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:124)
+        at java.base/sun.nio.ch.SelectorImpl.select(SelectorImpl.java:141)
+        at org.http4s.blaze.channel.nio1.SelectorLoop.org$http4s$blaze$channel$nio1$SelectorLoop$$runLoop(
+SelectorLoop.scala:163)
+        at org.http4s.blaze.channel.nio1.SelectorLoop$$anon$1.run(SelectorLoop.scala:68)
+        at java.base/java.lang.Thread.run(Thread.java:834)
+ERROR NIO1SocketServerGroup - Listening socket(/0.0.0.0:53248) closed forcibly.
+java.nio.channels.ShutdownChannelGroupException: null
+        at org.http4s.blaze.channel.nio1.SelectorLoop.killSelector(SelectorLoop.scala:225)
+        at org.http4s.blaze.channel.nio1.SelectorLoop.org$http4s$blaze$channel$nio1$SelectorLoop$$runLoop(
+SelectorLoop.scala:186)
+        at org.http4s.blaze.channel.nio1.SelectorLoop$$anon$1.run(SelectorLoop.scala:68)
+        at java.base/java.lang.Thread.run(Thread.java:834)
+ERROR NIO1HeadStage - Abnormal NIO1HeadStage termination
+java.nio.channels.ShutdownChannelGroupException: null
+        at org.http4s.blaze.channel.nio1.SelectorLoop.killSelector(SelectorLoop.scala:225)
+        at org.http4s.blaze.channel.nio1.SelectorLoop.org$http4s$blaze$channel$nio1$SelectorLoop$$runLoop(
+SelectorLoop.scala:186)
+        at org.http4s.blaze.channel.nio1.SelectorLoop$$anon$1.run(SelectorLoop.scala:68)
+        at java.base/java.lang.Thread.run(Thread.java:834)
+```
