@@ -3096,7 +3096,61 @@ Service and testing software (Apache JMeter) were run on different workstations 
 
 Apache JMeter version 5.1.1 was used to run the benchmark and if not noted otherwise 10 threads were used with a 10 seconds ramp up time for each benchmark.
 
-# Comparison
+## Comparison
+
+So let's start with comparing the results. As mentioned more details can be found in the file `benchmarks.md`. We'll stick to using the average of the metrics across all three benchmark runs. The following abbreviations will be used in the tables and legends.
+
+AVG
+: The average response time in milli seconds.
+
+MED
+: The median response time in milli seconds.
+
+90%
+: 90 percent of all requests were handled within the response time in milli seconds or less.
+
+95%
+: 95 percent of all requests were handled within the response time in milli seconds or less.
+
+99%
+: 99 percent of all requests were handled within the response time in milli seconds or less.
+
+MIN
+: The minium response time in milli seconds.
+
+MAX
+: The maximum response time in milli seconds.
+
+ERR
+: The error rate in percent.
+
+R/S
+: The number of requests per second that could be handled.
+
+MEM
+: The maximum amount of memory used by the service during the benchmark in MB.
+
+LD
+: The average system load on service machine during the benchmark.
+
+### Create 100.000 products
+
+| Metric | Impure  | Pure    |
+|--------|---------|---------|
+| AVG    |   98    |   12    |
+| MED    |   95    |   11.33 |
+| 90%    |  129    |   15    |
+| 95%    |  142.66 |   18    |
+| 99%    |  171.66 |   30    |
+| MIN    |   53    |    5    |
+| MAX    | 1288    |  675    |
+| ERR    |    0%   |    0%   |
+| R/S    |  100.56 |  765.33 |
+| MEM    | 1157.66 | 1308.33 |
+|  LD    |   16    |    9    |
+
+Wow, I honestly have to say that I didn't expect that. Usually the world has come to believe that the *impure* approach might be dirty but is definitely always faster. Well it seems we're about to correct that. I don't know about you but I'm totally fine with that. ;-)
+But now let's break it apart piece by piece.
 
 TODO
 
