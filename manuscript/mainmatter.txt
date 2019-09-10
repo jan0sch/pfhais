@@ -3052,6 +3052,50 @@ I> Please do not confuse a benchmark with a load test. While the latter is inten
 
 There are several applications available to perform load tests and benchmarks. Regarding the latter the Apache JMeter[^25] project is a good starting point. It is quite easy to get something running. Like the documentation says: For the real stuff you should only use the command line application and use the GUI to create and test your benchmark.
 
+We'll skip a long introduction and tutorial for JMeter because you can find a lot within the documentation and there are lots of tutorials online.
+
+## Our environment
+
+Within the book repository you'll find a folder named `jmeter` it contains several things:
+
+1. Several files ending with `.jmx` like `Pure-Create-Products.jmx` and so on.
+2. A CSV file containing 100.000 valid product IDs named `product-ids.csv`.
+3. A file named `benchmarks.md`.
+
+The `.jmx` files are the configuration files for JMeter which can be used to run the benchmarks. They are hopefully named understandable and are expected to be run in the following order:
+
+1. Create products
+2. Load products
+3. Update products
+4. Load all products
+
+I> Please note that you should really run the service on another machine! Therefore you will have to adapt the HTTP request component in the benchmarks which defaults to `localhost`.
+
+The file `product-ids.csv` is expected in the `/tmp` folder, so you'll have to copy it there or adjust the benchmark configurations. Finally the file `benchmarks.md` holds detailed information about the benchmark runs (each one was done three times in a row).
+
+### System environment
+
+Service and testing software (Apache JMeter) were run on different workstations connected via 100 MBit/s network connection.
+
+#### Service workstation
+
+| CPU | Core i5-9600K, 6 Cores, 3,7 GHz    |
+| RAM | 32 GB                              |
+| HDD | 2x Samsung SSD 860 PRO 512GB, SATA |
+| OS  | FreeBSD 12 (HT disabled)           |
+| JDK | 11.0.4+11-2                        |
+| DB  | PostgreSQL 11.3                    |
+
+#### Client workstation
+
+| CPU | AMD Ryzen Threadripper 2950X      |
+| RAM | 32 GB                             |
+| HDD | 2x Samsung SSD 970 PRO 512GB, M.2 |
+| OS  | FreeBSD 12 (HT disabled)          |
+| JDK | 11.0.4+11-2                       |
+
+Apache JMeter version 5.1.1 was used to run the benchmark and if not noted otherwise 10 threads were used with a 10 seconds ramp up time for each benchmark.
+
 # Comparison
 
 TODO
