@@ -24,6 +24,8 @@ JDK : 11.0.4+11-2
 
 Apache JMeter 5.1.1 was used to run the benchmark.
 
+If not noted otherwise 10 threads were used with a 10 seconds ramp up time.
+
 ## Impure runs
 
 ### 1 - Create 100.000 products
@@ -89,6 +91,31 @@ LD  = average system load
 | LD  |   16   |   16   |   16   |
 
 R/S = requests per second
+MEM = max. memory in MB
+LD  = average system load
+
+### 4 - Bulk load all 100.000 products
+
+* 2 threads were used with a 10 seconds ramp up time.
+* RAM had to be increased to 8 GB to avoid out of memory exceptions.
+
+#### Measurements
+
+|     |        |        |        |
+|-----|--------|--------|--------|
+| AVG | 19233  | 19008  | 18942  |
+| MED | 19099  | 18961  | 18962  |
+| 90% | 19611  | 19562  | 19399  |
+| 95% | 19895  | 19918  | 19812  |
+| 99% | 20401  | 19995  | 20684  |
+| MIN | 18620  | 17591  | 17334  |
+| MAX | 22994  | 20086  | 20864  |
+| ERR |    0%  |    0%  |    0%  |
+| R/S |    6.2 |    6.3 |    6.3 |
+| MEM | 7854   | 7909   | 7904   |
+| LD  |    5   |    5   |    5   |
+
+R/S = requests per minute
 MEM = max. memory in MB
 LD  = average system load
 
@@ -205,3 +232,28 @@ SelectorLoop.scala:186)
         at org.http4s.blaze.channel.nio1.SelectorLoop$$anon$1.run(SelectorLoop.scala:68)
         at java.base/java.lang.Thread.run(Thread.java:834)
 ```
+
+### 4 - Bulk load all 100.000 products
+
+* 2 threads were used with a 10 seconds ramp up time.
+
+#### Measurements
+
+|     |        |        |        |
+|-----|--------|--------|--------|
+| AVG | 14672  | 14414  | 14402  |
+| MED | 14640  | 14394  | 14371  |
+| 90% | 14913  | 14582  | 14573  |
+| 95% | 14950  | 14754  | 14620  |
+| 99% | 14959  | 14896  | 15122  |
+| MIN | 14221  | 13975  | 13828  |
+| MAX | 17241  | 15427  | 15677  |
+| ERR |    0%  |    0%  |    0%  |
+| R/S |    8.2 |    8.3 |    8.3 |
+| MEM | 1177   | 1187   | 1205   |
+| LD  |    4   |    4   |    4   |
+
+R/S = requests per minute
+MEM = max. memory in MB
+LD  = average system load
+

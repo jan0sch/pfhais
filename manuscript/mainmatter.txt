@@ -3050,6 +3050,8 @@ Now that we have our implementations in place we can start comparing them. We wi
 
 I> Please do not confuse a benchmark with a load test. While the latter is intended to push a system or application to its limits, the former is intended to gather performance statistics for a specified set of conditions.
 
+There are several applications available to perform load tests and benchmarks. Regarding the latter the Apache JMeter[^25] project is a good starting point. It is quite easy to get something running. Like the documentation says: For the real stuff you should only use the command line application and use the GUI to create and test your benchmark.
+
 # Comparison
 
 TODO
@@ -3093,3 +3095,5 @@ TODO
 [^23]: https://github.com/scalatest/scalatest/issues/1370
 
 [^24]: https://github.com/typelevel/kittens
+
+[^25]: https://jmeter.apache.org/
