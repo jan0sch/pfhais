@@ -70,6 +70,28 @@ R/S = requests per second
 MEM = max. memory in MB
 LD  = average system load
 
+### 3 - Update 100.000 products
+
+#### Measurements
+
+|     |        |        |        |
+|-----|--------|--------|--------|
+| AVG |   76   |   75   |   75   |
+| MED |   73   |   72   |   72   |
+| 90% |  100   |   99   |  100   |
+| 95% |  112   |  110   |  111   |
+| 99% |  139   |  136   |  137   |
+| MIN |   40   |   40   |   41   |
+| MAX | 1644   |  502   | 1054   |
+| ERR |    0%  |    0%  |    0%  |
+| R/S |  129.5 |  130.9 |  130.8 |
+| MEM | 1161   | 1226   | 1271   |
+|  LD |   16   |   16   |   16   |
+
+R/S = requests per second
+MEM = max. memory in MB
+LD  = average system load
+
 ## Pure runs
 
 ### 1 - Create 100.000 products
@@ -111,6 +133,28 @@ LD  = average system load
 | R/S | 1248.0 | 1250.6 | 1247.3 |
 | MEM | 1542   | 1538   | 1534   |
 |  LD |    8   |    8   |    8   |
+
+R/S = requests per second
+MEM = max. memory in MB
+LD  = average system load
+
+### 3 - Update 100.000 products
+
+#### Measurements
+
+|     |        |        |        |
+|-----|--------|--------|--------|
+| AVG |        |        |        |
+| MED |        |        |        |
+| 90% |        |        |        |
+| 95% |        |        |        |
+| 99% |        |        |        |
+| MIN |        |        |        |
+| MAX |        |        |        |
+| ERR |    0%  |    0%  |    0%  |
+| R/S |        |        |        |
+| MEM |        |        |        |
+|  LD |        |        |        |
 
 R/S = requests per second
 MEM = max. memory in MB
