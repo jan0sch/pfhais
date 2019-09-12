@@ -3138,21 +3138,92 @@ LD
 | Metric | Impure  | Pure    |
 |--------|---------|---------|
 | AVG    |   98    |   12    |
-| MED    |   95    |   11.33 |
+| MED    |   95    |   11    |
 | 90%    |  129    |   15    |
-| 95%    |  142.66 |   18    |
-| 99%    |  171.66 |   30    |
+| 95%    |  143    |   18    |
+| 99%    |  172    |   30    |
 | MIN    |   53    |    5    |
 | MAX    | 1288    |  675    |
 | ERR    |    0%   |    0%   |
 | R/S    |  100.56 |  765.33 |
-| MEM    | 1157.66 | 1308.33 |
+| MEM    | 1158    | 1308    |
 |  LD    |   16    |    9    |
 
 Wow, I honestly have to say that I didn't expect that. Usually the world has come to believe that the *impure* approach might be dirty but is definitely always faster. Well it seems we're about to correct that. I don't know about you but I'm totally fine with that. ;-)
-But now let's break it apart piece by piece.
+But now let's break it apart piece by piece. The first thing that catches the eye is that the pure service seems to be about seven times faster than the impure one! The average 100 requests per second on the impure side stand against an average 765 requests per second on the pure side. Also the metrics regarding the response times support that. Regarding the memory usage we can see that the pure service needed about 13% more memory than the impure one. Living in times in which memory is cheap I consider this a small price to pay for a significant performance boost.
+Last but not least I found it very interesting that the average system load was much higher (nearly twice as high) in the impure implementation. While it is okay to make use of your resources a lower utilisation allows more "breathing room" for other tasks (operating system, database, etc.).
 
-TODO
+### Load 100.000 products
+
+| Metric | Impure  | Pure    |
+|--------|---------|---------|
+| AVG    |    7    |    7    |
+| MED    |    8    |    7    |
+| 90%    |   10    |    9    |
+| 95%    |   11    |   10    |
+| 99%    |   14    |   19    |
+| MIN    |    4    |    2    |
+| MAX    |  347    |  118    |
+| ERR    |    0%   |    0%   |
+| R/S    | 1162.20 | 1248.63 |
+| MEM    | 1449    | 1538    |
+|  LD    |   13    |    8    |
+
+The loading benchmark provides a more balanced picture. While the pure service is still slightly ahead (about 7% faster), it uses about 6% more memory than the impure one. Overall both implementations deliver nearly the same results. But again the pure one causes significant lower system load like in the first benchmark.
+
+### Update 100.000 products
+
+| Metric | Impure  | Pure    |
+|--------|---------|---------|
+| AVG    |   78    |   12    |
+| MED    |   75    |   11    |
+| 90%    |  104    |   16    |
+| 95%    |  115    |   20    |
+| 99%    |  140    |   34    |
+| MIN    |   42    |    5    |
+| MAX    |  798    |  707    |
+| ERR    |    0%   |    0%   |
+| R/S    |  125.66 |  765.26 |
+| MEM    | 1176    | 1279    |
+|  LD    |   16    |    8    |
+
+Updating existing products results in nearly the same picture as the "create products" benchmark. Interestingly the impure service performs about 20% better on an update than on a create. I have no idea why but it caught my eye. The other metrics are as said nearly identical to the first benchmark. The pure service uses a bit more memory (around 8%) but is around 6 times faster than the impure one causing only half of the system load.
+
+I> During the runs I encountered occasionally errors with the pure service but I was unable to reproduce them. For posterity I created a ticket on the http4s project[^26] and also noted the error messages in the file `benchmarks.md`.
+
+### Bulk load all 100.000 products
+
+For our last benchmark we load all existing products via the `GET /products` route. Because this causes a lot of load we reduce the number of threads in our JMeter configuration from 10 to 2 and only use 50 iterations. But enough talk here are the numbers.
+
+| Metric | Impure  | Pure    |
+|--------|---------|---------|
+| AVG    | 19061   | 14496   |
+| MED    | 19007   | 14468   |
+| 90%    | 19524   | 14689   |
+| 95%    | 19875   | 14775   |
+| 99%    | 20360   | 14992   |
+| MIN    | 17848   | 14008   |
+| MAX    | 21315   | 16115   |
+| ERR    |     0%  |     0%  |
+| R/M    |    6.30 |    8.30 |
+| MEM    |  7889   |  1190   |
+|  LD    |     5   |     4   |
+
+I> Please note that we now have requests per minute (`R/M`) instead of requests per second as before.
+
+As you can see the difference in system load is way smaller this time. While it is still 25% a load of 4 versus 5 on a machine like the test machine makes almost no difference. However the pure service is again faster (about 25%). Looking at the memory footprint we can see that the impure one uses nearly seven times as much memory as the pure one.
+But before we burst into cheers about that let's remember what we did in the impure implementation! Yes, we used the `groupBy` operator of Akka which keeps a lot of stuff in memory so the fault for this is ours. ;-)
+Because I'm not in the mood to mess with Akka until we're on the memory safe side here, we'll just ignore the memory footprint for this benchmark. Summarising that the pure service is again fast than the impure one.
+
+## Summary
+
+Q> So what can we say after comparing our two implementations?
+
+If you look around in the internet (and also in the literature) you'll find a lot of sources stating that "functional programming is slow" or "functional programming does not perform" and so on. Well I would argue that we have proven that this is not the case! Although we cannot generalise our findings because we only took a look at a specific niche within the corner of a specific environment, I think this is pretty exciting!
+
+Not only do you benefit from having code that can more easily reasoned about but you gain better testing possibilities and in the end your application also performs better! :-)
+
+While we pay some price (increased memory footprint) for it because there is no free lunch. It seems that it is worth it to work in a clean and pure fashion. So next time someone argues in favour of some dirty impure monstrosity because it is faster, just remember and tell 'em that this might not be true!
 
 # Documenting your API
 
@@ -3195,3 +3266,5 @@ TODO
 [^24]: https://github.com/typelevel/kittens
 
 [^25]: https://jmeter.apache.org/
+
+[^26]: https://github.com/http4s/http4s/issues/2855
