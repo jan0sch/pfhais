@@ -3227,11 +3227,30 @@ While we pay some price (increased memory footprint) for it because there is no 
 
 # Documenting your API
 
-TODO
+Before we celebrate ourselves we have to tackle one missing point: We have to document our API.
+
+Q> But isn't the code documentation enough?
+
+No, it is not! Leaving the issues of proper documented code aside here, we will concentrate on documenting the API. The de factor standard in our days seems to be using Swagger[^27] for this. To keep things simple we will stick to it. Besides that it won't hurt to have some documentation in text form (a small file could be enough) which should explain the quirks of our API. The bigger the project the earlier you may encounter flaws in the logic which might not be changeable because whatever reasons there are. ;-)
 
 ## The lay of the land
 
-TODO
+Swagger provides a bit of tooling and there are likely lots of projects trying to bring it to your favourite web framework or tool kit. In many cases it might be a good idea to bundle the Swagger UI[^28] with your service and make it available on a specific path. Depending on your needs and environment you'll want to protect that path via authentication and make it configurable for turning it off in production.
+
+Having the UI you must decide which path you want to go down:
+
+1. Write a `swagger.yml` file which describes your API, create JSON from it and deliver that as an asset.
+2. Create the JSON dynamically via some library at runtime.
+
+The first point has the benefit that you description will be more or less set in stone and you avoid possible performance impacts and other quirks at runtime. However you must think of a way to test that your service actually fulfils the description (*read* specification) that you deliver. The most common tool for writing your API description is probably the Swagger Editor[^29].
+
+Taking the second path will result in a description which reflects your actual code. However none of the tools available I've seen so far has fulfilled that promise to 100 percent. You'll very likely have to make extensive use of annotations to make your API description usable, resulting also in a decoupling of code and description. Also you might encounter "funny" deduced data types like `Future1` and so on - which are annoying and confusing for the user. For those favouring the impure approach there is the swagger-akka-http library[^30].
+
+Q> But can't we do better than this?
+
+The answer is yes! We can describe our API using static typing and have the compiler check it and can deduce server and client code from it.
+
+I> To be fair: Swagger is also intended to auto generate code from it but often (if not always) these are one shot throw away solutions. Because you loose your modifications if the code needs to be re-generated again.
 
 ## Using types to describe an API
 
@@ -3268,3 +3287,11 @@ TODO
 [^25]: https://jmeter.apache.org/
 
 [^26]: https://github.com/http4s/http4s/issues/2855
+
+[^27]: https://swagger.io/
+
+[^28]: https://swagger.io/tools/swagger-ui/
+
+[^29]: https://swagger.io/tools/swagger-editor/
+
+[^30]: https://github.com/swagger-akka-http/swagger-akka-http
