@@ -3254,7 +3254,9 @@ I> To be fair: Swagger is also intended to auto generate code from it but often 
 
 ## Using types to describe an API
 
-TODO
+Describing your API using types is not bleeding edge academic research stuff like you might have guessed. There are several libraries existing for it! :-)
+
+Personally I stumbled upon such things first some years ago when seeing the talk "Using object algebras to design embedded DSLs" (Curry On 2016)[^31]. The related project is the library endpoints[^32]. However there are other projects too including the ρ (rho) library[^33] included in the http4s project. Another one is tapir[^24] which we will be using in our example.
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
@@ -3295,3 +3297,11 @@ TODO
 [^29]: https://swagger.io/tools/swagger-editor/
 
 [^30]: https://github.com/swagger-akka-http/swagger-akka-http
+
+[^31]: https://www.youtube.com/watch?v=snbsYyBS4Bs
+
+[^32]: http://julienrf.github.io/endpoints/
+
+[^33]: https://github.com/http4s/rho
+
+[^34]: https://github.com/softwaremill/tapir
