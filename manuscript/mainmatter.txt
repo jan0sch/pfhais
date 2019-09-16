@@ -3231,7 +3231,7 @@ Before we celebrate ourselves we have to tackle one missing point: We have to do
 
 Q> But isn't the code documentation enough?
 
-No, it is not! Leaving the issues of proper documented code aside here, we will concentrate on documenting the API. The de factor standard in our days seems to be using Swagger[^27] for this. To keep things simple we will stick to it. Besides that it won't hurt to have some documentation in text form (a small file could be enough) which should explain the quirks of our API. The bigger the project the earlier you may encounter flaws in the logic which might not be changeable because whatever reasons there are. ;-)
+No, it is not! Leaving the issues of proper documented code aside here, we will concentrate on documenting the API. The de facto standard in our days seems to be using Swagger[^27] for this. To keep things simple we will stick to it. Besides that it won't hurt to have some documentation in text form (a small file could be enough) which should explain the quirks of our API. The bigger the project the earlier you may encounter flaws in the logic which might not be changeable because whatever reasons there are. ;-)
 
 ## The lay of the land
 
