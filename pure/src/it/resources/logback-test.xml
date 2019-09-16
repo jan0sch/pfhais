@@ -15,7 +15,7 @@
     <discardingThreshold>0</discardingThreshold>
   </appender>
 
-  <logger name="com.wegtam.books.pfhais.impure" level="INFO" additivity="false">
+  <logger name="com.wegtam.books.pfhais.pure" level="INFO" additivity="false">
     <appender-ref ref="console"/>
   </logger>
 
