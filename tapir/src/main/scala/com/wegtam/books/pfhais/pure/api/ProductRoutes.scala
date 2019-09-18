@@ -20,6 +20,8 @@ import eu.timepit.refined.auto._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
+import tapir._
+import tapir.json.circe._
 
 final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
@@ -47,5 +49,13 @@ final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] 
           case InvalidMessageBodyFailure(_, _) => BadRequest()
         }
   }
+
+}
+
+object ProductRoutes {
+
+  val endpoint: Endpoint[ProductId, Unit, Product, Nothing] = endpoint.get
+    .in("product" / path[ProductId])
+    .out(jsonBody[Product])
 
 }

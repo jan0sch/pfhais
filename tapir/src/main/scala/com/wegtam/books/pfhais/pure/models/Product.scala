@@ -17,6 +17,7 @@ import cats.implicits._
 import eu.timepit.refined.auto._
 import io.circe._
 import io.circe.generic.semiauto._
+import tapir._
 
 /**
   * A product.
@@ -35,6 +36,20 @@ object Product {
   implicit val order: Order[Product] = new Order[Product] {
     def compare(x: Product, y: Product): Int = x.id.compare(y.id)
   }
+
+  @SuppressWarnings(
+    Array(
+      "org.wartremover.warts.Product",
+      "org.wartremover.warts.Serializable"
+    )
+  )
+  implicit val schemaFor: SchemaFor[Product] = SchemaFor(
+    Schema.SProduct(
+      Schema.SObjectInfo("Product"),
+      List(("id", Schema.SString), ("names", Schema.SArray(Translation.schemaFor.schema))),
+      List("id", "names")
+    )
+  )
 
   /**
     * Try to create a Product from the given list of database rows.

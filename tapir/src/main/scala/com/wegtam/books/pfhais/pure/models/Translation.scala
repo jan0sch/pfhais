@@ -16,6 +16,7 @@ import cats.derived
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.refined._
+import tapir._
 
 /**
   * The translation data for a product name.
@@ -35,5 +36,13 @@ object Translation {
     import derived.auto.order._
     derived.semi.order[Translation]
   }
+
+  implicit val schemaFor: SchemaFor[Translation] = SchemaFor(
+    Schema.SProduct(
+      Schema.SObjectInfo("Translation"),
+      List(("lang", Schema.SString), ("name", Schema.SString)),
+      List("lang", "name")
+    )
+  )
 
 }
