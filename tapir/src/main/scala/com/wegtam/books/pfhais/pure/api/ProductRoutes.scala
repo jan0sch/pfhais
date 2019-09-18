@@ -52,9 +52,10 @@ final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] 
 
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductRoutes {
 
-  val endpoint: Endpoint[ProductId, Unit, Product, Nothing] = endpoint.get
+  val routes: Endpoint[ProductId, Unit, Product, Nothing] = endpoint.get
     .in("product" / path[ProductId])
     .out(jsonBody[Product])
 
