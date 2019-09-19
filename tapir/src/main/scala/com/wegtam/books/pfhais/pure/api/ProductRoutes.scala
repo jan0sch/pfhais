@@ -22,10 +22,18 @@ import org.http4s.circe._
 import org.http4s.dsl._
 import tapir._
 import tapir.json.circe._
+import tapir.server.http4s._
 
 final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
   implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
+
+  val getRoute: HttpRoutes[F] = ProductRoutes.getProduct.toRoutes { id =>
+    for {
+      rows <- repo.loadProduct(id)
+      resp = Product.fromDatabase(rows).fold(().asLeft[Product])(_.asRight[Unit])
+    } yield resp
+  }
 
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / "product" / UUIDVar(id) =>
@@ -55,8 +63,15 @@ final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductRoutes {
 
-  val routes: Endpoint[ProductId, Unit, Product, Nothing] = endpoint.get
+  val getProduct: Endpoint[ProductId, Unit, Product, Nothing] = endpoint.get
     .in("product" / path[ProductId])
     .out(jsonBody[Product])
+
+  val updateProduct: Endpoint[(ProductId, Product), Unit, Unit, Nothing] = endpoint.put
+    .in("product" / path[ProductId])
+    .in(
+      jsonBody[Product]
+        .description("The updated product data which should be saved.")
+    )
 
 }
