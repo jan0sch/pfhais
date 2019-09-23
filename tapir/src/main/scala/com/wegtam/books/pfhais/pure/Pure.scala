@@ -43,8 +43,8 @@ object Pure extends IOApp {
         val cfg = ConfigFactory.load
         // TODO Think about alternatives to `Throw`.
         (
-          loadConfigOrThrow[ApiConfig](cfg, "api"),
-          loadConfigOrThrow[DatabaseConfig](cfg, "database")
+          ConfigSource.fromConfig(cfg).at("api").loadOrThrow[ApiConfig],
+          ConfigSource.fromConfig(cfg).at("database").loadOrThrow[DatabaseConfig]
         )
       }
       ms <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
