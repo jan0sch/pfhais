@@ -12,7 +12,7 @@
 package com.wegtam.books.pfhais.pure.api
 
 import cats.Applicative
-import cats.effect.Sync
+import cats.effect._
 import cats.implicits._
 import com.wegtam.books.pfhais.pure.db._
 import com.wegtam.books.pfhais.pure.models._
@@ -24,7 +24,7 @@ import tapir._
 import tapir.json.circe._
 import tapir.server.http4s._
 
-final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
+final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
   implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
 
