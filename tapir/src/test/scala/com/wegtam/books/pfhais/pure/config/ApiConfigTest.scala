@@ -15,7 +15,7 @@ import com.typesafe.config._
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.pure.config.ApiConfigGenerators._
 import eu.timepit.refined.auto._
-import pureconfig._
+import pureconfig.loadConfig
 
 class ApiConfigTest extends BaseSpec {
 
@@ -23,7 +23,7 @@ class ApiConfigTest extends BaseSpec {
     "loading invalid config format" must {
       "fail" in {
         val config = ConfigFactory.parseString("{}")
-        ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
+        loadConfig[ApiConfig](config, "api") match {
           case Left(_)  => succeed
           case Right(_) => fail("Loading an invalid config must fail!")
         }
@@ -36,7 +36,7 @@ class ApiConfigTest extends BaseSpec {
           forAll("port") { i: Int =>
             whenever(i < 1 || i > 65535) {
               val config = ConfigFactory.parseString(s"""api{"host":"","port":$i}""")
-              ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
+              loadConfig[ApiConfig](config, "api") match {
                 case Left(_)  => succeed
                 case Right(_) => fail("Loading a config with invalid settings must fail!")
               }
@@ -52,7 +52,7 @@ class ApiConfigTest extends BaseSpec {
               ConfigFactory.parseString(
                 s"""api{"host":"${expected.host}","port":${expected.port}}"""
               )
-            ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
+            loadConfig[ApiConfig](config, "api") match {
               case Left(e)  => fail(s"Parsing a valid configuration must succeed! ($e)")
               case Right(c) => c must be(expected)
             }

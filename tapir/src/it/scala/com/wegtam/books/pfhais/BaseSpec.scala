@@ -14,7 +14,7 @@ package com.wegtam.books.pfhais
 import com.typesafe.config._
 import com.wegtam.books.pfhais.pure.config._
 import eu.timepit.refined.auto._
-import pureconfig._
+import pureconfig.loadConfig
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
@@ -28,7 +28,7 @@ abstract class BaseSpec extends WordSpec
     with BeforeAndAfterEach {
 
   protected val config = ConfigFactory.load()
-  protected val dbConfig = ConfigSource.fromConfig(config).at("database").load[DatabaseConfig]
+  protected val dbConfig = loadConfig[DatabaseConfig](config, "database")
 
   override def beforeAll(): Unit = {
     val _ = withClue("Database configuration could not be loaded!") {
