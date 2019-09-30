@@ -22,6 +22,7 @@ import org.http4s.circe._
 import org.http4s.dsl._
 import tapir._
 import tapir.json.circe._
+import tapir.model.{ StatusCode, StatusCodes }
 import tapir.server.http4s._
 
 final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends Http4sDsl[F] {
@@ -31,7 +32,9 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
   val getRoute: HttpRoutes[F] = ProductRoutes.getProduct.toRoutes { id =>
     for {
       rows <- repo.loadProduct(id)
-      resp = Product.fromDatabase(rows).fold(().asLeft[Product])(_.asRight[Unit])
+      resp = Product
+        .fromDatabase(rows)
+        .fold(StatusCodes.NotFound.asLeft[Product])(_.asRight[StatusCode])
     } yield resp
   }
 
@@ -63,12 +66,13 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductRoutes {
 
-  val getProduct: Endpoint[ProductId, Unit, Product, Nothing] = endpoint.get
-    .in("product" / path[ProductId])
+  val getProduct: Endpoint[ProductId, StatusCode, Product, Nothing] = endpoint.get
+    .in("product" / path[ProductId]("id"))
+    .errorOut(statusCode)
     .out(jsonBody[Product])
 
   val updateProduct: Endpoint[(ProductId, Product), Unit, Unit, Nothing] = endpoint.put
-    .in("product" / path[ProductId])
+    .in("product" / path[ProductId]("id"))
     .in(
       jsonBody[Product]
         .description("The updated product data which should be saved.")

@@ -66,7 +66,7 @@ final class ProductRoutesTest extends BaseSpec {
               case Right(u) =>
                 val repo: Repository[IO] = new TestRepository[IO](Seq(p))
                 def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(repo).routes)
+                  Router("/" -> new ProductRoutes(repo).getRoute)
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.GET, uri = u)
                 )
