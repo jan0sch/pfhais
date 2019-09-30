@@ -3258,6 +3258,29 @@ Describing your API using types is not bleeding edge academic research stuff lik
 
 Personally I stumbled upon such things first some years ago when seeing the talk "Using object algebras to design embedded DSLs" (Curry On 2016)[^31]. The related project is the library endpoints[^32]. However there are other projects too including the rho library[^33] included in the http4s project. Another one is tapir[^24] which we will be using in our example.
 
+Q> So why did I pick the tapir library?
+
+First I wanted to use something which allows us to generate a http4s server. This already narrowed down the options a bit. Also it should be able to generate API documentation (which nowadays means Swagger/OpenAPI support). Furthermore it should support not only http4s but more options. So after playing a bit around I decided to use the tapir library.
+
+W> The library is still pretty young and may be subject to breaking changes. So please have this in mind when reading through the following part.
+
+## A pure implementation using tapir.
+
+We basically cloned our `pure` folder into the `tapir` folder and start to apply our changes to the already pure implementation. But first some theory.
+
+### Basics
+
+The tapir library assumes that you describe your API using the `Endpoint` type which is more concrete defined as follows: `Endpoint[I, E, O, S]`
+
+* The type `I` defines the input given into the endpoint.
+* Type type `E` defines the error (or errors) which may be returned by the endpoint.
+* The type `O` defines the possible output of the endpoint.
+* The type `S` specifies the type of streams which are used for in- and output.
+
+An endpoint can have attributes like `name` or `description` which will be used in the generated documentation. You can also map input and output parameters into case classes.
+
+I> Please note that all mappings have to be bi-directional because tapir must be able to generate server and client code from it.
+
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/
