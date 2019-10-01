@@ -29,7 +29,7 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
   implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
   implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
 
-  val getRoute: HttpRoutes[F] = ProductRoutes.getProduct.toRoutes { id =>
+  private val getRoute: HttpRoutes[F] = ProductRoutes.getProduct.toRoutes { id =>
     for {
       rows <- repo.loadProduct(id)
       resp = Product
@@ -38,28 +38,19 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
     } yield resp
   }
 
-  val routes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root / "product" / UUIDVar(id) =>
+  private val updateRoute: HttpRoutes[F] = ProductRoutes.updateProduct.toRoutes {
+    case (id, p) =>
       for {
-        rows <- repo.loadProduct(id)
-        resp <- Product.fromDatabase(rows).fold(NotFound())(p => Ok(p))
-      } yield resp
-    case req @ PUT -> Root / "product" / UUIDVar(id) =>
-      req
-        .as[Product]
-        .flatMap { p =>
-          for {
-            cnt <- repo.updateProduct(p)
-            res <- cnt match {
-              case 0 => NotFound()
-              case _ => NoContent()
-            }
-          } yield res
+        cnt <- repo.updateProduct(p)
+        res = cnt match {
+          case 0 => StatusCodes.NotFound.asLeft[Unit]
+          case _ => ().asRight[StatusCode]
         }
-        .handleErrorWith {
-          case InvalidMessageBodyFailure(_, _) => BadRequest()
-        }
+      } yield res
   }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  val routes: HttpRoutes[F] = getRoute <+> updateRoute
 
 }
 
@@ -71,11 +62,13 @@ object ProductRoutes {
     .errorOut(statusCode)
     .out(jsonBody[Product])
 
-  val updateProduct: Endpoint[(ProductId, Product), Unit, Unit, Nothing] = endpoint.put
+  val updateProduct: Endpoint[(ProductId, Product), StatusCode, Unit, Nothing] = endpoint.put
     .in("product" / path[ProductId]("id"))
     .in(
       jsonBody[Product]
         .description("The updated product data which should be saved.")
     )
+    .errorOut(statusCode)
+    .out(statusCode(StatusCodes.NoContent))
 
 }

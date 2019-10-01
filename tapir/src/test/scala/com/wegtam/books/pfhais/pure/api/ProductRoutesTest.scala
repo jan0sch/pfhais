@@ -44,7 +44,7 @@ final class ProductRoutesTest extends BaseSpec {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
                 def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(emptyRepository).getRoute)
+                  Router("/" -> new ProductRoutes(emptyRepository).routes)
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.GET, uri = u)
                 )
@@ -66,7 +66,7 @@ final class ProductRoutesTest extends BaseSpec {
               case Right(u) =>
                 val repo: Repository[IO] = new TestRepository[IO](Seq(p))
                 def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(repo).getRoute)
+                  Router("/" -> new ProductRoutes(repo).routes)
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.GET, uri = u)
                 )
@@ -97,7 +97,8 @@ final class ProductRoutesTest extends BaseSpec {
                 )
                 val result = response.unsafeRunSync
                 result.status must be(expectedStatusCode)
-                result.body.compile.toVector.unsafeRunSync must be(empty)
+                result.as[String].unsafeRunSync must be("Invalid value for: body")
+              //result.body.compile.toVector.unsafeRunSync must be(empty)
             }
           }
         }
