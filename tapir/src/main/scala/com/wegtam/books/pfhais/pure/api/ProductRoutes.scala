@@ -57,18 +57,19 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductRoutes {
 
-  val getProduct: Endpoint[ProductId, StatusCode, Product, Nothing] = endpoint.get
+  private val getProduct: Endpoint[ProductId, StatusCode, Product, Nothing] = endpoint.get
     .in("product" / path[ProductId]("id"))
     .errorOut(statusCode)
     .out(jsonBody[Product])
 
-  val updateProduct: Endpoint[(ProductId, Product), StatusCode, Unit, Nothing] = endpoint.put
-    .in("product" / path[ProductId]("id"))
-    .in(
-      jsonBody[Product]
-        .description("The updated product data which should be saved.")
-    )
-    .errorOut(statusCode)
-    .out(statusCode(StatusCodes.NoContent))
+  private val updateProduct: Endpoint[(ProductId, Product), StatusCode, Unit, Nothing] =
+    endpoint.put
+      .in("product" / path[ProductId]("id"))
+      .in(
+        jsonBody[Product]
+          .description("The updated product data which should be saved.")
+      )
+      .errorOut(statusCode)
+      .out(statusCode(StatusCodes.NoContent))
 
 }
