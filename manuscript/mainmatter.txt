@@ -3281,6 +3281,108 @@ An endpoint can have attributes like `name` or `description` which will be used 
 
 I> Please note that all mappings have to be bi-directional because tapir must be able to generate server and client code from it.
 
+### Product routes
+
+Having the basics settled we can try to write our first endpoint. Let's refactor our product routes. We will define our endpoints in the companion object of the class.
+
+{caption: "Tapir endpoint for loading a product"}
+```scala
+// Our type is Endpoint[ProductId, StatusCode, Product, Nothing]
+val getProduct = endpoint.get
+  .in("product" / path[ProductId]("id"))
+  .errorOut(statusCode)
+  .out(jsonBody[Product])
+```
+
+So what do we have here? First we specify the HTTP method by using the `get` function of the endpoint. Now we need to define our path and inputs. We do this using the `in` helper which accepts path fragments separated by slashes and also a `path[T]` helper which allows us to extract a type directly from a path fragment. This way we define our entry point `product/id` in which `id` must match our `ProductId` type.
+To be able to be more flexible about our returned status codes we use the `errorOut` function which in our case just receives a status code (indicated by passing `statusCode` to it).
+Finally we define that the endpoint will return the JSON representation of a product by using the `out` and `jsonBody` helpers. This all is reflected in the actual type signature of our endpoint which reads `Endpoint[ProductId, StatusCode, Product, Nothing]`. If we remember the basics then we know that this amounts to an endpoint which takes a `ProductId` as input, produces a `StatusCode` as possible error and returns a `Product` upon success.
+
+I> But not only we know this, the compiler now knows this too! :-)
+
+Our endpoint alone won't do us any good so we need an actual server side implementation of it. While we could have used the `serverLogic` function to directly attach our logic onto the endpoint definition this would have nailed us down to a concrete server implementation.
+So we're going to implement it in the `ProductRoutes` class.
+
+{caption: "http4s implementation of the load product endpoint"}
+```scala
+val getRoute: HttpRoutes[F] = ProductRoutes.getProduct.toRoutes { id =>
+  for {
+    rows <- repo.loadProduct(id)
+    resp = Product
+      .fromDatabase(rows)
+      .fold(StatusCodes.NotFound.asLeft[Product])(_.asRight[StatusCode])
+  } yield resp
+}
+```
+
+We use the `toRoutes` helper of tapir which expects a function with the actual logic. As you can see the implementation is straightforward and only differs slightly from our original one. Currently there is no other way to handle our "not found" case than using the `fold` at the end. But if you remember, we did the same thing in the original code.
+
+That was not that difficult, for something which some people like to talk about as "academic fantasies from fairy tale land". ;-)
+
+Onward to our next route: updating an existing product. First we need to define our endpoint.
+
+{caption: "Tapir endpoint for updating a product"}
+```scala
+// Our type is Endpoint[(ProductId, Product), StatusCode, Unit, Nothing]
+val updateProduct =
+  endpoint.put
+    .in("product" / path[ProductId]("id"))
+    .in(
+      jsonBody[Product]
+        .description("The updated product data which should be saved.")
+    )
+    .errorOut(statusCode)
+    .out(statusCode(StatusCodes.NoContent))
+```
+
+This is only slightly more code than our first endpoint. We use the `put` method this time and the same logic as before to extract our product id from the path. But we also need our product input which we expect as JSON in the request body. The `jsonBody` function used is also extended with the `description` helper here which will provide data for a possibly generated documentation. We'll come to generated API docs later on.
+We also restrict our errors to status codes via the `errorOut(statusCode)` directive. Last but not least we have to define our output. Per default a status code of "200 OK" will be used which is why we override it in the `out` function with the "204 No Content" preferred by us.
+
+{caption: "http4s implementation of the update product endpoint"}
+```scala
+private val updateRoute: HttpRoutes[F] = 
+  ProductRoutes.updateProduct.toRoutes {
+    case (id, p) =>
+      for {
+        cnt <- repo.updateProduct(p)
+        res = cnt match {
+          case 0 => StatusCodes.NotFound.asLeft[Unit]
+          case _ => ().asRight[StatusCode]
+        }
+      } yield res
+  }
+```
+
+The implementation is again very similar to our original one. Except that it is even a bit simpler. This is because we do not have to worry about wrongly encoded input (Remember our `handleErrorWith` directive?). The tapir library will by default return a "400 Bad Request" status if any provided input cannot be decoded.
+Within the pattern match we use the status codes provided by tapir and map the returned values to the correct type which is an `Either[StatusCode, Unit]` because of our endpoint type. This results from our endpoint type signature being `Endpoint[(ProductId, Product), StatusCode, Unit, Nothing]`. This translates to having an input of both a `ProductId` and a `Product` and returning a `StatusCode` in the error case or `Unit` upon success.
+
+Now we only need to combine both routes and we're set.
+
+{caption: "combined product routes"}
+```scala
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
+val routes: HttpRoutes[F] = getRoute <+> updateRoute
+```
+
+So, let us run our tests and see what happens.
+
+```text
+[info]   when PUT /product/ID
+[info]     when request body is invalid
+[info]     - must return 400 Bad Request *** FAILED ***
+[info]       TestFailedException was thrown during property evaluation.
+[info]         Message: Vector(...) was not empty
+[info]         Location: (ProductRoutesTest.scala:100)
+[info]         Occurred when passed generated values (
+[info]           id = b55df341-a165-40c4-87ba-3d1c5cfb2f0c
+[info]         )
+```
+
+Well, not what we expected, or is it? To be honest I personally expected more errors but maybe I'm just doing this stuff for too long. ;-)
+If we look into the error we find that because the encoding problems are now handled for us the response not only contains a status code of "400 Bad Request" but also an error message: "Invalid value for: body". Because I'm fine with that I just adjust the test and let it be good. :-)
+
+Pretty awesome, we have already half of our endpoints done. So let's move on to the remaining ones and finally see how to generate documentation and also a client for our API.
+
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/
