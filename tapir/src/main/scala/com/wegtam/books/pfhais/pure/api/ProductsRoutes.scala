@@ -11,7 +11,7 @@
 
 package com.wegtam.books.pfhais.pure.api
 
-import cats.effect.Sync
+import cats.effect._
 import cats.implicits._
 import com.wegtam.books.pfhais.pure.db._
 import com.wegtam.books.pfhais.pure.models._
@@ -21,8 +21,12 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
+import tapir._
+import tapir.json.circe._
+import tapir.model.{ StatusCode, StatusCodes }
+import tapir.server.http4s._
 
-final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
+final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
 
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
@@ -58,5 +62,30 @@ final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F]
           case InvalidMessageBodyFailure(_, _) => BadRequest()
         }
   }
+
+  val createRoute: HttpRoutes[F] = ProductsRoutes.createProduct.toRoutes { product =>
+    for {
+      cnt <- repo.saveProduct(product)
+      res = cnt match {
+        case 0 => StatusCodes.InternalServerError.asLeft[Unit]
+        case _ => ().asRight[StatusCode]
+      }
+    } yield res
+  }
+
+}
+
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
+object ProductsRoutes {
+
+  val createProduct: Endpoint[Product, StatusCode, Unit, Nothing] =
+    endpoint.post
+      .in("products")
+      .in(
+        jsonBody[Product]
+          .description("The product data which should be created.")
+      )
+      .errorOut(statusCode)
+      .out(statusCode(StatusCodes.NoContent))
 
 }
