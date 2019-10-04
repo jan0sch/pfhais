@@ -57,12 +57,12 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductRoutes {
 
-  private val getProduct: Endpoint[ProductId, StatusCode, Product, Nothing] = endpoint.get
+  val getProduct: Endpoint[ProductId, StatusCode, Product, Nothing] = endpoint.get
     .in("product" / path[ProductId]("id"))
     .errorOut(statusCode)
     .out(jsonBody[Product])
 
-  private val updateProduct: Endpoint[(ProductId, Product), StatusCode, Unit, Nothing] =
+  val updateProduct: Endpoint[(ProductId, Product), StatusCode, Unit, Nothing] =
     endpoint.put
       .in("product" / path[ProductId]("id"))
       .in(
