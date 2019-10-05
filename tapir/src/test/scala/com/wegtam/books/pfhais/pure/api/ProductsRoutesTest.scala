@@ -24,11 +24,14 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 
 import scala.collection.immutable.Seq
+import scala.concurrent.ExecutionContext.Implicits.global
 
 final class ProductsRoutesTest extends BaseSpec {
   implicit def decodeProduct: EntityDecoder[IO, Product]                   = jsonOf
   implicit def decodeProducts: EntityDecoder[IO, List[Product]]            = jsonOf
   implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
+  implicit val contextShift: ContextShift[IO]                              = IO.contextShift(global)
+  implicit val timer: Timer[IO]                                            = IO.timer(global)
   private val emptyRepository: Repository[IO]                              = new TestRepository[IO](Seq.empty)
 
   "ProductsRoutes" when {

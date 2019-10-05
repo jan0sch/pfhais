@@ -78,6 +78,12 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductsRoutes {
 
+  def getProducts[F[_]]: Endpoint[Unit, StatusCode, Stream[F, String], Stream[F, String]] =
+    endpoint.get
+      .in("products")
+      .errorOut(statusCode)
+      .out(streamBody[Stream[F, String]](schemaFor[String], tapir.MediaType.Json()))
+
   val createProduct: Endpoint[Product, StatusCode, Unit, Nothing] =
     endpoint.post
       .in("products")
