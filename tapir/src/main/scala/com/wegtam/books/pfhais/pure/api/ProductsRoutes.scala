@@ -63,6 +63,25 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
         }
   }
 
+  val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
+    val prefix = Stream.eval("[".pure[F])
+    val suffix = Stream.eval("]".pure[F])
+    val ps = repo.loadProducts
+      .groupAdjacentBy(_._1)
+      .map {
+        case (id, rows) => Product.fromDatabase(rows.toList)
+      }
+      .collect {
+        case Some(p) => p
+      }
+      .map(_.asJson.noSpaces)
+      .intersperse(",")
+    @SuppressWarnings(Array("org.wartremover.warts.Any"))
+    val result: Stream[F, String] = prefix ++ ps ++ suffix
+    val bytes: Stream[F, Byte]    = result.through(fs2.text.utf8Encode)
+    bytes
+  }
+
   val createRoute: HttpRoutes[F] = ProductsRoutes.createProduct.toRoutes { product =>
     for {
       cnt <- repo.saveProduct(product)
@@ -78,11 +97,11 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductsRoutes {
 
-  def getProducts[F[_]]: Endpoint[Unit, StatusCode, Stream[F, String], Stream[F, String]] =
+  def getProducts[F[_]]: Endpoint[Unit, StatusCode, Stream[F, Byte], Stream[F, Byte]] =
     endpoint.get
       .in("products")
       .errorOut(statusCode)
-      .out(streamBody[Stream[F, String]](schemaFor[String], tapir.MediaType.Json()))
+      .out(streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json()))
 
   val createProduct: Endpoint[Product, StatusCode, Unit, Nothing] =
     endpoint.post
