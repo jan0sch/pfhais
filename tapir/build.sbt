@@ -42,6 +42,9 @@ lazy val tapir =
 	library.tapirCirce,
 	library.tapirCore,
 	library.tapirHttp4s,
+	library.tapirOpenApiDocs,
+	library.tapirOpenApiYaml,
+	library.tapirSwaggerUi,
 	library.doobieScalaTest   % IntegrationTest,
         library.refinedScalaCheck % IntegrationTest,
         library.scalaCheck        % IntegrationTest,
@@ -74,34 +77,37 @@ lazy val library =
       val scalaTest    = "3.0.8"
       val tapir        = "0.11.4"
     }
-    val catsCore          = "org.typelevel"          %% "cats-core"            % Version.cats
-    val circeCore         = "io.circe"               %% "circe-core"           % Version.circe
-    val circeGeneric      = "io.circe"               %% "circe-generic"        % Version.circe
-    val circeRefined      = "io.circe"               %% "circe-refined"        % Version.circe
-    val circeParser       = "io.circe"               %% "circe-parser"         % Version.circe
-    val doobieCore        = "org.tpolecat"           %% "doobie-core"          % Version.doobie
-    val doobieHikari      = "org.tpolecat"           %% "doobie-hikari"        % Version.doobie
-    val doobiePostgres    = "org.tpolecat"           %% "doobie-postgres"      % Version.doobie
-    val doobieRefined     = "org.tpolecat"           %% "doobie-refined"       % Version.doobie
-    val doobieScalaTest   = "org.tpolecat"           %% "doobie-scalatest"     % Version.doobie
-    val flywayCore        = "org.flywaydb"           %  "flyway-core"          % Version.flyway
-    val http4sBlazeServer = "org.http4s"             %% "http4s-blaze-server"  % Version.http4s
-    val http4sBlazeClient = "org.http4s"             %% "http4s-blaze-client"  % Version.http4s
-    val http4sCirce       = "org.http4s"             %% "http4s-circe"         % Version.http4s
-    val http4sDsl         = "org.http4s"             %% "http4s-dsl"           % Version.http4s
-    val kittens           = "org.typelevel"          %% "kittens"              % Version.kittens
-    val logback           = "ch.qos.logback"         %  "logback-classic"      % Version.logback
-    val postgresql        = "org.postgresql"         %  "postgresql"           % Version.postgresql
-    val pureConfig        = "com.github.pureconfig"  %% "pureconfig"           % Version.pureConfig
-    val refinedCore       = "eu.timepit"             %% "refined"              % Version.refined
-    val refinedCats       = "eu.timepit"             %% "refined-cats"         % Version.refined
-    val refinedPureConfig = "eu.timepit"             %% "refined-pureconfig"   % Version.refined
-    val refinedScalaCheck = "eu.timepit"             %% "refined-scalacheck"   % Version.refined
-    val scalaCheck        = "org.scalacheck"         %% "scalacheck"           % Version.scalaCheck
-    val scalaTest         = "org.scalatest"          %% "scalatest"            % Version.scalaTest
-    val tapirCirce        = "com.softwaremill.tapir" %% "tapir-json-circe"     % Version.tapir
-    val tapirCore         = "com.softwaremill.tapir" %% "tapir-core"           % Version.tapir
-    val tapirHttp4s       = "com.softwaremill.tapir" %% "tapir-http4s-server"  % Version.tapir
+    val catsCore          = "org.typelevel"          %% "cats-core"                % Version.cats
+    val circeCore         = "io.circe"               %% "circe-core"               % Version.circe
+    val circeGeneric      = "io.circe"               %% "circe-generic"            % Version.circe
+    val circeRefined      = "io.circe"               %% "circe-refined"            % Version.circe
+    val circeParser       = "io.circe"               %% "circe-parser"             % Version.circe
+    val doobieCore        = "org.tpolecat"           %% "doobie-core"              % Version.doobie
+    val doobieHikari      = "org.tpolecat"           %% "doobie-hikari"            % Version.doobie
+    val doobiePostgres    = "org.tpolecat"           %% "doobie-postgres"          % Version.doobie
+    val doobieRefined     = "org.tpolecat"           %% "doobie-refined"           % Version.doobie
+    val doobieScalaTest   = "org.tpolecat"           %% "doobie-scalatest"         % Version.doobie
+    val flywayCore        = "org.flywaydb"           %  "flyway-core"              % Version.flyway
+    val http4sBlazeServer = "org.http4s"             %% "http4s-blaze-server"      % Version.http4s
+    val http4sBlazeClient = "org.http4s"             %% "http4s-blaze-client"      % Version.http4s
+    val http4sCirce       = "org.http4s"             %% "http4s-circe"             % Version.http4s
+    val http4sDsl         = "org.http4s"             %% "http4s-dsl"               % Version.http4s
+    val kittens           = "org.typelevel"          %% "kittens"                  % Version.kittens
+    val logback           = "ch.qos.logback"         %  "logback-classic"          % Version.logback
+    val postgresql        = "org.postgresql"         %  "postgresql"               % Version.postgresql
+    val pureConfig        = "com.github.pureconfig"  %% "pureconfig"               % Version.pureConfig
+    val refinedCore       = "eu.timepit"             %% "refined"                  % Version.refined
+    val refinedCats       = "eu.timepit"             %% "refined-cats"             % Version.refined
+    val refinedPureConfig = "eu.timepit"             %% "refined-pureconfig"       % Version.refined
+    val refinedScalaCheck = "eu.timepit"             %% "refined-scalacheck"       % Version.refined
+    val scalaCheck        = "org.scalacheck"         %% "scalacheck"               % Version.scalaCheck
+    val scalaTest         = "org.scalatest"          %% "scalatest"                % Version.scalaTest
+    val tapirCirce        = "com.softwaremill.tapir" %% "tapir-json-circe"         % Version.tapir
+    val tapirCore         = "com.softwaremill.tapir" %% "tapir-core"               % Version.tapir
+    val tapirHttp4s       = "com.softwaremill.tapir" %% "tapir-http4s-server"      % Version.tapir
+    val tapirOpenApiDocs  = "com.softwaremill.tapir" %% "tapir-openapi-docs"       % Version.tapir
+    val tapirOpenApiYaml  = "com.softwaremill.tapir" %% "tapir-openapi-circe-yaml" % Version.tapir
+    val tapirSwaggerUi    = "com.softwaremill.tapir" %% "tapir-swagger-ui-http4s"  % Version.tapir
   }
 
 // *****************************************************************************
