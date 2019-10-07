@@ -3383,6 +3383,37 @@ If we look into the error we find that because the encoding problems are now han
 
 Pretty awesome, we have already half of our endpoints done. So let's move on to the remaining ones and finally see how to generate documentation and also a client for our API.
 
+{caption: "Tapir endpoint for creating a product"}
+```scala
+val createProduct: Endpoint[Product, StatusCode, Unit, Nothing] =
+  endpoint.post
+    .in("products")
+    .in(
+      jsonBody[Product]
+	.description("The product data which should be created.")
+    )
+    .errorOut(statusCode)
+    .out(statusCode(StatusCodes.NoContent))
+```
+
+As we can see the endpoint definition for creating a product does not differ from the one that was used to update one. Except that we have a different path here and do not need to extract our `ProductId` from the URL path.
+
+{caption: "http4s implementation of the create product endpoint"}
+```scala
+val createRoute: HttpRoutes[F] =
+  ProductsRoutes.createProduct.toRoutes { product =>
+    for {
+      cnt <- repo.saveProduct(product)
+      res = cnt match {
+	case 0 => StatusCodes.InternalServerError.asLeft[Unit]
+	case _ => ().asRight[StatusCode]
+      }
+    } yield res
+  }
+```
+
+The implementation is again pretty simple. In case that the `saveProduct` function returns a zero we output a "500 Internal Server Error" because the product has not been saved into the database.
+
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/
