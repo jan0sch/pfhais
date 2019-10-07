@@ -24,6 +24,9 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
 import pureconfig._
+import tapir.docs.openapi._
+import tapir.openapi.circe.yaml._
+import tapir.swagger.http4s.SwaggerHttp4s
 
 import scala.io.StdIn
 
@@ -53,10 +56,13 @@ object Pure extends IOApp {
       repo           = new DoobieRepository(tx)
       productRoutes  = new ProductRoutes(repo)
       productsRoutes = new ProductsRoutes(repo)
-      routes         = productRoutes.routes <+> productsRoutes.routes
-      httpApp        = Router("/" -> routes).orNotFound
-      server         = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
-      fiber          = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
+      docs = List(ProductRoutes.getProduct, ProductRoutes.updateProduct)
+        .toOpenAPI("Pure Tapir API", "1.0.0")
+      docsRoutes = new SwaggerHttp4s(docs.toYaml)
+      routes     = productRoutes.routes <+> productsRoutes.routes
+      httpApp    = Router("/" -> routes, "/docs" -> docsRoutes.routes).orNotFound
+      server     = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
+      fiber      = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
     } yield fiber
     program.attempt.unsafeRunSync match {
       case Left(e) =>
