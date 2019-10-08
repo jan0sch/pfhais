@@ -56,8 +56,12 @@ object Pure extends IOApp {
       repo           = new DoobieRepository(tx)
       productRoutes  = new ProductRoutes(repo)
       productsRoutes = new ProductsRoutes(repo)
-      docs = List(ProductRoutes.getProduct, ProductRoutes.updateProduct)
-        .toOpenAPI("Pure Tapir API", "1.0.0")
+      docs = List(
+        ProductRoutes.getProduct,
+        ProductRoutes.updateProduct,
+        ProductsRoutes.getProducts,
+        ProductsRoutes.createProduct
+      ).toOpenAPI("Pure Tapir API", "1.0.0")
       docsRoutes = new SwaggerHttp4s(docs.toYaml)
       routes     = productRoutes.routes <+> productsRoutes.routes
       httpApp    = Router("/" -> routes, "/docs" -> docsRoutes.routes).orNotFound

@@ -11,6 +11,7 @@
 
 package com.wegtam.books.pfhais.pure.api
 
+import cats.data._
 import cats.effect._
 import cats.implicits._
 import com.wegtam.books.pfhais.pure.db._
@@ -96,12 +97,56 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
 
 @SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductsRoutes {
+  val examples = NonEmptyList.one(
+      Product(
+        id = java.util.UUID.randomUUID,
+        names = NonEmptySet.one(
+            Translation(
+              lang = "de",
+              name = "Das ist ein Name."
+            )
+          ) ++
+          NonEmptySet.one(
+            Translation(
+              lang = "en",
+              name = "That's a name."
+            )
+          ) ++
+          NonEmptySet.one(
+            Translation(
+              lang = "es",
+              name = "Ese es un nombre."
+            )
+          )
+      )
+    ) :::
+    NonEmptyList.one(
+      Product(
+        id = java.util.UUID.randomUUID,
+        names = NonEmptySet.one(
+            Translation(
+              lang = "de",
+              name = "Das sind nicht die Droiden, nach denen sie suchen!"
+            )
+          ) ++
+          NonEmptySet.one(
+            Translation(
+              lang = "en",
+              name = "These are not the droids you're looking for!"
+            )
+          )
+      )
+    )
 
   def getProducts[F[_]]: Endpoint[Unit, StatusCode, Stream[F, Byte], Stream[F, Byte]] =
     endpoint.get
       .in("products")
       .errorOut(statusCode)
-      .out(streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json()))
+      .out(
+        streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
+          .example(examples.toList.asJson.spaces2)
+      )
+      .description("Return all existing products in JSON format as a stream of bytes.")
 
   val createProduct: Endpoint[Product, StatusCode, Unit, Nothing] =
     endpoint.post
@@ -109,8 +154,15 @@ object ProductsRoutes {
       .in(
         jsonBody[Product]
           .description("The product data which should be created.")
+          .example(examples.head)
       )
       .errorOut(statusCode)
-      .out(statusCode(StatusCodes.NoContent))
+      .out(
+        statusCode(StatusCodes.NoContent)
+          .description("Upon successful product creation no content is returned.")
+      )
+      .description(
+        "Creates a new product. The product data has to be passed encoded as JSON in the request body. If the product creation failes then a HTTP 500 error is returned."
+      )
 
 }

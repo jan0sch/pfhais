@@ -106,7 +106,10 @@ object ProductRoutes {
           .example(example)
       )
       .errorOut(statusCode)
-      .out(statusCode(StatusCodes.NoContent))
+      .out(
+        statusCode(StatusCodes.NoContent)
+          .description("Upon successful product update no content is returned.")
+      )
       .description(
         "Updates the product specified by the ID given in the URL path. The product data has to be passed encoded as JSON in the request body. If the product does not exist then a HTTP 404 error is returned."
       )
