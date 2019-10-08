@@ -16,12 +16,13 @@ import com.wegtam.books.pfhais.pure.config._
 import eu.timepit.refined.auto._
 import pureconfig.loadConfig
 import org.scalatest._
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 /**
   * A base class for our integration tests.
   */
-abstract class BaseSpec extends WordSpec 
+abstract class BaseSpec extends AnyWordSpec 
     with MustMatchers
     with ScalaCheckPropertyChecks
     with BeforeAndAfterAll
