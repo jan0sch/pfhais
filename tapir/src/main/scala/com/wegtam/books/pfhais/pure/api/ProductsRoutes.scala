@@ -30,40 +30,6 @@ import tapir.server.http4s._
 final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
 
-  val routes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root / "products" =>
-      val prefix = Stream.eval("[".pure[F])
-      val suffix = Stream.eval("]".pure[F])
-      val ps = repo.loadProducts
-        .groupAdjacentBy(_._1)
-        .map {
-          case (id, rows) => Product.fromDatabase(rows.toList)
-        }
-        .collect {
-          case Some(p) => p
-        }
-        .map(_.asJson.noSpaces)
-        .intersperse(",")
-      @SuppressWarnings(Array("org.wartremover.warts.Any"))
-      val result: Stream[F, String] = prefix ++ ps ++ suffix
-      Ok(result)
-    case req @ POST -> Root / "products" =>
-      req
-        .as[Product]
-        .flatMap { p =>
-          for {
-            cnt <- repo.saveProduct(p)
-            res <- cnt match {
-              case 0 => InternalServerError()
-              case _ => NoContent()
-            }
-          } yield res
-        }
-        .handleErrorWith {
-          case InvalidMessageBodyFailure(_, _) => BadRequest()
-        }
-  }
-
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   lazy val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
     val prefix = Stream.eval("[".pure[F])
@@ -83,6 +49,25 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
     ???
   }
 
+  val oldGetRoute: HttpRoutes[F] = HttpRoutes.of[F] {
+    case GET -> Root / "products" =>
+      val prefix = Stream.eval("[".pure[F])
+      val suffix = Stream.eval("]".pure[F])
+      val ps = repo.loadProducts
+        .groupAdjacentBy(_._1)
+        .map {
+          case (id, rows) => Product.fromDatabase(rows.toList)
+        }
+        .collect {
+          case Some(p) => p
+        }
+        .map(_.asJson.noSpaces)
+        .intersperse(",")
+      @SuppressWarnings(Array("org.wartremover.warts.Any"))
+      val result: Stream[F, String] = prefix ++ ps ++ suffix
+      Ok(result)
+  }
+
   val createRoute: HttpRoutes[F] = ProductsRoutes.createProduct.toRoutes { product =>
     for {
       cnt <- repo.saveProduct(product)
@@ -92,6 +77,9 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
       }
     } yield res
   }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  val routes: HttpRoutes[F] = createRoute <+> oldGetRoute
 
 }
 
