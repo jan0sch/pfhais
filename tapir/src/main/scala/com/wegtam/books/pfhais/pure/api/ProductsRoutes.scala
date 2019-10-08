@@ -63,7 +63,8 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
         }
   }
 
-  val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  lazy val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
     val prefix = Stream.eval("[".pure[F])
     val suffix = Stream.eval("]".pure[F])
     val ps = repo.loadProducts
@@ -76,10 +77,9 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
       }
       .map(_.asJson.noSpaces)
       .intersperse(",")
-    @SuppressWarnings(Array("org.wartremover.warts.Any"))
     val result: Stream[F, String] = prefix ++ ps ++ suffix
     val bytes: Stream[F, Byte]    = result.through(fs2.text.utf8Encode)
-    bytes
+    ???
   }
 
   val createRoute: HttpRoutes[F] = ProductsRoutes.createProduct.toRoutes { product =>
