@@ -3383,6 +3383,8 @@ If we look into the error we find that because the encoding problems are now han
 
 Pretty awesome, we have already half of our endpoints done. So let's move on to the remaining ones and finally see how to generate documentation and also a client for our API.
 
+### Products routes
+
 {caption: "Tapir endpoint for creating a product"}
 ```scala
 val createProduct: Endpoint[Product, StatusCode, Unit, Nothing] =
@@ -3390,7 +3392,7 @@ val createProduct: Endpoint[Product, StatusCode, Unit, Nothing] =
     .in("products")
     .in(
       jsonBody[Product]
-	.description("The product data which should be created.")
+        .description("The product data which should be created.")
     )
     .errorOut(statusCode)
     .out(statusCode(StatusCodes.NoContent))
@@ -3405,14 +3407,218 @@ val createRoute: HttpRoutes[F] =
     for {
       cnt <- repo.saveProduct(product)
       res = cnt match {
-	case 0 => StatusCodes.InternalServerError.asLeft[Unit]
-	case _ => ().asRight[StatusCode]
+        case 0 => StatusCodes.InternalServerError.asLeft[Unit]
+        case _ => ().asRight[StatusCode]
       }
     } yield res
   }
 ```
 
 The implementation is again pretty simple. In case that the `saveProduct` function returns a zero we output a "500 Internal Server Error" because the product has not been saved into the database.
+
+Finally we have our streaming endpoint left, so let's see how we can do this via tapir.
+
+{caption: "Tapir endpoint for loading all products"}
+```scala
+// Our type is Endpoint[Unit, StatusCode, Stream[F, Byte], Stream[F, Byte]]
+def getProducts[F[_]] =
+  endpoint.get
+    .in("products")
+    .errorOut(statusCode)
+    .out(
+      streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
+    )
+```
+
+The first thing we can see is that we use a `def` instead of a `val` this time. This is caused by some necessities on the Scala side. If we want to abstract over a type parameter then we need to use a `def` here.
+We also have set the last type parameter not to `Nothing` but to something concrete this time. This is because we actually want to stream something. ;-)
+It is a bit annoying that we have to define it two times (once for the output type and once for the "stream" type). Much nicer would be something like `Endpoint[I, E, Byte, Stream[F, _]]` but currently this is not the way we can do it.
+So we again specify the HTTP method (via `get`) and the path (which is "products"). The `errorOut` helper once again restricts our error output to the status code. Finally we set the output of the endpoint by declaring a streaming entity (via `streamBody`).
+
+I> Currently the only supported streaming output is `Stream[F, Byte]` so we are nailed down to just that.
+
+But is is sufficient and we also directly specify the returned media type to be JSON.
+
+{caption: "http4s implementation of the load all products endpoint (1)"}
+```scala
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
+val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
+  val prefix = Stream.eval("[".pure[F])
+  val suffix = Stream.eval("]".pure[F])
+  val ps = repo.loadProducts
+    .groupAdjacentBy(_._1)
+    .map {
+      case (id, rows) => Product.fromDatabase(rows.toList)
+    }
+    .collect {
+      case Some(p) => p
+    }
+    .map(_.asJson.noSpaces)
+    .intersperse(",")
+  val result: Stream[F, String] = prefix ++ ps ++ suffix
+  val bytes: Stream[F, Byte]    = result.through(fs2.text.utf8Encode)
+  bytes
+}
+```
+
+Again our implementation is quite the same compared to the original one. Except that in the end we convert our stream of `String` into a stream of `Byte` using the `utf8Encode` helper from the fs2 library.
+
+Q> So what does the compiler say to this?
+
+```text
+  found   : fs2.Stream[F,Byte]
+  required: Unit => F[Either[tapir.model.StatusCode,fs2.Stream[F,Byte]]]
+     (which expands to)  Unit => F[Either[Int,fs2.Stream[F,Byte]]]
+     bytes
+     ^
+```
+
+Damn, so close. But let's keep calm and think. Or ask around on the internet. Which is totally fine. Actually it is all in the compiler error message.
+
+Q> So how do we convert our `Stream[F, Byte]` into an `F[Either[...]]`?
+
+{caption: "http4s implementation of the load all products endpoint (2)"}
+```scala
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
+val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
+  // ...
+  val result: Stream[F, String] = prefix ++ ps ++ suffix
+  val bytes: Stream[F, Byte]    = result.through(fs2.text.utf8Encode)
+  val response: Either[StatusCode, Stream[F, Byte]] = Right(bytes)
+  (_: Unit) => response.pure[F]
+}
+```
+
+We first convert our response explicitly into the right side of an `Either` because the left side is used for the error case. Afterwards we provide the needed `Unit => ...` function in which we lift our response value via `pure` into the context of `F`.
+So let's go crazy and simply combine our routes like in the previous part and run the test via `testOnly *.ProductsRoutesTest` on the sbt console.
+
+```text
+[info] All tests passed.
+```
+
+Yes! Very nice, it seems like we are done with implementing our routes via tapir endpoints.
+
+### Documentation via OpenAPI
+
+So, we can now look at documenting our API via OpenAPI using the tooling provided by tapir. But first we should actually modify our main application entry point to provide the documentation for us.
+
+{caption: "Provide Swagger UI and documentation"}
+```scala
+// ...
+  productRoutes  = new ProductRoutes(repo)
+  productsRoutes = new ProductsRoutes(repo)
+  docs = List(
+    ProductRoutes.getProduct,
+    ProductRoutes.updateProduct,
+    ProductsRoutes.getProducts,
+    ProductsRoutes.createProduct
+  ).toOpenAPI("Pure Tapir API", "1.0.0")
+  docsRoutes = new SwaggerHttp4s(docs.toYaml)
+  routes     = productRoutes.routes <+> productsRoutes.routes
+  httpApp    = Router(
+    "/" -> routes,
+    "/docs" -> docsRoutes.routes
+  ).orNotFound
+// ...
+```
+
+We use the `toOpenAPI` helper provided by tapir which generates a class structure describing our API from a list of given endpoints. Additionally we use the `SwaggerHttp4s` helper which includes the Swagger UI for simple documentation browsing. All of it is made available under the `/docs` path. So calling `http://localhost:57344/docs` with your browser should open the UI and the correct documentation.
+But while browsing there we can see that it provides our models and endpoints but documentation could be better. So what can we do about it?
+The answer is simple: Use the helpers provided by tapir to add additional information to our endpoints.
+
+#### Providing example data
+
+Besides functions like `description` or `name` tapir also provides `example` which will result in having concrete examples in the documentation. To use this we must construct example values of the needed type. A `Product` example could look like this.
+
+{caption: "Example Product type for the API documentation"}
+```scala
+val example = Product(
+  id = java.util.UUID.randomUUID,
+  names = NonEmptySet.one(
+      Translation(
+        lang = "de",
+        name = "Das ist ein Name."
+      )
+    ) ++
+    NonEmptySet.one(
+      Translation(
+        lang = "en",
+        name = "That's a name."
+      )
+    ) ++
+    NonEmptySet.one(
+      Translation(
+        lang = "es",
+        name = "Ese es un nombre."
+      )
+    )
+)
+```
+
+We can now use it in our product endpoint description.
+
+{caption: "Documented tapir endpoints (1)"}
+```scala
+val getProduct = endpoint.get
+  .in(
+    "product" / path[ProductId]("id")
+      .description("The ID of a product which is a UUID.")
+      .example(example.id)
+  )
+  .errorOut(statusCode)
+  .out(
+    jsonBody[Product]
+    .description("The product associated with the given ID.")
+    .example(example)
+  )
+  .description(
+    "Returns the product specified by the ID given in the URL path. If the product does not exist then a HTTP 404 error is returned."
+  )
+```
+
+As you can see we make use of `description` and `example` here. Also the path parameter `id` is described that way.
+
+{caption: "Documented tapir endpoints (2)"}
+```scala
+val updateProduct =
+  endpoint.put
+    .in(
+      "product" / path[ProductId]("id")
+        .description("The ID of a product which is a UUID.")
+        .example(example.id)
+    )
+    .in(
+      jsonBody[Product]
+        .description("The updated product data which should be saved.")
+        .example(example)
+    )
+    .errorOut(statusCode)
+    .out(
+      statusCode(StatusCodes.NoContent)
+        .description("Upon successful product update no content is returned.")
+    )
+    .description(
+      "Updates the product specified by the ID given in the URL path. The product data has to be passed encoded as JSON in the request body. If the product does not exist then a HTTP 404 error is returned."
+    )
+```
+
+Here we also add a description to the simply status code output explaining explicitly that no content will be returned upon success. While the 204 status code should be enough to say this you can never be sure enough. ;-)
+We'll skip the create endpoint because it looks nearly the same as the update endpoint. Instead let's take a look at our streaming endpoint.
+
+{caption: "Documented tapir endpoints (3)"}
+```scala
+def getProducts[F[_]] =
+  endpoint.get
+    .in("products")
+    .errorOut(statusCode)
+    .out(
+      streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
+        .example(examples.toList.asJson.spaces2)
+    )
+    .description("Return all existing products in JSON format as a stream of bytes.")
+```
+
+This time we need to provide our example as a string because of the nature (*read* type) of our endpoint. We use the non empty list of examples that we created (you can look it up in `ProductsRoutes.scala`) and convert it into a JSON string.
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
