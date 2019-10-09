@@ -31,7 +31,7 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
   implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  lazy val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
+  val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
     val prefix = Stream.eval("[".pure[F])
     val suffix = Stream.eval("]".pure[F])
     val ps = repo.loadProducts
@@ -44,28 +44,10 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
       }
       .map(_.asJson.noSpaces)
       .intersperse(",")
-    val result: Stream[F, String] = prefix ++ ps ++ suffix
-    val bytes: Stream[F, Byte]    = result.through(fs2.text.utf8Encode)
-    ???
-  }
-
-  val oldGetRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root / "products" =>
-      val prefix = Stream.eval("[".pure[F])
-      val suffix = Stream.eval("]".pure[F])
-      val ps = repo.loadProducts
-        .groupAdjacentBy(_._1)
-        .map {
-          case (id, rows) => Product.fromDatabase(rows.toList)
-        }
-        .collect {
-          case Some(p) => p
-        }
-        .map(_.asJson.noSpaces)
-        .intersperse(",")
-      @SuppressWarnings(Array("org.wartremover.warts.Any"))
-      val result: Stream[F, String] = prefix ++ ps ++ suffix
-      Ok(result)
+    val result: Stream[F, String]                     = prefix ++ ps ++ suffix
+    val bytes: Stream[F, Byte]                        = result.through(fs2.text.utf8Encode)
+    val response: Either[StatusCode, Stream[F, Byte]] = Right(bytes)
+    (_: Unit) => response.pure[F]
   }
 
   val createRoute: HttpRoutes[F] = ProductsRoutes.createProduct.toRoutes { product =>
@@ -79,7 +61,7 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  val routes: HttpRoutes[F] = createRoute <+> oldGetRoute
+  val routes: HttpRoutes[F] = createRoute <+> getRoute
 
 }
 
