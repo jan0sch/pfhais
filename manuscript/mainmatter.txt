@@ -3572,7 +3572,8 @@ val getProduct = endpoint.get
     .example(example)
   )
   .description(
-    "Returns the product specified by the ID given in the URL path. If the product does not exist then a HTTP 404 error is returned."
+    "Returns the product specified by the ID given in the URL path.
+    If the product does not exist then a HTTP 404 error is returned."
   )
 ```
 
@@ -3598,11 +3599,13 @@ val updateProduct =
         .description("Upon successful product update no content is returned.")
     )
     .description(
-      "Updates the product specified by the ID given in the URL path. The product data has to be passed encoded as JSON in the request body. If the product does not exist then a HTTP 404 error is returned."
+      "Updates the product specified by the ID given in the URL path.
+      The product data has to be passed encoded as JSON in the request body.
+      If the product does not exist then a HTTP 404 error is returned."
     )
 ```
 
-Here we also add a description to the simply status code output explaining explicitly that no content will be returned upon success. While the 204 status code should be enough to say this you can never be sure enough. ;-)
+Here we also add a description to the simple status code output explaining explicitly that no content will be returned upon success. While the 204 status code should be enough to say this you can never be sure enough. ;-)
 We'll skip the create endpoint because it looks nearly the same as the update endpoint. Instead let's take a look at our streaming endpoint.
 
 {caption: "Documented tapir endpoints (3)"}
@@ -3615,7 +3618,9 @@ def getProducts[F[_]] =
       streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
         .example(examples.toList.asJson.spaces2)
     )
-    .description("Return all existing products in JSON format as a stream of bytes.")
+    .description(
+      "Return all existing products in JSON format as a stream of bytes."
+    )
 ```
 
 This time we need to provide our example as a string because of the nature (*read* type) of our endpoint. We use the non empty list of examples that we created (you can look it up in `ProductsRoutes.scala`) and convert it into a JSON string.
