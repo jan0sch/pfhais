@@ -9,7 +9,9 @@ HTTP APIs in Scala" which is available on Leanpub: https://leanpub.com/pfhais
 
 The folder `manuscript` contains the book source code and other resources 
 like images. The service implementations are placed in the folders 
-`impure` and `pure`.
+`impure` and `pure`. Within the folder `tapir` you can find the pure 
+implementation which uses the [tapir library](https://github.com/softwaremill/tapir) 
+for a typed API design.
 
 ## Copyleft Notice ##
 
