@@ -11,12 +11,15 @@ sudo: false
 env:
   - TEST_DIR=impure
   - TEST_DIR=pure
+  - TEST_DIR=tapir
 
 before_script:
   - psql -c "CREATE ROLE impure WITH LOGIN ENCRYPTED PASSWORD 'secret';" -U postgres
   - psql -c "CREATE DATABASE impure_test WITH OWNER impure;" -U postgres
   - psql -c "CREATE ROLE pure WITH LOGIN ENCRYPTED PASSWORD 'secret';" -U postgres
   - psql -c "CREATE DATABASE pure_test WITH OWNER pure;" -U postgres
+  - psql -c "CREATE ROLE tapir WITH LOGIN ENCRYPTED PASSWORD 'secret';" -U postgres
+  - psql -c "CREATE DATABASE tapir_test WITH OWNER pure;" -U postgres
 
 script:
   - cd ${TEST_DIR} && sbt clean coverage test it:test coverageReport
