@@ -10,11 +10,11 @@ This book is intended for the intermediate Scala programmer who is interested in
 
 However maybe you have wondered if we can't do better even though aforementioned projects are battle tested and proven.
 
-The answer to this can be found in this book which is intended to be read from cover to cover in the given order. Within the book the following libraries will be used: Cats[^3], Cats Effect[^4], http4s[^5], Doobie[^6], Refined[^7], fs2[^8] and probably others. ;-)
+The answer to this can be found in this book which is intended to be read from cover to cover in the given order. Within the book the following libraries will be used: Cats[^3], Cats Effect[^4], http4s[^5], Doobie[^6], Refined[^7], fs2[^8], tapir[^9] and probably others. ;-)
 
 # Copyleft Notice
 
-This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC BY-SA 4.0) license[^9]. The code snippets in this book are licensed under CC0[^10] which means you can use them without restriction. Excerpts from libraries maintain their license.
+This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC BY-SA 4.0) license[^10]. The code snippets in this book are licensed under CC0[^11] which means you can use them without restriction. Excerpts from libraries maintain their license.
 
 # Thanks
 
@@ -37,6 +37,8 @@ Also I send a big thank you to alle the nice people from the Scala community whi
 
 [^8]: https://fs2.io/
 
-[^9]: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+[^9]: https://github.com/softwaremill/tapir
 
-[^10]: https://wiki.creativecommons.org/wiki/CC0
+[^10]: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+[^11]: https://wiki.creativecommons.org/wiki/CC0
