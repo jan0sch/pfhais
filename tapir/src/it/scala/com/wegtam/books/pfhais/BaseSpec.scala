@@ -12,7 +12,7 @@
 package com.wegtam.books.pfhais
 
 import com.typesafe.config._
-import com.wegtam.books.pfhais.pure.config._
+import com.wegtam.books.pfhais.tapir.config._
 import eu.timepit.refined.auto._
 import pureconfig.loadConfig
 import org.scalatest._
