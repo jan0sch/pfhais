@@ -116,7 +116,7 @@ val licenseText = s"""CC0 1.0 Universal (CC0 1.0) - Public Domain Dedication
 
 lazy val commonSettings =
   Seq(
-    scalaVersion := "2.12.9",
+    scalaVersion := "2.12.10",
     organization := "com.wegtam",
     organizationName := "Jens Grassel",
     startYear := Some(2019),
