@@ -130,21 +130,52 @@ val licenseText = s"""CC0 1.0 Universal (CC0 1.0) - Public Domain Dedication
                    |
                    |                               No Copyright
                    |
-                   |The person who associated a work with this deed has dedicated the work to 
+                   |The person who associated a work with this deed has dedicated the work to
                    |the public domain by waiving all of his or her rights to the work worldwide
-                   |under copyright law, including all related and neighboring rights, to the 
+                   |under copyright law, including all related and neighboring rights, to the
                    |extent allowed by law.""".stripMargin
 
-lazy val commonSettings =
-  Seq(
-    scalaVersion := "2.12.10",
-    organization := "com.wegtam",
-    organizationName := "Jens Grassel",
-    startYear := Some(2019),
-    headerLicense := Some(HeaderLicense.Custom(licenseText)),
-    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
-    addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
-    scalacOptions ++= Seq(
+def compilerSettings(sv: String) =
+  CrossVersion.partialVersion(sv) match {
+    case Some((2, 13)) =>
+      Seq(
+	"-deprecation",
+	"-explaintypes",
+	"-feature",
+	"-language:higherKinds",
+	"-unchecked",
+	"-Xcheckinit",
+	"-Xfatal-warnings",
+	"-Xlint:adapted-args",
+	"-Xlint:constant",
+	"-Xlint:delayedinit-select",
+	"-Xlint:doc-detached",
+	"-Xlint:inaccessible",
+	"-Xlint:infer-any",
+	"-Xlint:missing-interpolator",
+	"-Xlint:nullary-override",
+	"-Xlint:nullary-unit",
+	"-Xlint:option-implicit",
+	"-Xlint:package-object-classes",
+	"-Xlint:poly-implicit-overload",
+	"-Xlint:private-shadow",
+	"-Xlint:stars-align",
+	"-Xlint:type-parameter-shadow",
+	"-Ywarn-dead-code",
+	"-Ywarn-extra-implicit",
+	"-Ywarn-numeric-widen",
+	//"-Ywarn-unused:implicits",
+	"-Ywarn-unused:imports",
+	//"-Ywarn-unused:locals",
+	//"-Ywarn-unused:params",
+	"-Ywarn-unused:patvars",
+	"-Ywarn-unused:privates",
+	"-Ywarn-value-discard",
+	"-Ycache-plugin-class-loader:last-modified",
+	"-Ycache-macro-class-loader:last-modified",
+      )
+    case _ =>
+      Seq(
       "-deprecation",
       "-encoding", "UTF-8",
       "-explaintypes",
@@ -178,7 +209,20 @@ lazy val commonSettings =
       "-Ywarn-numeric-widen",
       "-Ywarn-unused-import",
       "-Ywarn-value-discard"
-    ),
+    )
+  }
+
+lazy val commonSettings =
+  Seq(
+    scalaVersion := "2.12.10",
+    crossScalaVersions := Seq(scalaVersion.value, "2.13.1"),
+    organization := "com.wegtam",
+    organizationName := "Jens Grassel",
+    startYear := Some(2019),
+    headerLicense := Some(HeaderLicense.Custom(licenseText)),
+    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
+    scalacOptions ++= compilerSettings(scalaVersion.value),
     Compile / console / scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused-import"),
     Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),
     Compile / compile / wartremoverWarnings ++= Warts.unsafe,
