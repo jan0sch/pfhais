@@ -21,6 +21,8 @@ import slick.jdbc._
 
 import scala.concurrent.Future
 
+// Wartremover seems to report different on scala 2.13.
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
 final class Repository(val dbConfig: DatabaseConfig[JdbcProfile]) {
   import dbConfig.profile.api._
 

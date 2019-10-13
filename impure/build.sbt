@@ -58,14 +58,14 @@ lazy val library =
   new {
     object Version {
       val akka         = "2.5.25"
-      val akkaHttp     = "10.1.9"
-      val akkaHttpJson = "1.27.0"
-      val cats         = "1.6.1"
-      val circe        = "0.11.1"
-      val flyway       = "6.0.1"
+      val akkaHttp     = "10.1.10"
+      val akkaHttpJson = "1.29.1"
+      val cats         = "2.0.0"
+      val circe        = "0.12.2"
+      val flyway       = "6.0.6"
       val logback      = "1.2.3"
-      val postgresql   = "42.2.6"
-      val refined      = "0.9.9"
+      val postgresql   = "42.2.8"
+      val refined      = "0.9.10"
       val scalaCheck   = "1.14.0"
       val scalaTest    = "3.0.8"
       val slick        = "3.3.2"
@@ -107,21 +107,52 @@ val licenseText = s"""CC0 1.0 Universal (CC0 1.0) - Public Domain Dedication
                    |
                    |                               No Copyright
                    |
-                   |The person who associated a work with this deed has dedicated the work to 
+                   |The person who associated a work with this deed has dedicated the work to
                    |the public domain by waiving all of his or her rights to the work worldwide
-                   |under copyright law, including all related and neighboring rights, to the 
+                   |under copyright law, including all related and neighboring rights, to the
                    |extent allowed by law.""".stripMargin
 
-lazy val commonSettings =
-  Seq(
-    scalaVersion := "2.12.9",
-    organization := "com.wegtam",
-    organizationName := "Jens Grassel",
-    startYear := Some(2019),
-    headerLicense := Some(HeaderLicense.Custom(licenseText)),
-    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
-    addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
-    scalacOptions ++= Seq(
+def compilerSettings(sv: String) =
+  CrossVersion.partialVersion(sv) match {
+    case Some((2, 13)) =>
+      Seq(
+	"-deprecation",
+	"-explaintypes",
+	"-feature",
+	"-language:higherKinds",
+	"-unchecked",
+	"-Xcheckinit",
+	"-Xfatal-warnings",
+	"-Xlint:adapted-args",
+	"-Xlint:constant",
+	"-Xlint:delayedinit-select",
+	"-Xlint:doc-detached",
+	"-Xlint:inaccessible",
+	"-Xlint:infer-any",
+	"-Xlint:missing-interpolator",
+	"-Xlint:nullary-override",
+	"-Xlint:nullary-unit",
+	"-Xlint:option-implicit",
+	"-Xlint:package-object-classes",
+	"-Xlint:poly-implicit-overload",
+	"-Xlint:private-shadow",
+	"-Xlint:stars-align",
+	"-Xlint:type-parameter-shadow",
+	"-Ywarn-dead-code",
+	"-Ywarn-extra-implicit",
+	"-Ywarn-numeric-widen",
+	//"-Ywarn-unused:implicits",
+	"-Ywarn-unused:imports",
+	//"-Ywarn-unused:locals",
+	//"-Ywarn-unused:params",
+	"-Ywarn-unused:patvars",
+	"-Ywarn-unused:privates",
+	"-Ywarn-value-discard",
+	"-Ycache-plugin-class-loader:last-modified",
+	"-Ycache-macro-class-loader:last-modified",
+      )
+    case _ =>
+      Seq(
       "-deprecation",
       "-encoding", "UTF-8",
       "-explaintypes",
@@ -155,7 +186,20 @@ lazy val commonSettings =
       "-Ywarn-numeric-widen",
       "-Ywarn-unused-import",
       "-Ywarn-value-discard"
-    ),
+    )
+  }
+
+lazy val commonSettings =
+  Seq(
+    scalaVersion := "2.12.10",
+    crossScalaVersions := Seq(scalaVersion.value, "2.13.1"),
+    organization := "com.wegtam",
+    organizationName := "Jens Grassel",
+    startYear := Some(2019),
+    headerLicense := Some(HeaderLicense.Custom(licenseText)),
+    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
+    scalacOptions ++= compilerSettings(scalaVersion.value),
     Compile / console / scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused-import"),
     Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),
     Compile / compile / wartremoverWarnings ++= Warts.unsafe,
