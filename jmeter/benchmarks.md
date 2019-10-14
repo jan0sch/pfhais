@@ -32,6 +32,8 @@ If not noted otherwise 10 threads were used with a 10 seconds ramp up time.
 
 #### Measurements
 
+##### Scala 2.12
+
 |     |        |        |        |
 |-----|--------|--------|--------|
 | AVG |   98   |   98   |   98   |
@@ -45,6 +47,22 @@ If not noted otherwise 10 threads were used with a 10 seconds ramp up time.
 | R/S |  100.2 |  100.7 |  100.8 |
 | MEM | 1135   | 1161   | 1177   |
 |  LD |   16   |   16   |   16   |
+
+##### Scala 2.13
+
+|     |        |        |        |
+|-----|--------|--------|--------|
+| AVG |  110   |  108   |  108   |
+| MED |  109   |  107   |  107   |
+| 90% |  142   |  140   |  140   |
+| 95% |  154   |  151   |  151   |
+| 99% |  182   |  176   |  176   |
+| MIN |   48   |   49   |   49   |
+| MAX | 2233   |  389   |  453   |
+| ERR |    0%  |    0%  |    0%  |
+| R/S |   89.5 |   91.1 |   91.2 |
+| MEM | 1126   | 1144   | 1166   |
+|  LD |   17   |   17   |   17   |
 
 R/S = requests per second
 MEM = max. memory in MB
