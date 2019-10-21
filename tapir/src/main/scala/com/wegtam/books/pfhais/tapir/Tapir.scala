@@ -20,14 +20,20 @@ import com.wegtam.books.pfhais.tapir.config._
 import com.wegtam.books.pfhais.tapir.db._
 import doobie._
 import eu.timepit.refined.auto._
+import monocle._
+import monocle.function.At.at
+import monocle.macros.GenLens
+import monocle.std.map._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
 import pureconfig._
 import tapir.docs.openapi._
+import tapir.openapi._
 import tapir.openapi.circe.yaml._
 import tapir.swagger.http4s.SwaggerHttp4s
 
+import scala.collection.immutable._
 import scala.io.StdIn
 
 object Tapir extends IOApp {
@@ -62,6 +68,7 @@ object Tapir extends IOApp {
         ProductsRoutes.getProducts,
         ProductsRoutes.createProduct
       ).toOpenAPI("Pure Tapir API", "1.0.0")
+      _          = fixme(docs)
       docsRoutes = new SwaggerHttp4s(docs.toYaml)
       routes     = productRoutes.routes <+> productsRoutes.routes
       httpApp    = Router("/" -> routes, "/docs" -> docsRoutes.routes).orNotFound
@@ -79,5 +86,19 @@ object Tapir extends IOApp {
         }
       case Right(r) => r
     }
+  }
+
+  private def fixme(d: OpenAPI): Unit = {
+    val paths: Lens[OpenAPI, ListMap[String, PathItem]] = GenLens[OpenAPI](_.paths)
+    val parameters: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
+      GenLens[PathItem](_.parameters)
+    val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
+    val ps                                                            = d.paths.get("/product/{id}")
+    println(s"PS: $ps")
+    val _ = for {
+      pi <- ps
+      go <- pi.get
+      id <- go.parameters.find(_.toOption.map(_.name === "id").getOrElse(false)).flatMap(_.toOption)
+    } yield ()
   }
 }
