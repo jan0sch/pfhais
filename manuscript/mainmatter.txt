@@ -3282,6 +3282,66 @@ An endpoint can have attributes like `name` or `description` which will be used 
 
 I> Please note that all mappings have to be bi-directional because tapir must be able to generate server and client code from it.
 
+Regarding the encoding and decoding of data we will need our Circe codecs but additionally some schema definitions required by tapir. In concrete we will need to define implicit `SchemaFor[T]` instances for each of our models. We will start with the `Translation` model.
+
+{caption: "Tapir schema for Translation"}
+```scala
+implicit val schemaFor: SchemaFor[Translation] = SchemaFor(
+  Schema.SProduct(
+    Schema.SObjectInfo("Translation"),
+    List(("lang", Schema.SString), ("name", Schema.SString)),
+    List("lang", "name")
+  )
+)
+```
+
+As you can see this is quite straightforward and not very complicated. In the future we might be able to derive such things but for now we have to define them. The schema is defined as a product type which is further described by the "object info" type containing a name, the field names and their schemas and at least a list of field names which are required to construct the type.
+
+{caption: "Tapir schema for Product (1)"}
+```scala
+implicit val schemaFor: SchemaFor[Product] = SchemaFor(
+  Schema.SProduct(
+    Schema.SObjectInfo("Product"),
+    List(
+      ("id", Schema.SString),
+      ("names", Schema.SArray(Translation.schemaFor.schema))
+    ),
+    List("id", "names")
+  )
+)
+```
+
+This is basically the same thing as before except that we rely on the existing schema definition of `Translation` and use that here. You might notice that we explicitly define our `NonEmptySet` as an `SArray` here. This is because we want a list like representation on the JSON side.
+
+Q> But can we generalise this some more?
+
+Yes, we can! :-) To gain more flexibility we can provide a generic schema for our `NonEmptySet` type.
+
+{caption: "Tapir schema for NonEmptySet from Cats"}
+```scala
+implicit def schemaForNeS[T](implicit a: SchemaFor[T]): 
+  SchemaFor[NonEmptySet[T]] =
+    SchemaFor(Schema.SArray(a.schema))
+```
+
+Here we define that a `NonEmptySet` will be an array using the schema of whatever type it contains. Now we rewrite our previous schema definition as follows.
+
+{caption: "Tapir schema for Product (2)"}
+```scala
+implicit val schemaFor: SchemaFor[Product] = SchemaFor(
+  Schema.SProduct(
+    Schema.SObjectInfo("Product"),
+    List(
+      ("id", Schema.SString),
+      ("names", schemaForNeS[Translation].schema)
+    ),
+    List("id", "names")
+  )
+)
+```
+
+It is not necessarily shorter but we have gained some more flexibility and can reuse our schema for the non empty set in several places.
+
 ### Product routes
 
 Having the basics settled we can try to write our first endpoint. Let's refactor our product routes. We will define our endpoints in the companion object of the class.

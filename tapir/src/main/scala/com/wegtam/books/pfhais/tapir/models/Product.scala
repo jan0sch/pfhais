@@ -37,16 +37,13 @@ object Product {
     def compare(x: Product, y: Product): Int = x.id.compare(y.id)
   }
 
-  @SuppressWarnings(
-    Array(
-      "org.wartremover.warts.Product",
-      "org.wartremover.warts.Serializable"
-    )
-  )
+  implicit def schemaForNeS[T](implicit a: SchemaFor[T]): SchemaFor[NonEmptySet[T]] =
+    SchemaFor(Schema.SArray(a.schema))
+
   implicit val schemaFor: SchemaFor[Product] = SchemaFor(
     Schema.SProduct(
       Schema.SObjectInfo("Product"),
-      List(("id", Schema.SString), ("names", Schema.SArray(Translation.schemaFor.schema))),
+      List(("id", Schema.SString), ("names", schemaForNeS[Translation].schema)),
       List("id", "names")
     )
   )
