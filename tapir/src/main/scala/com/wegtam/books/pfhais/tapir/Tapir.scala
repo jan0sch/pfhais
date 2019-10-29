@@ -21,9 +21,8 @@ import com.wegtam.books.pfhais.tapir.db._
 import doobie._
 import eu.timepit.refined.auto._
 import monocle._
-//import monocle.function.At.at
+//import monocle.function.all._
 import monocle.macros.GenLens
-//import monocle.std.map._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
@@ -52,8 +51,8 @@ object Tapir extends IOApp {
         val cfg = ConfigFactory.load
         // TODO Think about alternatives to `Throw`.
         (
-          loadConfigOrThrow[ApiConfig](cfg, "api"),
-          loadConfigOrThrow[DatabaseConfig](cfg, "database")
+          ConfigSource.fromConfig(cfg).at("api").loadOrThrow[ApiConfig],
+          ConfigSource.fromConfig(cfg).at("database").loadOrThrow[DatabaseConfig]
         )
       }
       ms <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
@@ -89,16 +88,20 @@ object Tapir extends IOApp {
   }
 
   private def fixme(d: OpenAPI): Unit = {
+    // Generate some lenses.
     val paths: Lens[OpenAPI, ListMap[String, PathItem]] = GenLens[OpenAPI](_.paths)
     val parameters: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
       GenLens[PathItem](_.parameters)
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
-    val ps                                                            = d.paths.get("/product/{id}")
+    // Now try to get thins going...
+    //val x  = (paths composeOptional at("/product/{id}")).getOption(d)
+    val ps = d.paths.get("/product/{id}")
     println(s"PS: $ps")
     val _ = for {
       pi <- ps
       go <- pi.get
       id <- go.parameters.find(_.toOption.map(_.name === "id").getOrElse(false)).flatMap(_.toOption)
+      _ = println(id)
     } yield ()
   }
 }

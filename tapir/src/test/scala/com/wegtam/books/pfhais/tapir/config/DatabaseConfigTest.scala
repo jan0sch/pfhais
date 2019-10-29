@@ -15,7 +15,7 @@ import com.typesafe.config._
 import com.wegtam.books.pfhais.BaseSpec
 import com.wegtam.books.pfhais.tapir.config.DatabaseConfigGenerators._
 import eu.timepit.refined.auto._
-import pureconfig.loadConfig
+import pureconfig._
 
 class DatabaseConfigTest extends BaseSpec {
 
@@ -23,7 +23,7 @@ class DatabaseConfigTest extends BaseSpec {
     "loading invalid config format" must {
       "fail" in {
         val config = ConfigFactory.parseString("{}")
-        loadConfig[DatabaseConfig](config, "database") match {
+        ConfigSource.fromConfig(config).at("database").load[DatabaseConfig] match {
           case Left(_)  => succeed
           case Right(_) => fail("Loading an invalid config must fail!")
         }
@@ -42,7 +42,7 @@ class DatabaseConfigTest extends BaseSpec {
                   |  "pass": ""
                   |}""".stripMargin
             )
-            loadConfig[DatabaseConfig](config, "database") match {
+            ConfigSource.fromConfig(config).at("database").load[DatabaseConfig] match {
               case Left(_)  => succeed
               case Right(_) => fail("Loading a config with invalid settings must fail!")
             }
@@ -61,7 +61,7 @@ class DatabaseConfigTest extends BaseSpec {
                    |  "pass": "${expected.pass}"
                    |}""".stripMargin
             )
-            loadConfig[DatabaseConfig](config, "database") match {
+            ConfigSource.fromConfig(config).at("database").load[DatabaseConfig] match {
               case Left(e)  => fail(s"Parsing a valid configuration must succeed! ($e)")
               case Right(c) => c must be(expected)
             }
