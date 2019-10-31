@@ -3737,6 +3737,44 @@ Q> What have we overlooked?
 
 According to the OpenAPI specification we are nailed down to Javascript regular expressions (*read* the ECMA 262 regular expression dialect[^30]). Oh why cruel fate? Well, let us deal with that when we have our other puzzle pieces in order.
 
+Before we dive right in let's play around a bit to get used to this fancy optics thing.
+
+```scala
+val docs: OpenAPI = ???
+val paths: Lens[OpenAPI, ListMap[String, PathItem]] =
+  GenLens[OpenAPI](_.paths)
+val test = (paths composeLens at("/product/{id}")).get(d)
+```
+
+We defined our first `Lens` via the `GenLens` macro. It is supposed to give us the path definitions from an `OpenAPI` object. In the last part we use the compose functionality to query a specific item from the paths which we address via a string because it is a `ListMap` using string keys.
+
+```text
+[error] ...scala: ambiguous implicit values:
+[error]  both method atMap in object At of type 
+           [K, V]=> monocle.function.At[Map[K,V],K,Option[V]]
+[error]  and method atSet in object At of type 
+           [A]=> monocle.function.At[Set[A],A,Boolean]
+[error]  match expected type monocle.function.At[S,String,A]
+[error]     val x  = (paths composeLens at("/product/{id}")).get(d)
+[error]                                   ^
+[error] one error found
+```
+
+Oh no, the compiler yells at us! Some investigation leads to the conclusion that there is a type class instance missing for `ListMap`. So we build one. Luckily for us this is practically identical to the one for `Map`.
+
+{caption: "At type class instance for ListMap"}
+```scala
+implicit def atListMap[K, V]: At[ListMap[K, V], K, Option[V]] = At(
+  i => Lens((_: ListMap[K, V]).get(i))(optV => map => 
+    optV.fold(map - i)(v => map + (i -> v))
+  )
+)
+```
+
+And now our code compiles, hooray! :-)
+
+I> The instance has been committed to the Monocle project so chances are good that it is included in the next release you're using.
+
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/

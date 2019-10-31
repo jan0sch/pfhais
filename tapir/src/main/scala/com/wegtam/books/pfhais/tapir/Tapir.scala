@@ -13,7 +13,6 @@ package com.wegtam.books.pfhais.tapir
 
 import cats.effect._
 import cats.implicits._
-//import cats.syntax.all._
 import com.typesafe.config._
 import com.wegtam.books.pfhais.tapir.api._
 import com.wegtam.books.pfhais.tapir.config._
@@ -21,7 +20,8 @@ import com.wegtam.books.pfhais.tapir.db._
 import doobie._
 import eu.timepit.refined.auto._
 import monocle._
-//import monocle.function.all._
+import monocle.function.At
+import monocle.function.all._
 import monocle.macros.GenLens
 import org.http4s.implicits._
 import org.http4s.server.Router
@@ -88,13 +88,16 @@ object Tapir extends IOApp {
   }
 
   private def fixme(d: OpenAPI): Unit = {
+    implicit def atListMap[K, V]: At[ListMap[K, V], K, Option[V]] = At(
+      i => Lens((_: ListMap[K, V]).get(i))(optV => map => optV.fold(map - i)(v => map + (i -> v)))
+    )
     // Generate some lenses.
     val paths: Lens[OpenAPI, ListMap[String, PathItem]] = GenLens[OpenAPI](_.paths)
     val parameters: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
       GenLens[PathItem](_.parameters)
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
     // Now try to get thins going...
-    //val x  = (paths composeOptional at("/product/{id}")).getOption(d)
+    val x  = (paths composeLens at("/product/{id}")).get(d)
     val ps = d.paths.get("/product/{id}")
     println(s"PS: $ps")
     val _ = for {
