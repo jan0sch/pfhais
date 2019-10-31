@@ -3700,6 +3700,43 @@ Q> Can't we do better than this?
 Yes, we can! Confronted with big and nested structures we should pick a tool from our functional programming toolbox which is called optics[^36].
 Don't be scared by the name or all that mathematics, there exist some usable libraries for it. In our case we will pick Monocle[^37] which provides profunctor optics for Scala. The basic idea of optics is to provide pure functional abstractions for the manipulation of immutable objects. Because of their pure nature they are composable which results in code which is more flexible and can more easily be reasoned about.
 
+Now that we have that cleared let's make a plan what we actually want to do.
+
+1. Adjust the URL parameter descriptions of `{id}` to mark them as kind of `UUID`.
+2. Adjust the `id` attribute of our `Product` model to mark it as kind of `UUID`.
+3. Adjust the `lang` attribute of our `Translation` model to mark it as an ISO-639-1 language code.
+
+Q> So how can we do that?
+
+If we take a look at the code within the tapir library, we see that the `Schema` and `SchemaFor` code which is used for codecs does not yet support a dedicated `UUID` type. There is a detour for it using `Schema.SString`.
+
+I> Currently there is active discussion about changing and extending the schema code in tapir regarding more future possibilities and better documentation options.
+
+Now we look a bit further into the `OpenAPI` code and find that it supports several interesting attributes which we might use. For now we will stick to the attribute `pattern` of the `Schema` class in that part. It is intended to hold a pattern (*read* regular expression) which describes the format of a string type.
+Okay, so we need to define some (or better exactly 2) regular expressions. But hey wait, we already have one for our language code! :-)
+
+Q> How do we use the existing regular expression from our refined type?
+
+Well, using some shapeless[^28] magic we might use an implicit `Witness` which should be provided by our refined type.
+
+{caption: "Idea to reuse regular expression from refined type"}
+```scala
+def extractRegEx[S <: String](implicit w: Witness.Aux[S]): String =
+  ws.value
+```
+
+The code above is a rough idea so don't count on it. We'll see later on if I was right or did suffer from the hallucination of actually understanding what I am doing. ;-)
+In the hope that this is settled we need one additional regular expression for a `UUID`. These are defined in RFC-4122[^29] and ignoring the special edge case of a "NIL UUID" we come up with the following solution.
+
+{caption: "Regular expression for matching UUIDs"}
+```text
+^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$
+```
+
+Q> What have we overlooked?
+
+According to the OpenAPI specification we are nailed down to Javascript regular expressions (*read* the ECMA 262 regular expression dialect[^30]). Oh why cruel fate? Well, let us deal with that when we have our other puzzle pieces in order.
+
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/
@@ -3753,3 +3790,9 @@ Don't be scared by the name or all that mathematics, there exist some usable lib
 [^36]: https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf
 
 [^37]: https://github.com/julien-truffaut/Monocle
+
+[^38]: https://github.com/milessabin/shapeless
+
+[^39]: https://tools.ietf.org/html/rfc4122
+
+[^40]: https://www.ecma-international.org/ecma-262/5.1/#sec-7.8.5
