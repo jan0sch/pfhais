@@ -3685,6 +3685,20 @@ def getProducts[F[_]] =
 ```
 
 This time we need to provide our example as a string because of the nature (*read* type) of our endpoint. We use the non empty list of examples that we created (you can look it up in `ProductsRoutes.scala`) and convert it into a JSON string.
+If we now visit our swagger endpoint we'll see nice examples included in the documentation. Pretty cool, especially because many people will look at the examples not at the specification. This might be because (too) many of us have seen an API not fulfilling its specification. This shouldn't happen in our case because we're deriving it, yeah! But nonetheless examples are very nice to have. :-)
+
+Q> So what now?
+
+If we take a closer look at our model descriptions then we might see that we could do better in some cases. I'm thinking of our ID fields being simple strings instead of UUIDs and the language code which is also defined as a simple string. So let's get going and clean that up!
+
+### Refining the generated documentation
+
+Looking at the intermediate model for our API documentation (see the `OpenAPI` class structure in the tapir library) we realise that modifying such a deeply nested case class structure might result in some really messy code. I mean we have probably all been there at some point in our life as developer. ;-)
+
+Q> Can't we do better than this?
+
+Yes, we can! Confronted with big and nested structures we should pick a tool from our functional programming toolbox which is called optics[^36].
+Don't be scared by the name or all that mathematics, there exist some usable libraries for it. In our case we will pick Monocle[^37] which provides profunctor optics for Scala. The basic idea of optics is to provide pure functional abstractions for the manipulation of immutable objects. Because of their pure nature they are composable which results in code which is more flexible and can more easily be reasoned about.
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
@@ -3735,3 +3749,7 @@ This time we need to provide our example as a string because of the nature (*rea
 [^34]: https://github.com/softwaremill/tapir
 
 [^35]: https://www.servant.dev/
+
+[^36]: https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf
+
+[^37]: https://github.com/julien-truffaut/Monocle
