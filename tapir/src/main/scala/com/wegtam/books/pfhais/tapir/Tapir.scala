@@ -87,7 +87,7 @@ object Tapir extends IOApp {
     }
   }
 
-  private def fixme(d: OpenAPI): Unit = {
+  private def fixme(docs: OpenAPI): Unit = {
     implicit def atListMap[K, V]: At[ListMap[K, V], K, Option[V]] = At(
       i => Lens((_: ListMap[K, V]).get(i))(optV => map => optV.fold(map - i)(v => map + (i -> v)))
     )
@@ -101,11 +101,14 @@ object Tapir extends IOApp {
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
     val schemaPattern: Lens[Schema, Option[String]]                   = GenLens[Schema](_.pattern)
     // Now try to get things going...
-    val a = (paths composeLens at("/product/{id}")).set(None)(d)
+    val a = (paths composeLens at("/product/{id}")).set(None)(docs)
     val b = (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams)
-      .set(List.empty)(d)
+      .set(List.empty)(docs)
     val c =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema)
-        .getAll(d)
+        .getAll(docs)
+//    val d =
+//      (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema composeTraversal each composeOptional possible composeLens schemaPattern)
+//        .getAll(docs)
   }
 }
