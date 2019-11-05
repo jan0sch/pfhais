@@ -101,11 +101,6 @@ object Tapir extends IOApp {
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
     val schemaPattern: Lens[Schema, Option[String]]                   = GenLens[Schema](_.pattern)
     // Now try to get things going...
-    /*
-    val x =
-      (paths composeOptional at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema)
-        .getAll(d)
-     */
     val a = (paths composeLens at("/product/{id}")).set(None)(d)
     val b = (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams)
       .set(List.empty)(d)
