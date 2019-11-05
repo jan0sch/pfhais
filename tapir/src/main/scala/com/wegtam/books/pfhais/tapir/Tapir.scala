@@ -112,13 +112,5 @@ object Tapir extends IOApp {
     val c =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema)
         .getAll(d)
-    val ps = d.paths.get("/product/{id}")
-    println(s"PS: $ps")
-    val _ = for {
-      pi <- ps
-      go <- pi.get
-      id <- go.parameters.find(_.toOption.map(_.name === "id").getOrElse(false)).flatMap(_.toOption)
-      _ = println(id)
-    } yield ()
   }
 }
