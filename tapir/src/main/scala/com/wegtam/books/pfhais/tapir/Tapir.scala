@@ -20,7 +20,7 @@ import com.wegtam.books.pfhais.tapir.db._
 import doobie._
 import eu.timepit.refined.auto._
 import monocle._
-import monocle.function.At
+import monocle.function.{ At, Index }
 import monocle.function.all._
 import monocle.macros.GenLens
 import org.http4s.implicits._
@@ -91,13 +91,22 @@ object Tapir extends IOApp {
     implicit def atListMap[K, V]: At[ListMap[K, V], K, Option[V]] = At(
       i => Lens((_: ListMap[K, V]).get(i))(optV => map => optV.fold(map - i)(v => map + (i -> v)))
     )
+    implicit def listMapIndex[K, V]: Index[ListMap[K, V], K, V] = Index.fromAt
     // Generate some lenses.
     val paths: Lens[OpenAPI, ListMap[String, PathItem]] = GenLens[OpenAPI](_.paths)
-    val parameters: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
+    val operationParams: Lens[Operation, List[OpenAPI.ReferenceOr[Parameter]]] =
+      GenLens[Operation](_.parameters)
+    val pathParams: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
       GenLens[PathItem](_.parameters)
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
-    // Now try to get thins going...
-    val x  = (paths composeLens at("/product/{id}")).get(d)
+    val schemaPattern: Lens[Schema, Option[String]]                   = GenLens[Schema](_.pattern)
+    // Now try to get things going...
+    /*
+    val x =
+      (paths composeOptional at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema)
+        .getAll(d)
+     */
+    val a  = (paths composeLens at("/product/{id}")).set(None)(d)
     val ps = d.paths.get("/product/{id}")
     println(s"PS: $ps")
     val _ = for {
