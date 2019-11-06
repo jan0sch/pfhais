@@ -3772,8 +3772,69 @@ implicit def atListMap[K, V]: At[ListMap[K, V], K, Option[V]] = At(
 ```
 
 And now our code compiles, hooray! :-)
+While we're at it we also provide an instance for `Index` on `ListMap`.
 
-I> The instance has been committed to the Monocle project so chances are good that it is included in the next release you're using.
+{caption: "Index type class instance for ListMap"}
+```scala
+implicit def listMapIndex[K, V]: Index[ListMap[K, V], K, V] = Index.fromAt
+```
+
+I> The instances have been committed to the Monocle project so chances are good that they'll be included in the next release you're using.
+
+Okay, back to work. Thinking a bit about our problem we realise that we need a couple of lenses which we can compose to modify the needed parts of the documentation structure.
+
+{caption: "Generating lenses"}
+```scala
+val paths: Lens[OpenAPI, ListMap[String, PathItem]] =
+  GenLens[OpenAPI](_.paths)
+val deleteOps: Lens[PathItem, Option[Operation]] =
+  GenLens[PathItem](_.delete)
+val getOps: Lens[PathItem, Option[Operation]] =
+  GenLens[PathItem](_.get)
+val postOps: Lens[PathItem, Option[Operation]] =
+  GenLens[PathItem](_.post)
+val putOps: Lens[PathItem, Option[Operation]] =
+  GenLens[PathItem](_.put)
+val operationParams: Lens[Operation, List[OpenAPI.ReferenceOr[Parameter]]] =
+  GenLens[Operation](_.parameters)
+val pathParams: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
+  GenLens[PathItem](_.parameters)
+val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] =
+  GenLens[Parameter](_.schema)
+val schemaPattern: Lens[Schema, Option[String]] =
+  GenLens[Schema](_.pattern)
+```
+
+Well this is quite a lot but let's break it apart piece by piece. In general we use the `GenLens` macro of Monocle to create the lenses for us.
+First we create a lens which returns the defined path items which is a `ListMap`. We later use the `at` function of the type class to grab a concrete entry from it. This "concrete" entry will be a `PathItem` that contains more information. Next are some lenses which will return an `Operation` from the aforementioned `PathItem`. Depending on the type of the operation (`GET`, `POST`, etc.) we return the appropriate entry.
+Now we need to grab the parameters used for the endpoints which can either be collected directly from a `PathItem` or an `Operation`. These are both lists of the type `Parameter`. Okay, I'm lying straight to your face here. In fact they are `ReferenceOr[Parameter]` which means an `Either[Reference, Parameter]`. But in our use case we only have them as parameters so we'll ignore this for now.
+Last but not least we need to grab the `Schema` of a parameter and from that one the `pattern` field. The schema describing the parameter is also an `Either[Reference, Schema]` which we will ignore too in this case. Now we can play around with our lenses and various combinations.
+
+{caption: "Some examples"}
+```scala
+// Delete the entry at "/product/{id}"
+(paths composeLens at("/product/{id}")).set(None)(docs)
+// Replace the path parameters with an empty list at "/product/{id}"
+(paths composeLens at("/product/{id}") composeOptional possible 
+  composeLens pathParams)
+    .set(List.empty)(docs)
+// Traverse through all schemas in all path parameters at "/product/{id}"
+(paths composeLens at("/product/{id}") composeOptional possible 
+  composeLens pathParams composeTraversal each composeOptional 
+  possible composeLens parameterSchema)
+    .getAll(docs)
+// Set the pattern field in all schemas in all path parameters
+// at "/product/{id}"
+(paths composeLens at("/product/{id}") composeOptional possible 
+  composeLens pathParams composeTraversal each composeOptional 
+  possible composeLens parameterSchema composeOptional possible 
+  composeLens schemaPattern)
+    .set(Option("Optics are soo cool!"))(docs)
+```
+
+This can be confusing at a first look but it is actually very powerful and clean for modifying deeply nested structures. The current API is a bit verbose but there is hope.
+
+I> Works in in the way to greatly reduce the boilerplate in the next release of Monocle. Hopefully you can then write more straightforward code like this `paths.at("/product/{id}").field(_.parameters).each.right.field(_.schema)`.
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
