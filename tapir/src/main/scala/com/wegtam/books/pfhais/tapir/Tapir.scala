@@ -94,6 +94,10 @@ object Tapir extends IOApp {
     implicit def listMapIndex[K, V]: Index[ListMap[K, V], K, V] = Index.fromAt
     // Generate some lenses.
     val paths: Lens[OpenAPI, ListMap[String, PathItem]] = GenLens[OpenAPI](_.paths)
+    val deleteOps: Lens[PathItem, Option[Operation]]    = GenLens[PathItem](_.delete)
+    val getOps: Lens[PathItem, Option[Operation]]       = GenLens[PathItem](_.get)
+    val postOps: Lens[PathItem, Option[Operation]]      = GenLens[PathItem](_.post)
+    val putOps: Lens[PathItem, Option[Operation]]       = GenLens[PathItem](_.put)
     val operationParams: Lens[Operation, List[OpenAPI.ReferenceOr[Parameter]]] =
       GenLens[Operation](_.parameters)
     val pathParams: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
