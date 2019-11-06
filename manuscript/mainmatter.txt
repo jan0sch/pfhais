@@ -3836,6 +3836,19 @@ This can be confusing at a first look but it is actually very powerful and clean
 
 I> Works in in the way to greatly reduce the boilerplate in the next release of Monocle. Hopefully you can then write more straightforward code like this `paths.at("/product/{id}").field(_.parameters).each.right.field(_.schema)`.
 
+So what we can take away from this is that we can update our `pattern` field within all parameters using the following code. Before you ask: We can update all parameters because we have only one. ;-)
+
+{caption: "Update the pattern attribute in the API documentation"}
+```scala
+(paths composeLens at("/product/{id}") composeOptional possible 
+  composeLens pathParams composeTraversal each composeOptional 
+  possible composeLens parameterSchema composeOptional possible 
+  composeLens schemaPattern)
+    .set(Option("Fancy UUID regex here!"))(docs)
+```
+
+Seems we can (as good as) check off the first point on our list. Leaving us with modifying the pattern field of the actual model schemas.
+
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/
