@@ -67,12 +67,12 @@ object Tapir extends IOApp {
         ProductsRoutes.getProducts,
         ProductsRoutes.createProduct
       ).toOpenAPI("Pure Tapir API", "1.0.0")
-      _          = fixme(docs)
-      docsRoutes = new SwaggerHttp4s(docs.toYaml)
-      routes     = productRoutes.routes <+> productsRoutes.routes
-      httpApp    = Router("/" -> routes, "/docs" -> docsRoutes.routes).orNotFound
-      server     = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
-      fiber      = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
+      updatedDocs = updateDocumentation(docs)
+      docsRoutes  = new SwaggerHttp4s(updatedDocs.toYaml)
+      routes      = productRoutes.routes <+> productsRoutes.routes
+      httpApp     = Router("/" -> routes, "/docs" -> docsRoutes.routes).orNotFound
+      server      = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
+      fiber       = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
     } yield fiber
     program.attempt.unsafeRunSync match {
       case Left(e) =>
@@ -87,7 +87,13 @@ object Tapir extends IOApp {
     }
   }
 
-  private def fixme(docs: OpenAPI): Unit = {
+  /**
+    * Update the provided documentation structure by adding some information.
+    *
+    * @param docs The generated OpenAPI documentation from tapir.
+    * @return An updated documentation structure.
+    */
+  private def updateDocumentation(docs: OpenAPI): OpenAPI = {
     implicit def atListMap[K, V]: At[ListMap[K, V], K, Option[V]] = At(
       i => Lens((_: ListMap[K, V]).get(i))(optV => map => optV.fold(map - i)(v => map + (i -> v)))
     )
@@ -116,6 +122,9 @@ object Tapir extends IOApp {
         .set(Option("YES!"))(docs)
     val e =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens getOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
-        .set(Option("YES!"))(docs)
+        .set(
+          Option("/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i")
+        )(docs)
+    e
   }
 }
