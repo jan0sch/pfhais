@@ -3847,7 +3847,19 @@ So what we can take away from this is that we can update our `pattern` field wit
     .set(Option("Fancy UUID regex here!"))(docs)
 ```
 
-Seems we can (as good as) check off the first point on our list. Leaving us with modifying the pattern field of the actual model schemas.
+Seems we can (as good as) check off the first point on our list. Leaving us with modifying the pattern field of the actual model schemas. To get to these we have to define some more lenses.
+
+{caption: "Additional lenses for content schemas"}
+```scala
+// type Lens[Operation, ListMap[ResponsesKey, OpenAPI.ReferenceOr[Response]]]
+val operationResponses = GenLens[Operation](_.responses)
+
+val responseContent: Lens[Response, ListMap[String, MediaType]] =
+  GenLens[Response](_.content)
+
+// type Lens[MediaType, Option[OpenAPI.ReferenceOr[Schema]]]
+val mediaTypeSchema = GenLens[MediaType](_.schema)
+```
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 

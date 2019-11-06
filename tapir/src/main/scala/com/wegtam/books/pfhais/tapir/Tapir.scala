@@ -110,6 +110,8 @@ object Tapir extends IOApp {
       GenLens[Operation](_.responses)
     val responseContent: Lens[Response, ListMap[String, MediaType]] =
       GenLens[Response](_.content)
+    val mediaTypeSchema: Lens[MediaType, Option[OpenAPI.ReferenceOr[Schema]]] =
+      GenLens[MediaType](_.schema)
     val pathParams: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
       GenLens[PathItem](_.parameters)
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
