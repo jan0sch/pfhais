@@ -106,6 +106,8 @@ object Tapir extends IOApp {
     val putOps: Lens[PathItem, Option[Operation]]       = GenLens[PathItem](_.put)
     val operationParams: Lens[Operation, List[OpenAPI.ReferenceOr[Parameter]]] =
       GenLens[Operation](_.parameters)
+    val operationResponses: Lens[Operation, ListMap[ResponsesKey, OpenAPI.ReferenceOr[Response]]] =
+      GenLens[Operation](_.responses)
     val pathParams: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
       GenLens[PathItem](_.parameters)
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
