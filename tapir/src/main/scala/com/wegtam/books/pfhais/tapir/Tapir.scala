@@ -114,5 +114,8 @@ object Tapir extends IOApp {
     val d =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
         .set(Option("YES!"))(docs)
+    val e =
+      (paths composeLens at("/product/{id}") composeOptional possible composeLens getOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
+        .set(Option("YES!"))(docs)
   }
 }
