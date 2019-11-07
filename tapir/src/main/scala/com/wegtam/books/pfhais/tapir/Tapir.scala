@@ -97,6 +97,8 @@ object Tapir extends IOApp {
     implicit def atListMap[K, V]: At[ListMap[K, V], K, Option[V]] = At(
       i => Lens((_: ListMap[K, V]).get(i))(optV => map => optV.fold(map - i)(v => map + (i -> v)))
     )
+    // Seems we're missing a `Traverse` instance from Cats for `ListMap`
+    //implicit def eachListMap[K, V]: Each[ListMap[K, V], V]      = Each.fromTraverse[ListMap[K, ?], V]
     implicit def listMapIndex[K, V]: Index[ListMap[K, V], K, V] = Index.fromAt
     // Generate some lenses.
     val paths: Lens[OpenAPI, ListMap[String, PathItem]] = GenLens[OpenAPI](_.paths)
