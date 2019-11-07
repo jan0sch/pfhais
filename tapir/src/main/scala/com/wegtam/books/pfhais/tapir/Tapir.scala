@@ -117,22 +117,13 @@ object Tapir extends IOApp {
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
     val schemaPattern: Lens[Schema, Option[String]]                   = GenLens[Schema](_.pattern)
     // Now try to get things going...
-    val a = (paths composeLens at("/product/{id}")).set(None)(docs)
-    val b = (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams)
-      .set(List.empty)(docs)
-    val c =
-      (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema)
-        .getAll(docs)
-    val d =
-      (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
-        .set(Option("YES!"))(docs)
     val uuidRegex = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i"
-    val updateGetProduct =
+    val updateGetProductId =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens getOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
         .set(uuidRegex.some)(docs)
-    val updatePutProduct =
+    val updatePutProductId =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens putOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
-        .set(uuidRegex.some)(updateGetProduct)
-    updatePutProduct
+        .set(uuidRegex.some)(updateGetProductId)
+    updatePutProductId
   }
 }
