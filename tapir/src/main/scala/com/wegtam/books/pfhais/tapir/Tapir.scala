@@ -126,11 +126,13 @@ object Tapir extends IOApp {
     val d =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens pathParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
         .set(Option("YES!"))(docs)
-    val e =
+    val uuidRegex = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i"
+    val updateGetProduct =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens getOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
-        .set(
-          Option("/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i")
-        )(docs)
-    e
+        .set(uuidRegex.some)(docs)
+    val updatePutProduct =
+      (paths composeLens at("/product/{id}") composeOptional possible composeLens putOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
+        .set(uuidRegex.some)(updateGetProduct)
+    updatePutProduct
   }
 }
