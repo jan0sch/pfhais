@@ -138,7 +138,7 @@ object Tapir extends IOApp {
     val _ =
       (paths composeTraversal each composeLens getOps composeOptional possible composeLens operationResponses composeTraversal each composeOptional possible composeLens responseContent composeLens at(
         "Product"
-      )).getAll(docs)
+      ) composeOptional possible composeLens mediaTypeSchema).getAll(docs)
     updatePutProductId
   }
 }
