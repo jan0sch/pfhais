@@ -135,7 +135,10 @@ object Tapir extends IOApp {
     val updatePutProductId =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens putOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
         .set(uuidRegex.some)(updateGetProductId)
-    val _ = (paths composeTraversal each composeLens getOps).getAll(docs)
+    val _ =
+      (paths composeTraversal each composeLens getOps composeOptional possible composeLens operationResponses composeTraversal each composeOptional possible composeLens responseContent composeLens at(
+        "Product"
+      )).getAll(docs)
     updatePutProductId
   }
 }
