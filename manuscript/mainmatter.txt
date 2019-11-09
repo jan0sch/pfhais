@@ -3861,6 +3861,44 @@ val responseContent: Lens[Response, ListMap[String, MediaType]] =
 val mediaTypeSchema = GenLens[MediaType](_.schema)
 ```
 
+The power of lenses allows us to traverse all of our structures and modify all affected models at once. So we will use the functionality provided by the `Each` type class here. Let's try something like the following code.
+
+{caption: "Traverse each path item"}
+```scala
+(paths composeTraversal each composeLens getOps).getAll(docs)
+```
+
+Looks good so far but it results in a compiler error.
+
+```text
+[error] ...: diverging implicit expansion for type cats.kernel.Order[A]
+[error] starting with method catsKernelStdOrderForSortedSet in trait 
+        LowPrioritySortedSetInstancesBinCompat1
+[error]       (paths composeTraversal each composeLens getOps).getAll(docs)
+[error]                               ^
+```
+
+This looks like an error from a binary incompatible cats version. But hey, this time the compiler is lying to us. Maybe you have guessed it already: we're missing another type class instance. This time the one for `Each` which we need to traverse our `ListMap` structure. So let's write one! :-)
+
+{caption: "Each type class instance for ListMap"}
+```scala
+implicit def listMapTraversal[K, V]: Traversal[ListMap[K, V], V] = 
+  new Traversal[ListMap[K, V], V] {
+    def modifyF[F[_]: Applicative](f: V => F[V])(s: ListMap[K, V]): 
+      F[ListMap[K, V]] =
+        s.foldLeft(Applicative[F].pure(ListMap.empty[K, V])) {
+          case (acc, (k, v)) =>
+            Applicative[F].map2(f(v), acc)((head, tail) => 
+              tail + (k -> head))
+      }
+  }
+
+implicit def listMapEach[K, V]: Each[ListMap[K, V], V] =
+  Each(listMapTraversal)
+```
+
+As noted above these things will hopefully be in the next Monocle release together with a much nicer API. :-D
+
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/
