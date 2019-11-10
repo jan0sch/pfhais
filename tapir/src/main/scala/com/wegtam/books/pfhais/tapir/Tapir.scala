@@ -126,7 +126,9 @@ object Tapir extends IOApp {
     val pathParams: Lens[PathItem, List[OpenAPI.ReferenceOr[Parameter]]] =
       GenLens[PathItem](_.parameters)
     val parameterSchema: Lens[Parameter, OpenAPI.ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
-    val schemaPattern: Lens[Schema, Option[String]]                   = GenLens[Schema](_.pattern)
+    val schemaProperties: Lens[Schema, ListMap[String, OpenAPI.ReferenceOr[Schema]]] =
+      GenLens[Schema](_.properties)
+    val schemaPattern: Lens[Schema, Option[String]] = GenLens[Schema](_.pattern)
     // Now try to get things going...
     val uuidRegex = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i"
     val updateGetProductId =
