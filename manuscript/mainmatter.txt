@@ -3721,7 +3721,7 @@ Well, using some shapeless[^28] magic we might use an implicit `Witness` which s
 
 {caption: "Idea to reuse regular expression from refined type"}
 ```scala
-def extractRegEx[S <: String](implicit w: Witness.Aux[S]): String =
+def extractRegEx[S <: String](implicit ws: Witness.Aux[S]): String =
   ws.value
 ```
 
@@ -3787,12 +3787,8 @@ Okay, back to work. Thinking a bit about our problem we realise that we need a c
 ```scala
 val paths: Lens[OpenAPI, ListMap[String, PathItem]] =
   GenLens[OpenAPI](_.paths)
-val deleteOps: Lens[PathItem, Option[Operation]] =
-  GenLens[PathItem](_.delete)
 val getOps: Lens[PathItem, Option[Operation]] =
   GenLens[PathItem](_.get)
-val postOps: Lens[PathItem, Option[Operation]] =
-  GenLens[PathItem](_.post)
 val putOps: Lens[PathItem, Option[Operation]] =
   GenLens[PathItem](_.put)
 val operationParams: Lens[Operation, List[OpenAPI.ReferenceOr[Parameter]]] =
@@ -3851,14 +3847,14 @@ Seems we can (as good as) check off the first point on our list. Leaving us with
 
 {caption: "Additional lenses for content schemas"}
 ```scala
-// type Lens[Operation, ListMap[ResponsesKey, OpenAPI.ReferenceOr[Response]]]
-val operationResponses = GenLens[Operation](_.responses)
-
-val responseContent: Lens[Response, ListMap[String, MediaType]] =
-  GenLens[Response](_.content)
-
-// type Lens[MediaType, Option[OpenAPI.ReferenceOr[Schema]]]
-val mediaTypeSchema = GenLens[MediaType](_.schema)
+val components: Lens[OpenAPI, Option[Components]] =
+  GenLens[OpenAPI](_.components)
+// type Lens[Components, ListMap[String, OpenAPI.ReferenceOr[Schema]]]
+val componentsSchemas =
+  GenLens[Components](_.schemas)
+// type Lens[Schema, ListMap[String, OpenAPI.ReferenceOr[Schema]]]
+val schemaProperties =
+  GenLens[Schema](_.properties)
 ```
 
 The power of lenses allows us to traverse all of our structures and modify all affected models at once. So we will use the functionality provided by the `Each` type class here. Let's try something like the following code.
@@ -3898,6 +3894,39 @@ implicit def listMapEach[K, V]: Each[ListMap[K, V], V] =
 ```
 
 As noted above these things will hopefully be in the next Monocle release together with a much nicer API. :-D
+The information we need to modify is within the `components` field of the generated documentation. While we could traverse all the stuff (paths, operations) these only hold references which are of no use for us. So let's update our `Product` model.
+
+{caption: "Update Product model description via lenses"}
+```scala
+(components composeOptional possible composeLens componentsSchemas 
+ composeLens at("Product") composeOptional possible composeOptional 
+ possible composeLens schemaProperties composeLens at("id") 
+ composeOptional possible composeOptional possible composeLens 
+ schemaPattern)
+  .set(Option("Our UUID regex here!"))(docs)
+```
+
+This is quite a lot but we actually only instruct our optics how to traverse down the structure. In general we need to take care of our possible field types here. Due to the nature of the generated structure having a lot of `Option` and `Either` fields we need way more boilerplate here. But as mentioned it is really not that complicated. We compose our lenses via `composeLens` but may need things like `composeOptional possible` to compose on a defined `Option[T]` which we have sometimes to duplicate when having nested occurrences of these. The same instructions can be used to zoom in on the right side of an `Either`.
+
+{caption: "Update Translation model description via lenses"}
+```scala
+(components composeOptional possible composeLens componentsSchemas 
+ composeLens at("Translation") composeOptional possible composeOptional 
+ possible composeLens schemaProperties composeLens at("lang") 
+ composeOptional possible composeOptional possible composeLens 
+ schemaPattern)
+  .set(Option("Our language code regex here!"))(docs)
+```
+
+The modification for the `Translation` model looks quite the same so we could possibly make a function out of it which would get some parameters and return the updated structure.
+
+Q> What are we missing?
+
+Oh yeah, right we thought about extracting the regular expression directly from the refined type to avoid code duplication.
+
+**TODO**
+
+Now if we take a look at our API documentation it looks better. Although we can see that the URL parameter pattern information is not used. But as mentioned before there is a lot of work going on at the tapir site currently and this will also get fixed then.
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 

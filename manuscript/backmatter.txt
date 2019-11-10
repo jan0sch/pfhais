@@ -2,4 +2,21 @@
 
 # Epilogue #
 
+Q> So what have we gained from this?
+
+I personally hope that you had some fun reading this, have learned something and got some ideas about what is possible in the realm of programming. For me it was fun to write this book and I also learned a lot while writing it. I want to thank all the people that got back to me with questions, hints and ideas about what might be missing.
+
+The next time some person points out that all this "academic functional nonsense" is for naught please remember some of the things you read here. We have seen several things that imply that we can use pure functional programming in our daily work:
+
+1. better understandable code
+2. better testable code
+3. better performing code (Yes!)
+4. better type safety using refined types
+5. deriving boilerplate code from our statically typed models and logic
+6. easier working with deeply nested structures using optics
+
+There really is no excuse to stick to impure and messy stuff that is hard to maintain. But please remember also that functional programming is not done for the sake of itself. It is another and in my opinion better way to deliver value. In our field of work this (*value*) usually means some working software / program / application / whatever.
+
+Also please do not consider this book a complete knowledge trove. Several things might already be outdated, some topics have only been scratched on the surface and other things are missing completely.
+So, people of the baud and the electron: Go out there, venture forth, cross boundaries, use the knowledge which is there and last but not least - Have fun!
 
