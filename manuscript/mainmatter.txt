@@ -3922,11 +3922,49 @@ The modification for the `Translation` model looks quite the same so we could po
 
 Q> What are we missing?
 
-Oh yeah, right we thought about extracting the regular expression directly from the refined type to avoid code duplication.
+Oh yeah, right we thought about extracting the regular expression directly from the refined type to avoid code duplication. So let's try to use the function defined earlier on like this `val langRegex = extractRegEx[LanguageCode]`.
 
-**TODO**
+```text
+[error] : type arguments [com.wegtam.books.pfhais.tapir.models.LanguageCode] 
+  do not conform to method extractRegEx's type parameter bounds [S <: String]
+[error]     val langRegex = extractRegEx[LanguageCode]
+[error]                                 ^
+```
+
+Okay, seems like I really don't understand what I'm doing. ;-) Luckily for us the Scala community has a nice, smart and helpful people in it. The solution is to write a type class which will support us extracting the desired parameter.
+
+{caption: "Type class to extract the regular expression"}
+```scala
+import eu.timepit.refined.api._
+import eu.timepit.refined.string._
+import shapeless.Witness
+
+trait RefinedExtract[T] {
+  def regex: String
+}
+
+object RefinedExtract {
+  implicit def instance[T, S <: String](
+      implicit ev: String Refined MatchesRegex[S] =:= T,
+      ws: Witness.Aux[S]
+  ): RefinedExtract[T] = new RefinedExtract[T] { val regex = ws.value }
+}
+```
+
+This allows us have the desired effect in just this small piece of code.
+
+{caption: "Extract and transform regular expression from LanguageCode"}
+```scala
+val typeRegex = implicitly[RefinedExtract[LanguageCode]].regex
+// convert to Javascript regular expression
+val langRegex = "/" + typeRegex + "/"
+```
 
 Now if we take a look at our API documentation it looks better. Although we can see that the URL parameter pattern information is not used. But as mentioned before there is a lot of work going on at the tapir site currently and this will also get fixed then.
+
+I> While I'm writing these lines the awesome tapir project has merged a pull-request which enables much easier customisation of derived schemas for documentation. :-)
+
+However don't forget about optics because their usage goes far beyond what we have done here.
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 

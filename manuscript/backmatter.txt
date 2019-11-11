@@ -18,5 +18,6 @@ The next time some person points out that all this "academic functional nonsense
 There really is no excuse to stick to impure and messy stuff that is hard to maintain. But please remember also that functional programming is not done for the sake of itself. It is another and in my opinion better way to deliver value. In our field of work this (*value*) usually means some working software / program / application / whatever.
 
 Also please do not consider this book a complete knowledge trove. Several things might already be outdated, some topics have only been scratched on the surface and other things are missing completely.
+
 So, people of the baud and the electron: Go out there, venture forth, cross boundaries, use the knowledge which is there and last but not least - Have fun!
 

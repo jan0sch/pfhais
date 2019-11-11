@@ -18,6 +18,7 @@ import com.typesafe.config._
 import com.wegtam.books.pfhais.tapir.api._
 import com.wegtam.books.pfhais.tapir.config._
 import com.wegtam.books.pfhais.tapir.db._
+import com.wegtam.books.pfhais.tapir.models.LanguageCode
 import doobie._
 import eu.timepit.refined.auto._
 import monocle._
@@ -28,7 +29,6 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
 import pureconfig._
-import shapeless.Witness
 import tapir.docs.openapi._
 import tapir.openapi._
 import tapir.openapi.circe.yaml._
@@ -90,15 +90,6 @@ object Tapir extends IOApp {
   }
 
   /**
-    * Extract the regular expression value from an existing
-    * implicit witness of for the type `String`.
-    *
-    * @return The value of the Witness.
-    */
-  def extractRegEx[S <: String](implicit ws: Witness.Aux[S]): String =
-    ws.value
-
-  /**
     * Update the provided documentation structure by adding some information.
     *
     * @param docs The generated OpenAPI documentation from tapir.
@@ -134,8 +125,8 @@ object Tapir extends IOApp {
       GenLens[Schema](_.properties)
     val schemaPattern: Lens[Schema, Option[String]] = GenLens[Schema](_.pattern)
     // Now try to get things going...
-    //val langRegex = extractRegEx[LanguageCode]
-    val langRegex = "/^[a-z]{2}$/"
+    val typeRegex = implicitly[RefinedExtract[LanguageCode]].regex
+    val langRegex = "/" + typeRegex + "/" // convert to Javascript regular expression
     val uuidRegex = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i"
     val updateGetProductId =
       (paths composeLens at("/product/{id}") composeOptional possible composeLens getOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
