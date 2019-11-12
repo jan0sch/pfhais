@@ -1147,7 +1147,7 @@ case GET -> Root / "products" =>
   Ok(result)
 ```
 
-First we create streams for the first and last JSON that we need to emit. Please not that we cannot simply use a `String` here but have to lift it into our HKT `F`. The usage of `pure` is okay because we simply lift a fixed value. Then we extend our original stream processing by explicitly converting our products to JSON and inserting the delimiter (a comma) manually using the `intersperse` function. In the end we simply concatenate our streams and return the result.
+First we create streams for the first and last JSON that we need to emit. Please note that we cannot simply use a `String` here but have to lift it into our HKT `F`. The usage of `pure` is okay because we simply lift a fixed value. Then we extend our original stream processing by explicitly converting our products to JSON and inserting the delimiter (a comma) manually using the `intersperse` function. In the end we simply concatenate our streams and return the result.
 Our solution is quite simple, having the downside that we need to suppress a warning from the wartremover[^18] tool. This is somewhat annoying but can happen. If we remove the annotation, we'll get a compiler error:
 
 {caption: "Wartremover error"}
@@ -1664,7 +1664,7 @@ def findAvailablePort(): Int = {
 }
 ```
 
-The code is quite simple and very useful for such cases. Please not that it is important use `setReuseAddress` because otherwise the found socket will be blocked for a certain amount of time. But now let us continue with our base test class.
+The code is quite simple and very useful for such cases. Please note that it is important use `setReuseAddress` because otherwise the found socket will be blocked for a certain amount of time. But now let us continue with our base test class.
 
 {caption: "BaseSpec for integration tests"}
 ```scala
