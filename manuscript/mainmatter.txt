@@ -3951,7 +3951,7 @@ object RefinedExtract {
 }
 ```
 
-This allows us have the desired effect in just this small piece of code.
+This allows us to have the desired effect in just this small piece of code.
 
 {caption: "Extract and transform regular expression from LanguageCode"}
 ```scala
