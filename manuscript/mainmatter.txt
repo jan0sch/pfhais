@@ -3213,7 +3213,7 @@ I> Please note that we now have requests per minute (`R/M`) instead of requests 
 
 As you can see the difference in system load is way smaller this time. While it is still 25% a load of 4 versus 5 on a machine like the test machine makes almost no difference. However the pure service is again faster (about 25%). Looking at the memory footprint we can see that the impure one uses nearly seven times as much memory as the pure one.
 But before we burst into cheers about that let's remember what we did in the impure implementation! Yes, we used the `groupBy` operator of Akka which keeps a lot of stuff in memory so the fault for this is ours. ;-)
-Because I'm not in the mood to mess with Akka until we're on the memory safe side here, we'll just ignore the memory footprint for this benchmark. Summarising that the pure service is again fast than the impure one.
+Because I'm not in the mood to mess with Akka until we're on the memory safe side here, we'll just ignore the memory footprint for this benchmark. Summarising that the pure service is again faster than the impure one.
 
 ## Summary
 
