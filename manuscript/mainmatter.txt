@@ -3931,7 +3931,7 @@ Oh yeah, right we thought about extracting the regular expression directly from 
 [error]                                 ^
 ```
 
-Okay, seems like I really don't understand what I'm doing. ;-) Luckily for us the Scala community has a nice, smart and helpful people in it. The solution is to write a type class which will support us extracting the desired parameter.
+Okay, seems like I really don't understand what I'm doing. ;-) Luckily for us the Scala community has nice, smart and helpful people in it. The solution is to write a type class which will support us extracting the desired parameter.
 
 {caption: "Type class to extract the regular expression"}
 ```scala
