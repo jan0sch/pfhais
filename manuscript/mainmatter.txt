@@ -1664,7 +1664,7 @@ def findAvailablePort(): Int = {
 }
 ```
 
-The code is quite simple and very useful for such cases. Please note that it is important use `setReuseAddress` because otherwise the found socket will be blocked for a certain amount of time. But now let us continue with our base test class.
+The code is quite simple and very useful for such cases. Please note that it is important to use `setReuseAddress` because otherwise the found socket will be blocked for a certain amount of time. But now let us continue with our base test class.
 
 {caption: "BaseSpec for integration tests"}
 ```scala
