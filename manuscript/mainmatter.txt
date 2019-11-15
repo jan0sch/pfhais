@@ -168,7 +168,7 @@ We'll be using the following libraries for the impure version of the service:
 5. Refined for using refined types
 6. the PostgreSQL JDBC driver
 
-I'll spare you the sbt setup as you can look that up in the code repository (e.g. the `impure` folder in the book repo).
+I'll spare you the sbt setup as you can look that up in the code repository (i.e. the `impure` folder in the book repo).
 
 ## Models
 
