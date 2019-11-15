@@ -13,6 +13,11 @@ like images. The service implementations are placed in the folders
 implementation which uses the [tapir library](https://github.com/softwaremill/tapir) 
 for a typed API design.
 
+### Build Tooling ###
+
+All project modules can be compiled, run and tested via [sbt](https://www.scala-sbt.org/).
+Just open a terminal in the desired folder (e.g. `pure`) and start the `sbt` shell.
+
 ## Copyleft Notice ##
 
 This book uses the Creative Commons Attribution ShareAlike 4.0 International 
