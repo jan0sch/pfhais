@@ -12,6 +12,8 @@ However maybe you have wondered if we can't do better even though aforementioned
 
 The answer to this can be found in this book which is intended to be read from cover to cover in the given order. Within the book the following libraries will be used: Cats[^3], Cats Effect[^4], http4s[^5], Doobie[^6], Refined[^7], fs2[^8], tapir[^9], Monocle[^10] and probably others. ;-)
 
+Code and book source can be found in the following repository: https://github.com/jan0sch/pfhais
+
 # Copyleft Notice
 
 This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC BY-SA 4.0) license[^11]. The code snippets in this book are licensed under CC0[^12] which means you can use them without restriction. Excerpts from libraries maintain their license.
