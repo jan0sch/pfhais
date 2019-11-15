@@ -4,7 +4,7 @@
 
 Thank you for your interest in this book. I hope you'll have a good time reading it and learn something from it.
 
-# About this book
+## About this book
 
 This book is intended for the intermediate Scala programmer who is interested in functional programming and works mainly on the web service backend side. Ideally she has experience with libraries like Akka HTTP[^1] and Slick[^2] which are in heavy use in that area.
 
@@ -14,7 +14,7 @@ The answer to this can be found in this book which is intended to be read from c
 
 Code and book source can be found in the following repository: https://github.com/jan0sch/pfhais
 
-# Copyleft Notice
+## Copyleft Notice
 
 This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC BY-SA 4.0) license[^11]. The code snippets in this book are licensed under CC0[^12] which means you can use them without restriction. Excerpts from libraries maintain their license.
 
