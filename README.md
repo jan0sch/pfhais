@@ -18,6 +18,11 @@ for a typed API design.
 All project modules can be compiled, run and tested via [sbt](https://www.scala-sbt.org/).
 Just open a terminal in the desired folder (e.g. `pure`) and start the `sbt` shell.
 
+If you are using the IntelliJ IDEA development environment then you will 
+need to install the Scala plugin for it. Afterwards you should be able to 
+create IDEA projects by using the "Import Project" feature and point it to 
+the desired folder (e.g. `tapir`).
+
 ## Copyleft Notice ##
 
 This book uses the Creative Commons Attribution ShareAlike 4.0 International 
