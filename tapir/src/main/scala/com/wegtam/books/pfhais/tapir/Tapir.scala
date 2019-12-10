@@ -50,7 +50,7 @@ object Tapir extends IOApp {
 
     val program = for {
       (apiConfig, dbConfig) <- IO {
-        val cfg = ConfigFactory.load
+        val cfg = ConfigFactory.load(getClass().getClassLoader())
         // TODO Think about alternatives to `Throw`.
         (
           ConfigSource.fromConfig(cfg).at("api").loadOrThrow[ApiConfig],

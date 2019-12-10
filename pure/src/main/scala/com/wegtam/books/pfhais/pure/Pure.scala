@@ -40,7 +40,7 @@ object Pure extends IOApp {
 
     val program = for {
       (apiConfig, dbConfig) <- IO {
-        val cfg = ConfigFactory.load
+        val cfg = ConfigFactory.load(getClass().getClassLoader())
         // TODO Think about alternatives to `Throw`.
         (
           loadConfigOrThrow[ApiConfig](cfg, "api"),
