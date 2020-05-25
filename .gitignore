@@ -36,6 +36,7 @@ Temporary Items
 .apdisk
 # Metals
 .metals/
+metals.sbt
 # SBT
 target/
 lib_managed/
