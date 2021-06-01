@@ -5,6 +5,14 @@
 This repository contains the source code for the book "Pure functional 
 HTTP APIs in Scala" which is available on Leanpub: https://leanpub.com/pfhais
 
+While Leanpub is the recommended source the book is also available at:
+
+- [Amazon](https://www.amazon.de/dp/B092JJGLVW)
+- [Thalia](https://www.thalia.de/shop/home/artikeldetails/ID151277747.html)
+- and others
+
+An online course based upon the book was done by Educative: https://www.educative.io/courses/pure-functional-http-apis-scala
+
 ## Structure ##
 
 The folder `manuscript` contains the book source code and other resources 
