@@ -1,6 +1,7 @@
 # Pure functional HTTP APIs in Scala #
 
 [![Build Status](https://app.travis-ci.com/jan0sch/pfhais.svg?branch=main)](https://app.travis-ci.com/jan0sch/pfhais)
+[![codecov](https://codecov.io/gh/jan0sch/pfhais/branch/main/graph/badge.svg?token=t6jfwoRMKJ)](https://codecov.io/gh/jan0sch/pfhais)
 
 This repository contains the source code for the book "Pure functional 
 HTTP APIs in Scala" which is available on Leanpub: https://leanpub.com/pfhais
@@ -37,8 +38,4 @@ This book uses the Creative Commons Attribution ShareAlike 4.0 International
 (CC BY-SA 4.0) license. The code snippets in this book are licensed under 
 CC0 which means you can use them without restriction. 
 Excerpts from libraries maintain their license.
-
-## Code Coverage ##
-
-[![codecov](https://codecov.io/gh/jan0sch/pfhais/branch/main/graph/badge.svg?token=t6jfwoRMKJ)](https://codecov.io/gh/jan0sch/pfhais)
 
