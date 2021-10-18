@@ -37,6 +37,7 @@ Temporary Items
 # Metals
 .metals/
 # SBT
+.bsp/
 target/
 lib_managed/
 src_managed/
