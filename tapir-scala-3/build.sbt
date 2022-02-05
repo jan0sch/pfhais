@@ -68,7 +68,7 @@ lazy val library =
   new {
     object Version {
       val cats         = "2.0.0"
-      val circe        = "0.12.3"
+      val circe        = "0.14.1"
       val doobie       = "0.8.8"
       val flyway       = "6.0.8"
       val http4s       = "0.21.31"
