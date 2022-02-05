@@ -214,8 +214,8 @@ def compilerSettings(sv: String) =
 
 lazy val commonSettings =
   Seq(
-    scalaVersion := "2.12.10",
-    crossScalaVersions := Seq(scalaVersion.value, "2.13.1"),
+    scalaVersion := "2.13.7",
+    crossScalaVersions := Seq(scalaVersion.value, "2.12.10"),
     organization := "com.wegtam",
     organizationName := "Jens Grassel",
     startYear := Some(2019),
