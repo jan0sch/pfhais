@@ -80,7 +80,7 @@ lazy val library =
       val refined      = "0.9.10"
       val scalaCheck   = "1.14.2"
       val scalaTest    = "3.0.8"
-      val tapir        = "0.11.9"
+      val tapir        = "0.11.11"
     }
     val catsCore          = "org.typelevel"              %% "cats-core"                % Version.cats
     val circeCore         = "io.circe"                   %% "circe-core"               % Version.circe
