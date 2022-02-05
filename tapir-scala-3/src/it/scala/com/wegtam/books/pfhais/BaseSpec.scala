@@ -22,13 +22,14 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 /**
   * A base class for our integration tests.
   */
-abstract class BaseSpec extends AnyWordSpec 
+abstract class BaseSpec
+    extends AnyWordSpec
     with MustMatchers
     with ScalaCheckPropertyChecks
     with BeforeAndAfterAll
     with BeforeAndAfterEach {
 
-  protected val config = ConfigFactory.load()
+  protected val config   = ConfigFactory.load()
   protected val dbConfig = ConfigSource.fromConfig(config).at("database").load[DatabaseConfig]
 
   override def beforeAll(): Unit = {

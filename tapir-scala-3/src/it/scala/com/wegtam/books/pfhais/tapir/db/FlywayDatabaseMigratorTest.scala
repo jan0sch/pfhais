@@ -3,9 +3,9 @@
  *
  *                                No Copyright
  *
- * The person who associated a work with this deed has dedicated the work to 
+ * The person who associated a work with this deed has dedicated the work to
  * the public domain by waiving all of his or her rights to the work worldwide
- * under copyright law, including all related and neighboring rights, to the 
+ * under copyright law, including all related and neighboring rights, to the
  * extent allowed by law.
  */
 
@@ -20,20 +20,18 @@ import org.flywaydb.core.api.FlywayException
 
 final class FlywayDatabaseMigratorTest extends BaseSpec {
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     dbConfig.foreach { cfg =>
       val flyway: Flyway = Flyway.configure().dataSource(cfg.url, cfg.user, cfg.pass).load()
-      val _ = flyway.migrate()
+      val _              = flyway.migrate()
       flyway.clean()
     }
-  }
 
-  override def afterEach(): Unit = {
+  override def afterEach(): Unit =
     dbConfig.foreach { cfg =>
       val flyway: Flyway = Flyway.configure().dataSource(cfg.url, cfg.user, cfg.pass).load()
       flyway.clean()
     }
-  }
 
   "FlywayDatabaseMigrator#migrate" when {
     "the database is configured and available" when {
@@ -41,7 +39,7 @@ final class FlywayDatabaseMigratorTest extends BaseSpec {
         "return the number of applied migrations" in {
           dbConfig.map { cfg =>
             val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
-            val program = migrator.migrate(cfg.url, cfg.user, cfg.pass)
+            val program                        = migrator.migrate(cfg.url, cfg.user, cfg.pass)
             program.unsafeRunSync must be > 0
           }
         }
@@ -51,8 +49,8 @@ final class FlywayDatabaseMigratorTest extends BaseSpec {
         "return zero" in {
           dbConfig.map { cfg =>
             val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
-            val program = migrator.migrate(cfg.url, cfg.user, cfg.pass)
-            val _ = program.unsafeRunSync
+            val program                        = migrator.migrate(cfg.url, cfg.user, cfg.pass)
+            val _                              = program.unsafeRunSync
             program.unsafeRunSync must be(0)
           }
         }
@@ -68,7 +66,7 @@ final class FlywayDatabaseMigratorTest extends BaseSpec {
           pass = "no-password"
         )
         val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
-        val program = migrator.migrate(cfg.url, cfg.user, cfg.pass)
+        val program                        = migrator.migrate(cfg.url, cfg.user, cfg.pass)
         an[FlywayException] must be thrownBy program.unsafeRunSync
       }
     }

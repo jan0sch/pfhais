@@ -3,9 +3,9 @@
  *
  *                                No Copyright
  *
- * The person who associated a work with this deed has dedicated the work to 
+ * The person who associated a work with this deed has dedicated the work to
  * the public domain by waiving all of his or her rights to the work worldwide
- * under copyright law, including all related and neighboring rights, to the 
+ * under copyright law, including all related and neighboring rights, to the
  * extent allowed by law.
  */
 
@@ -23,29 +23,27 @@ import org.flywaydb.core.Flyway
 final class DoobieRepositoryTest extends BaseSpec {
 
   implicit val cs = IO.contextShift(ExecutionContexts.synchronous)
-  
+
   override def beforeAll(): Unit = {
     super.beforeAll()
     dbConfig.foreach { cfg =>
       val flyway: Flyway = Flyway.configure().dataSource(cfg.url, cfg.user, cfg.pass).load()
-      val _ = flyway.migrate()
+      val _              = flyway.migrate()
     }
   }
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     dbConfig.foreach { cfg =>
       val flyway: Flyway = Flyway.configure().dataSource(cfg.url, cfg.user, cfg.pass).load()
       flyway.clean()
       val _ = flyway.migrate()
     }
-  }
 
-  override def afterEach(): Unit = {
+  override def afterEach(): Unit =
     dbConfig.foreach { cfg =>
       val flyway: Flyway = Flyway.configure().dataSource(cfg.url, cfg.user, cfg.pass).load()
       flyway.clean()
     }
-  }
 
   "DoobieRepository#loadProduct" when {
     "the product does not exist" must {
@@ -76,7 +74,7 @@ final class DoobieRepositoryTest extends BaseSpec {
               _    <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
             } yield {
-              rows must not be(empty)
+              rows must not be (empty)
               Product.fromDatabase(rows) must contain(p)
             }
           }
@@ -106,8 +104,9 @@ final class DoobieRepositoryTest extends BaseSpec {
           val repo = new DoobieRepository(tx)
           forAll("products") { ps: List[Product] =>
             for {
-              _    <- ps.traverse(repo.saveProduct)
-              rows = repo.loadProducts()
+              _ <- ps.traverse(repo.saveProduct)
+              rows = repo
+                .loadProducts()
                 .groupAdjacentBy(_._1)
                 .map {
                   case (id, rows) => Product.fromDatabase(rows.toList)
@@ -119,7 +118,7 @@ final class DoobieRepositoryTest extends BaseSpec {
                 .toList
             } yield {
               val products = rows.unsafeRunSync
-              products must not be(empty)
+              products must not be (empty)
               products mustEqual ps
             }
           }
@@ -140,7 +139,7 @@ final class DoobieRepositoryTest extends BaseSpec {
             rows <- repo.loadProduct(p.id)
           } yield {
             cnt must be > 0
-            rows must not be(empty)
+            rows must not be (empty)
             Product.fromDatabase(rows) must contain(p)
           }
         }
@@ -182,7 +181,7 @@ final class DoobieRepositoryTest extends BaseSpec {
               rows <- repo.loadProduct(p.id)
             } yield {
               cnt must be > 0
-              rows must not be(empty)
+              rows must not be (empty)
               Product.fromDatabase(rows) must contain(p)
             }
           }
