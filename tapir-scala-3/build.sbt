@@ -220,7 +220,7 @@ lazy val commonSettings =
     organizationName := "Jens Grassel",
     startYear := Some(2019),
     headerLicense := Some(HeaderLicense.Custom(licenseText)),
-    //addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"), // Must be dropped for 3.x
     addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
     scalacOptions ++= compilerSettings(scalaVersion.value),
     Compile / console / scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused-import"),
