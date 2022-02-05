@@ -153,7 +153,7 @@ def compilerSettings(sv: String) =
 	"-Xlint:inaccessible",
 	"-Xlint:infer-any",
 	"-Xlint:missing-interpolator",
-	"-Xlint:nullary-override",
+	//"-Xlint:nullary-override", // Flag was removed
 	"-Xlint:nullary-unit",
 	"-Xlint:option-implicit",
 	"-Xlint:package-object-classes",
