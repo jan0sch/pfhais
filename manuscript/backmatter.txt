@@ -21,3 +21,13 @@ Also please do not consider this book a complete knowledge trove. Several things
 
 So, people of the baud and the electron: Go out there, venture forth, cross boundaries, use the knowledge which is there and last but not least - Have fun!
 
+## Moving to Scala 3...
+
+When I wrote this book version 2.12 was the thing and 2.13 was not yet released. While I did enable cross-building for 2.13 the next big version was still far away. But then it happened and Scala 3 was released. However it took some time until libraries and frameworks moved to support it. As I am writing this some still have not added support for it because in some areas this involves a significant amount of work.
+
+However, I always wanted to do an update to Scala 3 and while I might still find time to write a complete book about that, I chose not to wait longer although some libraries I would like to use are still not ported. Therefore the topic of this chapter will be to update our small service (the tapir version) to Scala 3 while dropping some not yet ported libraries.
+
+But instead of jumping right into the middle of it we might be better of to look at our options and plan our migration accordingly.
+
+The first step should be to switch to Scala 2.13 as major version and update all dependencies to their latest versions. This alone will be quite some work but it will ease the migration to Scala 3 for which we will try to use some tools which are available.
+
