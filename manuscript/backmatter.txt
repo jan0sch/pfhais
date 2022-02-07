@@ -31,3 +31,13 @@ But instead of jumping right into the middle of it we might be better of to look
 
 The first step should be to switch to Scala 2.13 as major version and update all dependencies to their latest versions. This alone will be quite some work but it will ease the migration to Scala 3 for which we will try to use some tools which are available.
 
+Since version 1.5 the sbt build tool supports Scala 3 directly so there is no more need to add the sbt-dotty plugin to your build. Additionally it supports a new syntax for dependencies which will allow us to use 2.13 libraries in 3 and vice versa.
+
+```
+libraryDependency += ("my.domain" %% "my-lib" % "x.y.z").cross(CrossVersion.for3Use2_13)
+```
+
+The example above instructs sbt to use a Scala 2.13 library for Scala 3. If you want to do the opposite then you have to use `CrossVersion.for2_13Use3` instead which will make sbt use a Scala 3 library for Scala 2.13.
+
+Furthermore there is the Scala-3-Migrate plugin for sbt which supports on a variety of topics when migration a project to Scala 3.
+
