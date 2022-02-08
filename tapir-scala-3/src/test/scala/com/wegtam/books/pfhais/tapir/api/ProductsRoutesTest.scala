@@ -45,9 +45,9 @@ final class ProductsRoutesTest extends BaseSpec {
           val response: IO[Response[IO]] = service.orNotFound.run(
             Request(method = Method.GET, uri = Uri.uri("/products"))
           )
-          val result = response.unsafeRunSync
+          val result = response.unsafeRunSync()
           result.status must be(expectedStatusCode)
-          result.as[List[Product]].unsafeRunSync mustEqual List.empty[Product]
+          result.as[List[Product]].unsafeRunSync() mustEqual List.empty[Product]
         }
       }
 
@@ -62,9 +62,9 @@ final class ProductsRoutesTest extends BaseSpec {
             val response: IO[Response[IO]] = service.orNotFound.run(
               Request(method = Method.GET, uri = Uri.uri("/products"))
             )
-            val result = response.unsafeRunSync
+            val result = response.unsafeRunSync()
             result.status must be(expectedStatusCode)
-            result.as[List[Product]].unsafeRunSync mustEqual ps
+            result.as[List[Product]].unsafeRunSync() mustEqual ps
           }
         }
       }
@@ -82,10 +82,10 @@ final class ProductsRoutesTest extends BaseSpec {
             Request(method = Method.POST, uri = Uri.uri("/products"))
               .withEntity(payload.asJson.noSpaces)
           )
-          val result = response.unsafeRunSync
+          val result = response.unsafeRunSync()
           result.status must be(expectedStatusCode)
-          result.as[String].unsafeRunSync must be("Invalid value for: body")
-          //result.body.compile.toVector.unsafeRunSync must be(empty)
+          result.as[String].unsafeRunSync() must be("Invalid value for: body")
+          //result.body.compile.toVector.unsafeRunSync() must be(empty)
         }
       }
 
@@ -102,9 +102,9 @@ final class ProductsRoutesTest extends BaseSpec {
                 Request(method = Method.POST, uri = Uri.uri("/products"))
                   .withEntity(p)
               )
-              val result = response.unsafeRunSync
+              val result = response.unsafeRunSync()
               result.status must be(expectedStatusCode)
-              result.body.compile.toVector.unsafeRunSync must be(empty)
+              result.body.compile.toVector.unsafeRunSync() must be(empty)
             }
           }
         }
@@ -120,9 +120,9 @@ final class ProductsRoutesTest extends BaseSpec {
                 Request(method = Method.POST, uri = Uri.uri("/products"))
                   .withEntity(p)
               )
-              val result = response.unsafeRunSync
+              val result = response.unsafeRunSync()
               result.status must be(expectedStatusCode)
-              result.body.compile.toVector.unsafeRunSync must be(empty)
+              result.body.compile.toVector.unsafeRunSync() must be(empty)
             }
           }
         }

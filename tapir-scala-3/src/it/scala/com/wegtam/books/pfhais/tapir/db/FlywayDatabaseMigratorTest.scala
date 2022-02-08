@@ -40,7 +40,7 @@ final class FlywayDatabaseMigratorTest extends BaseSpec {
           dbConfig.map { cfg =>
             val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
             val program                        = migrator.migrate(cfg.url, cfg.user, cfg.pass)
-            program.unsafeRunSync must be > 0
+            program.unsafeRunSync() must be > 0
           }
         }
       }
@@ -50,8 +50,8 @@ final class FlywayDatabaseMigratorTest extends BaseSpec {
           dbConfig.map { cfg =>
             val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
             val program                        = migrator.migrate(cfg.url, cfg.user, cfg.pass)
-            val _                              = program.unsafeRunSync
-            program.unsafeRunSync must be(0)
+            val _                              = program.unsafeRunSync()
+            program.unsafeRunSync() must be(0)
           }
         }
       }
@@ -67,7 +67,7 @@ final class FlywayDatabaseMigratorTest extends BaseSpec {
         )
         val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
         val program                        = migrator.migrate(cfg.url, cfg.user, cfg.pass)
-        an[FlywayException] must be thrownBy program.unsafeRunSync
+        an[FlywayException] must be thrownBy program.unsafeRunSync()
       }
     }
   }

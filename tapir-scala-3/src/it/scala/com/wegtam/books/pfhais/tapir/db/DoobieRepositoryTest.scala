@@ -91,7 +91,7 @@ final class DoobieRepositoryTest extends BaseSpec {
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
           val rows = repo.loadProducts().compile.toList
-          rows.unsafeRunSync must be(empty)
+          rows.unsafeRunSync() must be(empty)
         }
       }
     }
@@ -117,7 +117,7 @@ final class DoobieRepositoryTest extends BaseSpec {
                 .compile
                 .toList
             } yield {
-              val products = rows.unsafeRunSync
+              val products = rows.unsafeRunSync()
               products must not be (empty)
               products mustEqual ps
             }

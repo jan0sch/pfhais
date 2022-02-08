@@ -34,7 +34,7 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
   val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
     val prefix = Stream.eval("[".pure[F])
     val suffix = Stream.eval("]".pure[F])
-    val ps = repo.loadProducts
+    val ps = repo.loadProducts()
       .groupAdjacentBy(_._1)
       .map {
         case (id, rows) => Product.fromDatabase(rows.toList)

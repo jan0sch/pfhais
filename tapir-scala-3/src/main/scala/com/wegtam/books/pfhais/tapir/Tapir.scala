@@ -76,7 +76,7 @@ object Tapir extends IOApp {
       server      = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
       fiber       = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
     } yield fiber
-    program.attempt.unsafeRunSync match {
+    program.attempt.unsafeRunSync() match {
       case Left(e) =>
         IO {
           println("*** An error occured! ***")
