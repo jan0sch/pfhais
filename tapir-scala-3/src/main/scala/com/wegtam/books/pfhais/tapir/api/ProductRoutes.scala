@@ -40,7 +40,7 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
   }
 
   private val updateRoute: HttpRoutes[F] = ProductRoutes.updateProduct.toRoutes {
-    case (id, p) =>
+    case (_, p) =>
       for {
         cnt <- repo.updateProduct(p)
         res = cnt match {
