@@ -41,3 +41,14 @@ The example above instructs sbt to use a Scala 2.13 library for Scala 3. If you 
 
 Furthermore there is the Scala-3-Migrate plugin for sbt which supports on a variety of topics when migration a project to Scala 3.
 
+### Updating to 2.13.x
+
+The currently recommended version to start a migration from is 2.13.7 so we will target this Scala version for updating our project. In the source code you can see that I simply copied the `tapir` folder of our project and named it `tapir-scala-3` to not mess with our existing code.
+
+First steps include updating sbt to a recent version as well as updating the sbt-plugins that we are using to their latest versions. Also some changes are made in regard to the compiler plugins. The kind-projector plugin needs a different way to be specififed (see `cross CrossVersion.full` in `build.sbt`) and the monadic-for plugin stays for now but will have to be removed when we're on Scala 3. And while at it the migration plugin to support us is added as well:
+
+```
+addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.5.0")
+```
+
+Now we switch the default version for Scala to `2.13.7` and try to compile the project. We run into some missing dependencies errors which will force our hand into upgrading several dependencies. In addition we stumble upon the matter that the compiler flag `-Xlint:nullary-override` has been dropped so we remove it or comment it out.
