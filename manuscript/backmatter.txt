@@ -23,7 +23,7 @@ So, people of the baud and the electron: Go out there, venture forth, cross boun
 
 ## Moving to Scala 3...
 
-When I wrote this book version 2.12 was the thing and 2.13 was not yet released. While I did enable cross-building for 2.13 the next big version was still far away. But then it happened and Scala 3 was released. However it took some time until libraries and frameworks moved to support it. As I am writing this some still have not added support for it because in some areas this involves a significant amount of work.
+When I wrote this book version 2.12 was the thing and 2.13 was not yet released. While I did enable cross-building for 2.13 after it was released the next big version was still far away. But then it happened and Scala 3 was released. However it took some time until libraries and frameworks moved to support it. As I am writing this some still have not added support for it because in some areas this involves a significant amount of work.
 
 However, I always wanted to do an update to Scala 3 and while I might still find time to write a complete book about that, I chose not to wait longer although some libraries I would like to use are still not ported. Therefore the topic of this chapter will be to update our small service (the tapir version) to Scala 3 while dropping some not yet ported libraries.
 
@@ -41,7 +41,9 @@ The example above instructs sbt to use a Scala 2.13 library for Scala 3. If you 
 
 Furthermore there is the Scala-3-Migrate plugin for sbt which supports on a variety of topics when migration a project to Scala 3.
 
-### Updating to 2.13.x
+So the second step would be to use the Scala-3-Migrate plugin to guide our migration to Scala 3. During this phase we will see what can be kept, what can be used with some restrictions and what has to be dropped.
+
+### Step 1: Updating to 2.13.x
 
 The currently recommended version to start a migration from is 2.13.7 so we will target this Scala version for updating our project. In the source code you can see that I simply copied the `tapir` folder of our project and named it `tapir-scala-3` to not mess with our existing code.
 
@@ -52,3 +54,101 @@ addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.5.0")
 ```
 
 Now we switch the default version for Scala to `2.13.7` and try to compile the project. We run into some missing dependencies errors which will force our hand into upgrading several dependencies. In addition we stumble upon the matter that the compiler flag `-Xlint:nullary-override` has been dropped so we remove it or comment it out.
+
+I> As much as I like it to turn any warning into an error, for a migration like this I recommend to fix only the deprecation issues and then turn of the `Xfatal-warnings` flag.
+
+Furthermore to reduce the clutter in our build file we remove support for Scala 2.12 and the related compiler options. In the case that you have to support older versions of Scala (cross compilation) things get more complicated. In our case we can move completely to Scala 3. :-)
+
+#### Details and some compiling issues
+
+So what was done until now?
+
+1. include kind-projector plugin via CrossVersion.full
+2. switch to Scala 2.13.7 aus default version
+3. remove Scala 2.12 and related settings
+4. update doobie to 0.8.8
+5. update http4s to 0.21.31
+6. update tapir to 0.11.11
+7. update circe to 0.14.1
+8. remove dropped compiler flags (for 2.13!)
+9. disable `Xfatal-warnings`
+
+So far compiling our main code resulted in nagging us to fix several issues with auto-application of missing brackets for function calls, the main culprit being `unsafeRunSync` here which has to be `unsafeRunSync()`. Also some unused variable issues were popping up and are fixed easily too.
+
+Now onwards to compiling the tests and we have some more issues. So far the integration tests compile fine but the unit tests spill out an error:
+
+```txt
+[error] .../src/test/scala/com/wegtam/books/pfhais/tapir/db/TestRepository.scala:26:51: trait Seq takes type parameters
+[error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
+[error]                                                   ^
+[error] .../src/test/scala/com/wegtam/books/pfhais/tapir/db/TestRepository.scala:26:50: missing argument list for method to in trait IterableOnceOps
+[error] Unapplied methods are only converted to functions when a function type is expected.
+[error] You can make this conversion explicit by writing `to _` or `to(_)` instead of `to`.
+[error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
+[error]                                                  ^
+[error] .../src/test/scala/com/wegtam/books/pfhais/tapir/db/TestRepository.scala:32:49: trait Seq takes type parameters
+[error]       val ns = p.names.toNonEmptyList.toList.to[Seq]
+[error]                                                 ^
+[error] .../src/test/scala/com/wegtam/books/pfhais/tapir/db/TestRepository.scala:32:48: missing argument list for method to in trait IterableOnceOps
+[error] Unapplied methods are only converted to functions when a function type is expected.
+[error] You can make this conversion explicit by writing `to _` or `to(_)` instead of `to`.
+[error]       val ns = p.names.toNonEmptyList.toList.to[Seq]
+[error]                                                ^
+[error] four errors found
+```
+
+This looks big at first but let us stay calm an read the error messages. So the "trait Seq takes takes type parameters" eh? The second one says something about "unapplied methods" but isn't exactly helpful either.
+
+Q> What can we do?
+
+Well, we fire up a REPL of course and as we are (or should be) in sbt we can simply use the `console` command. This will only work if we fixed all our compilation errors in the main code.
+
+```scala
+scala> List(1, 2, 3).to<TAB>
+// This should show a list of possible functions.
+```
+
+So it seems we are missing our plain old (`.to[T]`). While there is a `.to()` function it requires a collection factory. So what about `.toSeq`? We did not use it in the past because it converted into a mutable sequence. But what about now?
+
+```scala
+scala> val a: scala.collection.immutable.Seq[Int] = List(1, 2, 3).toSeq
+val a: Seq[Int] = List(1, 2, 3)
+scala> a.getClass
+val res0: Class[_ <: Seq[Int]] = class scala.collection.immutable.$colon$colon
+
+scala> a.getClass.getCanonicalName
+val res1: String = scala.collection.immutable.$colon$colon
+
+scala> a.getClass.getName
+val res2: String = scala.collection.immutable.$colon$colon
+```
+
+Well, well this looks pretty good I'd say so let's adjust the code. And quickly we get a big type error but the gist of it is:
+
+```txt
+[error] Note: List[...] <: Seq[...], but type F is invariant in type _.
+[error] You may wish to define _$$1 as +_$$1 instead. (SLS 4.5)
+[error]         ns.map(n => (p.id, n.lang, n.name)).pure[F]
+[error]                                                 ^
+[error] one error found
+```
+
+Good news first: The original error is gone and we can even simply the second error sources code by removing the `toSeq` completely. But the remaining one is heavier. So let's take a step back and take a deep breathe. If we take a look at our function signature we can see that it requires a `Seq` but what if we simply change it to `List`?
+
+So let us try it and see how far we get. First we have to change the type signature of the function `loadProduct` in `Repository` to have a `List` instead of a `Seq` in its return type. Afterwards the compiler will tell us exactly in which places we have to make changes. Furthermore we can also remove some imports (`scala.collection.immutable.Seq`) which are no longer needed.
+
+Okay, onwards to... Did you run the tests? ;-)
+
+While executing the tests we discover that some unit tests are failing and the integration tests look good. Additionally I get a warning that the Flyway library should be updated. But we save this for later. Let us take a look at our failing tests first. We can see that they error out because of an exception:
+
+```txt
+java.lang.NoSuchMethodError: 'cats.data.Kleisli
+  org.http4s.HttpRoutes$.apply(scala.Function1, cats.effect.Sync)'
+```
+
+This does not look good and it seems to be not caught by the compiler. We should start our service to see if it happens there too. So after a `sbt run` we can see that it affects our main code also.
+
+Nice we just broke our service. Welcome to the world of software development! :-)
+
+### Step 2: Migrating to Scala 3
+
