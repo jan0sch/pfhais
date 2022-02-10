@@ -145,7 +145,7 @@ def compilerSettings(sv: String) =
 	"-language:higherKinds",
 	"-unchecked",
 	"-Xcheckinit",
-	"-Xfatal-warnings",
+	//"-Xfatal-warnings", // Disable for migraton
 	"-Xlint:adapted-args",
 	"-Xlint:constant",
 	"-Xlint:delayedinit-select",
@@ -174,48 +174,13 @@ def compilerSettings(sv: String) =
 	"-Ycache-plugin-class-loader:last-modified",
 	"-Ycache-macro-class-loader:last-modified",
       )
-    case _ =>
-      Seq(
-      "-deprecation",
-      "-encoding", "UTF-8",
-      "-explaintypes",
-      "-feature",
-      "-language:higherKinds",
-      "-target:jvm-1.8",
-      "-unchecked",
-      "-Xcheckinit",
-      "-Xfatal-warnings",
-      "-Xfuture",
-      "-Xlint:adapted-args",
-      "-Xlint:by-name-right-associative",
-      "-Xlint:constant",
-      "-Xlint:delayedinit-select",
-      "-Xlint:doc-detached",
-      "-Xlint:inaccessible",
-      "-Xlint:infer-any",
-      "-Xlint:missing-interpolator",
-      "-Xlint:nullary-override",
-      "-Xlint:nullary-unit",
-      "-Xlint:option-implicit",
-      "-Xlint:package-object-classes",
-      "-Xlint:poly-implicit-overload",
-      "-Xlint:private-shadow",
-      "-Xlint:stars-align",
-      "-Xlint:type-parameter-shadow",
-      "-Xlint:unsound-match",
-      "-Ydelambdafy:method",
-      "-Yno-adapted-args",
-      "-Ypartial-unification",
-      "-Ywarn-numeric-widen",
-      "-Ywarn-unused-import",
-      "-Ywarn-value-discard"
-    )
+    case _ => Seq()
   }
 
 lazy val commonSettings =
   Seq(
     scalaVersion := "2.13.7",
-    crossScalaVersions := Seq(scalaVersion.value, "2.12.10"),
+    crossScalaVersions := Seq(scalaVersion.value),
     organization := "com.wegtam",
     organizationName := "Jens Grassel",
     startYear := Some(2019),
