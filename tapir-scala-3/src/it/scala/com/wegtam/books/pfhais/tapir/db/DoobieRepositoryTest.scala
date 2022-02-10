@@ -109,7 +109,7 @@ final class DoobieRepositoryTest extends BaseSpec {
                 .loadProducts()
                 .groupAdjacentBy(_._1)
                 .map {
-                  case (id, rows) => Product.fromDatabase(rows.toList)
+                  case (_, rows) => Product.fromDatabase(rows.toList)
                 }
                 .collect {
                   case Some(p) => p

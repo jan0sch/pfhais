@@ -20,8 +20,6 @@ import doobie.refined.implicits._
 import eu.timepit.refined.auto._
 import fs2.Stream
 
-import scala.collection.immutable.Seq
-
 /**
   * The doobie implementation of our repository.
   *
@@ -35,13 +33,13 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     * @param id The unique ID of the product.
     * @return A list of database rows for a single product which you'll need to combine.
     */
-  override def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]] =
+  override def loadProduct(id: ProductId): F[List[(ProductId, LanguageCode, ProductName)]] =
     sql"""SELECT products.id, names.lang_code, names.name 
           FROM products
           JOIN names ON products.id = names.product_id
           WHERE products.id = $id"""
       .query[(ProductId, LanguageCode, ProductName)]
-      .to[Seq]
+      .to[List]
       .transact(tx)
 
   /**

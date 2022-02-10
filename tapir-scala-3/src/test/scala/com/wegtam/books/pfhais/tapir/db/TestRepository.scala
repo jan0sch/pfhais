@@ -19,17 +19,17 @@ import fs2.Stream
 import scala.collection.immutable._
 
 class TestRepository[F[_]: Effect](data: Seq[Product]) extends Repository[F] {
-  override def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]] =
+  override def loadProduct(id: ProductId): F[List[(ProductId, LanguageCode, ProductName)]] =
     data.find(_.id === id) match {
-      case None => Seq.empty.pure[F]
+      case None => List.empty.pure[F]
       case Some(p) =>
-        val ns = p.names.toNonEmptyList.toList.to[Seq]
+        val ns = p.names.toNonEmptyList.toList
         ns.map(n => (p.id, n.lang, n.name)).pure[F]
     }
 
   override def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)] = {
     val rows = data.flatMap { p =>
-      val ns = p.names.toNonEmptyList.toList.to[Seq]
+      val ns = p.names.toNonEmptyList.toList
       ns.map(n => (p.id, n.lang, n.name))
     }
     Stream.emits(rows)

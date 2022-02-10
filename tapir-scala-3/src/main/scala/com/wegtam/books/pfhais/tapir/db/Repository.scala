@@ -14,8 +14,6 @@ package com.wegtam.books.pfhais.tapir.db
 import com.wegtam.books.pfhais.tapir.models._
 import fs2.Stream
 
-import scala.collection.immutable.Seq
-
 /**
   * A base class for our database repository.
   *
@@ -29,7 +27,7 @@ trait Repository[F[_]] {
     * @param id The unique ID of the product.
     * @return A list of database rows for a single product which you'll need to combine.
     */
-  def loadProduct(id: ProductId): F[Seq[(ProductId, LanguageCode, ProductName)]]
+  def loadProduct(id: ProductId): F[List[(ProductId, LanguageCode, ProductName)]]
 
   /**
     * Load all products from the database repository.
