@@ -184,5 +184,28 @@ But before we tackle this problem we might as well quickly update the Flyway lib
 
 You didn't expect this to be easy, did you? ;-) But this doesn't look like a big issue. The return type of the migrate function was changed upstream and the only decision we have to make is if we want to change our function return type accordingly and simply pass the information onwards or de we change the function a bit and still only return the number of applied migrations. I pick the lazy route this time and simply append `.migrationsExecuted` to the call to `.migrate()` and we're done with it.
 
+Now onwards to our tapir update. Before we simply upgrade to the latest version we should give it some more thought. Tapir is still in a heavy development phase and might depend on pre-release versions of other libraries again. So we better look some things up. The file `project/Versions.scala` within the tapir source repository gives us our needed insights. If we do not want to upgrade http4s even higher then it seem we will have to pick a tapir 0.17.x release. Such a jump will likely include lots of breaking changes so another option would be to pick the lowest possible tapir release with a compatible http4s dependency.
+
+Q> So what are our options?
+
+We can either upgrade to the highest tapir version with a still compatible http4s dependency. Or we try to do the "minimum viable upgrade" and pick the lowest possible tapir version with a compatible http4s dependency to reduce our changes to a minimum. Last but not least we have the option to upgrade to the latest tapir version and upgrade all other dependencies as well.
+
+The last option might be tempting but it will force us to upgrade not only http4s but other dependencies as well and we will likely head straight into "upgrade dependency hell" and may not even succeed.
+
+Of our other options we can pick either the version 0.17.20 or something from the 0.12.x line of the tapir releases. Please not that the artefact organization name for tapir has changed! If you simply change the version number you will get unresolved dependency errors.
+
+Upgrading software is not for the faint hearted so let's be brave and try to update to 0.17.20. The line between bravery and stupidity is a bit hazy but we'll see how we do. :-)
+
+The first thing we stumble upon is of course a ton of errors because the namespace for tapir changed. Because changing it is simple but tedious it screams for automation and therefore we'll use a shell script.
+
+```sh
+% for i in `find tapir-scala-3 -name "*.scala"`; do
+%   sed -i '' -e s/'import tapir'/'import sttp.tapir'/g $i
+% done
+```
+
+This script is specific to the `sed` version used in the BSD operating systems! It is a simple loop being fed from a `find` command and uses `sed` to perform a search and replace operation directly in the file. The `-i ''` parameter ensures that no backup is saved (We are within in version control anyway.).
+
+
 ### Step 2: Migrating to Scala 3
 
