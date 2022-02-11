@@ -133,7 +133,7 @@ Well, well this looks pretty good I'd say so let's adjust the code. And quickly 
 [error] one error found
 ```
 
-Good news first: The original error is gone and we can even simply the second error sources code by removing the `toSeq` completely. But the remaining one is heavier. So let's take a step back and take a deep breathe. If we take a look at our function signature we can see that it requires a `Seq` but what if we simply change it to `List`?
+Good news first: The original error is gone and we can even simplify the code around the second error source by removing the `toSeq` completely. But the remaining one is heavier. So let's take a step back and take a deep breathe. If we take a look at our function signature we can see that it requires a `Seq` but what if we simply change it to `List`?
 
 So let us try it and see how far we get. First we have to change the type signature of the function `loadProduct` in `Repository` to have a `List` instead of a `Seq` in its return type. Afterwards the compiler will tell us exactly in which places we have to make changes. Furthermore we can also remove some imports (`scala.collection.immutable.Seq`) which are no longer needed.
 
@@ -149,6 +149,40 @@ java.lang.NoSuchMethodError: 'cats.data.Kleisli
 This does not look good and it seems to be not caught by the compiler. We should start our service to see if it happens there too. So after a `sbt run` we can see that it affects our main code also.
 
 Nice we just broke our service. Welcome to the world of software development! :-)
+
+Q> So what could be the root cause here?
+
+Most likely we are in trouble due to updating dependencies and running into some binary incompatibility issues. The error message indicates that it might either be cats or http4s related. To get some more insights we should issue the `sbt evicted` command and take a look at the output. We find some messages about replaced versions.
+
+```txt
+* org.http4s:http4s-dsl_2.13:0.21.31 is selected over 0.21.0-M5
+...
+* org.typelevel:cats-effect_2.13:2.5.1 is selected over {2.0.0, ...}
+...
+* org.typelevel:cats-core_2.13:2.6.1 is selected over {2.0.0, ...}
+...
+* org.http4s:http4s-blaze-server_2.13:0.21.31 is selected over 0.21.0-M5
+...
+```
+
+Now we need to perform some investigations regarding the libraries which means digging into changelog entries, release notes and bug reports which might support our idea of something was broken. The cats part of the equation looks fine but there were some changes in the http4s library which might be the cause for our problem here. As the older version (`0.21.0-M5`) is a pre-release this is something that is totally valid and should always be on our radar. The older version is a dependency of tapir so that means we have to upgrade tapir as well which means "More breaking changes, yeah!" ;-)
+
+I> The more you run into problems when updating your applications the more you come to understand the restraint to updates. But if your application is still actively maintained then updates are a part of life and regular updates save you the pain of doing a major one every couple of years.
+
+But before we tackle this problem we might as well quickly update the Flyway library to get rid of the warning in our tests. Brave as we are we jump to the most recent release and also update the driver for PostgreSQL as well. But what is this?
+
+```txt
+[error] .../FlywayDatabaseMigrator.scala:35:21: type mismatch;
+[error]  found   : org.flywaydb.core.api.output.MigrateResult
+[error]  required: Int
+[error]       flyway.migrate()
+[error]                     ^
+[info] org.flywaydb.core.api.output.MigrateResult <: Int?
+[info] false
+[error] one error found
+```
+
+You didn't expect this to be easy, did you? ;-) But this doesn't look like a big issue. The return type of the migrate function was changed upstream and the only decision we have to make is if we want to change our function return type accordingly and simply pass the information onwards or de we change the function a bit and still only return the number of applied migrations. I pick the lazy route this time and simply append `.migrationsExecuted` to the call to `.migrate()` and we're done with it.
 
 ### Step 2: Migrating to Scala 3
 
