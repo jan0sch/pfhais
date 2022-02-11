@@ -32,7 +32,7 @@ final class FlywayDatabaseMigrator extends DatabaseMigrator[IO] {
   override def migrate(url: DatabaseUrl, user: DatabaseLogin, pass: DatabasePassword): IO[Int] =
     IO {
       val flyway: Flyway = Flyway.configure().dataSource(url, user, pass).load()
-      flyway.migrate()
+      flyway.migrate().migrationsExecuted
     }
 
 }
