@@ -22,10 +22,10 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
-import tapir._
-import tapir.json.circe._
-import tapir.model.{ StatusCode, StatusCodes }
-import tapir.server.http4s._
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.json.circe._
+import sttp.tapir.server.http4s._
 
 final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
@@ -55,7 +55,7 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
     for {
       cnt <- repo.saveProduct(product)
       res = cnt match {
-        case 0 => StatusCodes.InternalServerError.asLeft[Unit]
+        case 0 => StatusCode.InternalServerError.asLeft[Unit]
         case _ => ().asRight[StatusCode]
       }
     } yield res
@@ -114,7 +114,7 @@ object ProductsRoutes {
       .in("products")
       .errorOut(statusCode)
       .out(
-        streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
+        streamBody[Stream[F, Byte]](schemaFor[Byte], CodecFormat.Json())
           .example(examples.toList.asJson.spaces2)
       )
       .description("Return all existing products in JSON format as a stream of bytes.")
@@ -129,7 +129,7 @@ object ProductsRoutes {
       )
       .errorOut(statusCode)
       .out(
-        statusCode(StatusCodes.NoContent)
+        statusCode(StatusCode.NoContent)
           .description("Upon successful product creation no content is returned.")
       )
       .description(

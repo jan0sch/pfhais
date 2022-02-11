@@ -17,7 +17,7 @@ import cats.implicits._
 import eu.timepit.refined.auto._
 import io.circe._
 import io.circe.generic.semiauto._
-import tapir._
+import sttp.tapir._
 
 /**
   * A product.
@@ -37,14 +37,13 @@ object Product {
     def compare(x: Product, y: Product): Int = x.id.compare(y.id)
   }
 
-  implicit def schemaForNeS[T](implicit a: SchemaFor[T]): SchemaFor[NonEmptySet[T]] =
-    SchemaFor(Schema.SArray(a.schema))
+  implicit def schemaForNeS[T](implicit a: Schema[T]): Schema[NonEmptySet[T]] =
+    Schema(SchemaType.SArray(a))
 
-  implicit val schemaFor: SchemaFor[Product] = SchemaFor(
-    Schema.SProduct(
-      Schema.SObjectInfo("Product"),
-      List(("id", Schema.SString), ("names", schemaForNeS[Translation].schema)),
-      List("id", "names")
+  implicit val schemaFor: Schema[Product] = Schema(
+    SchemaType.SProduct(
+      SchemaType.SObjectInfo("Product"),
+      List(("id", Schema(SchemaType.SString)), ("names", schemaForNeS[Translation]))
     )
   )
 

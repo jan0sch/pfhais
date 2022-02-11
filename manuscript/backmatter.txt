@@ -206,6 +206,26 @@ The first thing we stumble upon is of course a ton of errors because the namespa
 
 This script is specific to the `sed` version used in the BSD operating systems! It is a simple loop being fed from a `find` command and uses `sed` to perform a search and replace operation directly in the file. The `-i ''` parameter ensures that no backup is saved (We are within in version control anyway.).
 
+Okay after fixing that and the change of `StatusCode` and `StatusCodes` from tapir to sttp we still get a log of errors which look quite intimidating. Deciding that bravery is all good and so we turn to plan B switching the tapir version to 0.12.28. ;-)
+
+We still get a bunch of errors now but they are less in number and seem mostly related to schema creation and derivation. Also not the most easy topic but as we get the same errors on 0.17.x plus a load more we might as well try to fix them. The first guess is that some code has been moved and indeed it seems that our `Schema.SWhatever` types are now under `SchemaType.SWhatever` so this should be fixed easily. Additionally we need to do small adjustments regarding changed signatures and use `Schema(SchemaType.SWhatever)` instead of `Schema.SWhatever` in some places.
+
+```txt
+...
+[warn] two warnings found
+[error] 6 errors found
+```
+
+Nice! We are down to a single digit number of errors. It looks like I didn't fix the `StatusCodes` issue correctly so after some changes we are down to one error:
+
+```txt
+[error] .../ProductsRoutes.scala:117:54: not found: value tapir
+[error] streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
+[error]                                              ^
+[error] one error found
+```
+
+After digging a bit through the tapir code we can see that we simply have to pass a `CodecFormat.Json()` here now. Hooray, it compiles! But before we become too confident, let us run some tests.
 
 ### Step 2: Migrating to Scala 3
 

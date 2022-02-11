@@ -21,10 +21,10 @@ import eu.timepit.refined.auto._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
-import tapir._
-import tapir.json.circe._
-import tapir.model.{ StatusCode, StatusCodes }
-import tapir.server.http4s._
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.json.circe._
+import sttp.tapir.server.http4s._
 
 final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
@@ -35,7 +35,7 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
       rows <- repo.loadProduct(id)
       resp = Product
         .fromDatabase(rows)
-        .fold(StatusCodes.NotFound.asLeft[Product])(_.asRight[StatusCode])
+        .fold(StatusCode.NotFound.asLeft[Product])(_.asRight[StatusCode])
     } yield resp
   }
 
@@ -44,7 +44,7 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
       for {
         cnt <- repo.updateProduct(p)
         res = cnt match {
-          case 0 => StatusCodes.NotFound.asLeft[Unit]
+          case 0 => StatusCode.NotFound.asLeft[Unit]
           case _ => ().asRight[StatusCode]
         }
       } yield res
@@ -107,7 +107,7 @@ object ProductRoutes {
       )
       .errorOut(statusCode)
       .out(
-        statusCode(StatusCodes.NoContent)
+        statusCode(StatusCode.NoContent)
           .description("Upon successful product update no content is returned.")
       )
       .description(

@@ -29,10 +29,10 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
 import pureconfig._
-import tapir.docs.openapi._
-import tapir.openapi._
-import tapir.openapi.circe.yaml._
-import tapir.swagger.http4s.SwaggerHttp4s
+import sttp.tapir.docs.openapi._
+import sttp.tapir.openapi._
+import sttp.tapir.openapi.circe.yaml._
+import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
 import scala.collection.immutable._
 import scala.io.StdIn
