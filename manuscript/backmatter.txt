@@ -227,5 +227,11 @@ Nice! We are down to a single digit number of errors. It looks like I didn't fix
 
 After digging a bit through the tapir code we can see that we simply have to pass a `CodecFormat.Json()` here now. Hooray, it compiles! But before we become too confident, let us run some tests.
 
+```txt
+[info] All tests passed.
+```
+
+This is good news and furthermore starting our service via `sbt run` looks good also. :-)
+
 ### Step 2: Migrating to Scala 3
 
