@@ -190,7 +190,6 @@ lazy val commonSettings =
     scalacOptions ++= compilerSettings(scalaVersion.value),
     Compile / console / scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused-import"),
     Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),
-    Compile / compile / wartremoverWarnings ++= Warts.unsafe,
     Test / console / scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused-import"),
     Test / unmanagedSourceDirectories := Seq((Test / scalaSource).value),
 )
