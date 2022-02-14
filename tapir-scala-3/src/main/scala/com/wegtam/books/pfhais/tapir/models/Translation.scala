@@ -34,7 +34,7 @@ object Translation {
 
   implicit val order: Order[Translation] = {
     import derived.auto.order._
-    derived.semi.order[Translation]
+    derived.semiauto.order[Translation]
   }
 
   implicit val schemaFor: Schema[Translation] = Schema(
