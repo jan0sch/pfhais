@@ -11,6 +11,8 @@
 
 package com.wegtam.books.pfhais.tapir
 
+import java.util.concurrent.{ ExecutorService, Executors }
+
 import cats._
 import cats.effect._
 import cats.implicits._
@@ -27,7 +29,7 @@ import monocle.function.all._
 import monocle.macros.GenLens
 import org.http4s.implicits._
 import org.http4s.server.Router
-import org.http4s.server.blaze._
+import org.http4s.ember.server._
 import pureconfig._
 import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi._
@@ -35,9 +37,17 @@ import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
 import scala.collection.immutable._
+import scala.concurrent.ExecutionContext
 import scala.io.StdIn
 
-object Tapir extends IOApp {
+object Tapir extends IOApp.WithContext {
+  val availableProcessors: Int      = Runtime.getRuntime().availableProcessors() / 2
+  val blockingCores: Int            = if (availableProcessors < 2) 2 else availableProcessors
+  val blockingPool: ExecutorService = Executors.newFixedThreadPool(blockingCores)
+  val ec: ExecutionContext          = ExecutionContext.global
+
+  override protected def executionContextResource: Resource[SyncIO, ExecutionContext] =
+    Resource.eval(SyncIO(ec))
 
   @SuppressWarnings(
     Array(
@@ -46,6 +56,7 @@ object Tapir extends IOApp {
     )
   )
   def run(args: List[String]): IO[ExitCode] = {
+    val blocker                        = Blocker.liftExecutorService(blockingPool)
     val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
 
     val program = for {
@@ -73,8 +84,14 @@ object Tapir extends IOApp {
       docsRoutes  = new SwaggerHttp4s(updatedDocs.toYaml)
       routes      = productRoutes.routes <+> productsRoutes.routes
       httpApp     = Router("/" -> routes, "/docs" -> docsRoutes.routes).orNotFound
-      server      = BlazeServerBuilder[IO].bindHttp(apiConfig.port, apiConfig.host).withHttpApp(httpApp)
-      fiber       = server.resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
+      resource = EmberServerBuilder
+        .default[IO]
+        .withBlocker(blocker)
+        .withHost(apiConfig.host)
+        .withPort(apiConfig.port)
+        .withHttpApp(httpApp)
+        .build
+      fiber = resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
     } yield fiber
     program.attempt.unsafeRunSync() match {
       case Left(e) =>

@@ -28,10 +28,10 @@ lazy val tapir =
 	library.doobiePostgres,
 	library.doobieRefined,
 	library.flywayCore,
-	library.http4sBlazeClient,
-	library.http4sBlazeServer,
 	library.http4sCirce,
 	library.http4sDsl,
+	library.http4sEmberClient,
+	library.http4sEmberServer,
 	library.kittens,
         library.logback,
 	library.monocleCore,
@@ -93,15 +93,15 @@ lazy val library =
     val doobieRefined     = "org.tpolecat"                    %% "doobie-refined"           % Version.doobie
     val doobieScalaTest   = "org.tpolecat"                    %% "doobie-scalatest"         % Version.doobie
     val flywayCore        = "org.flywaydb"                    %  "flyway-core"              % Version.flyway
-    val http4sBlazeServer = "org.http4s"                      %% "http4s-blaze-server"      % Version.http4s
-    val http4sBlazeClient = "org.http4s"                      %% "http4s-blaze-client"      % Version.http4s
     val http4sCirce       = "org.http4s"                      %% "http4s-circe"             % Version.http4s
     val http4sDsl         = "org.http4s"                      %% "http4s-dsl"               % Version.http4s
+    val http4sEmberServer = "org.http4s"                      %% "http4s-ember-server"      % Version.http4s
+    val http4sEmberClient = "org.http4s"                      %% "http4s-ember-client"      % Version.http4s
     val kittens           = "org.typelevel"                   %% "kittens"                  % Version.kittens
     val logback           = "ch.qos.logback"                  %  "logback-classic"          % Version.logback
     val monocleCore       = "com.github.julien-truffaut"      %% "monocle-core"             % Version.monocle
     val monocleMacro      = "com.github.julien-truffaut"      %% "monocle-macro"            % Version.monocle
-    val monocleLaw        = "com.github.julien-truffaut"      %% "monocle-law"            % Version.monocle
+    val monocleLaw        = "com.github.julien-truffaut"      %% "monocle-law"              % Version.monocle
     val postgresql        = "org.postgresql"                  %  "postgresql"               % Version.postgresql
     val pureConfig        = "com.github.pureconfig"           %% "pureconfig"               % Version.pureConfig
     val refinedCore       = "eu.timepit"                      %% "refined"                  % Version.refined
