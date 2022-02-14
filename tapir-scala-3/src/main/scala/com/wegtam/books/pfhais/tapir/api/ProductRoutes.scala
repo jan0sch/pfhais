@@ -50,12 +50,10 @@ final class ProductRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends
       } yield res
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   val routes: HttpRoutes[F] = getRoute <+> updateRoute
 
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductRoutes {
   val example = Product(
     id = java.util.UUID.randomUUID,

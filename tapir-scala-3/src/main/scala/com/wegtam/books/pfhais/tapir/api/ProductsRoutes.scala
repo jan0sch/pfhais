@@ -30,7 +30,6 @@ import sttp.tapir.server.http4s._
 final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
     val prefix = Stream.eval("[".pure[F])
     val suffix = Stream.eval("]".pure[F])
@@ -61,12 +60,10 @@ final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extend
     } yield res
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   val routes: HttpRoutes[F] = createRoute <+> getRoute
 
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Any"))
 object ProductsRoutes {
   val examples = NonEmptyList.one(
       Product(

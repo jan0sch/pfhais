@@ -49,12 +49,7 @@ object Tapir extends IOApp.WithContext {
   override protected def executionContextResource: Resource[SyncIO, ExecutionContext] =
     Resource.eval(SyncIO(ec))
 
-  @SuppressWarnings(
-    Array(
-      "org.wartremover.warts.Any",
-      "scalafix:DisableSyntax.null"
-    )
-  )
+  @SuppressWarnings(Array("scalafix:DisableSyntax.null"))
   def run(args: List[String]): IO[ExitCode] = {
     val blocker                        = Blocker.liftExecutorService(blockingPool)
     val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
