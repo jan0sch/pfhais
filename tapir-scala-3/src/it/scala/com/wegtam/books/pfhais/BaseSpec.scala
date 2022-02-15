@@ -16,6 +16,7 @@ import com.wegtam.books.pfhais.tapir.config._
 import eu.timepit.refined.auto._
 import pureconfig._
 import org.scalatest._
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
@@ -24,7 +25,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
   */
 abstract class BaseSpec
     extends AnyWordSpec
-    with MustMatchers
+    with Matchers
     with ScalaCheckPropertyChecks
     with BeforeAndAfterAll
     with BeforeAndAfterEach {

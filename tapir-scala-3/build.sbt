@@ -78,8 +78,8 @@ lazy val library =
       val postgresql   = "42.3.2"
       val pureConfig   = "0.17.1"
       val refined      = "0.9.28"
-      val scalaCheck   = "1.14.2"
-      val scalaTest    = "3.0.8"
+      val scalaCheck   = "1.15.4"
+      val scalaTest    = "3.2.11"
       val tapir        = "0.12.28"
     }
     val catsCore          = "org.typelevel"                   %% "cats-core"                % Version.cats

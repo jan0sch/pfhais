@@ -11,11 +11,11 @@
 
 package com.wegtam.books.pfhais
 
-import org.scalatest.MustMatchers
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 /**
   * A base class for our tests.
   */
-abstract class BaseSpec extends AnyWordSpec with MustMatchers with ScalaCheckPropertyChecks {}
+abstract class BaseSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks {}
