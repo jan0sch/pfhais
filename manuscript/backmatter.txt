@@ -281,7 +281,36 @@ The things left to update look like they might be a bit more involving:
 3. Monocle (version 3.x brings huge improvements but will require many changes)
 4. tapir (contains breaking changes and might introduce more dependency trouble)
 
-As mentioned before we shouldn't simply dive in but check what is really needed.
+As mentioned before we shouldn't simply dive in but check what is really needed. To gather the necessary information we move on to the next step.
 
 ### Step 2: Migrating to Scala 3
+
+We have prepared our battle ground and already included the sbt plugin so we can just issue the `migrate-libs tapir` command to get some output. This is quite a lot so let's concentrate on the important parts. First there is some explanation on the top:
+
+```txt
+[info] X             : Cannot be updated to scala 3
+[info] Valid         : Already a valid version for Scala 3
+[info] To be updated : Need to be updated to the following version
+```
+
+We should not see the `X` mark (usually red in the terminal) but here we are and I count two of them. So what do we have?
+
+1. The better-monadic-for plugin.
+2. The pureconfig library.
+
+The first one is no problem because we can simply drop it and the underlying problem is supposed to be solved in Scala 3. But what about pureconfig? Well let's worry later and process the output further. We have quite some `Valid` marks which is great! Several others have other notes on them so onward to take a closer look.
+
+The following dependencies are supposed to work with `CrossVersion.for3Use2_13`:
+
+1. Monocle
+2. Refined
+
+Last but not least some dependencies need to be updated further to support Scala 3:
+
+1. Doobie
+2. http4s
+3. kittens
+4. tapir
+
+So it looks like we won't get away without doing major upgrades anyway. While at it we might as well add Monocle to our upgrade list because it looks like it will be quite some work either way.
 
