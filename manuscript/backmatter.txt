@@ -324,4 +324,31 @@ Q> But where to start?
 
 So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving. After increasing the version number for Monocle and changing also the artefact group and removing the laws package we are greeted by a number of deprecation warnings and one errors upon compilation. This doesn't look too bad so maybe we are lucky after all, are we?
 
+For the deprecations there is an open issue for providing scalafix rules for automatic code rewrite but it is not yet done[^41] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
+
+```txt
+[error] .../Tapir.scala:117:11: object creation impossible.
+        Missing implementation for:
+[error]   def modifyA[F[_]](f: V => F[V])
+            (s: scala.collection.immutable.ListMap[K,V])
+	    (implicit evidence$1: cats.Applicative[F]):
+	    F[scala.collection.immutable.ListMap[K,V]]
+	    // inherited from trait PTraversal
+[error]       new Traversal[ListMap[K, V], V] {
+[error]           ^
+```
+
+This might look intimidating but actually it is just complaining about a missing implementation so we will have to adjust or rewrite the one we are providing. But wait! Didn't we provide patches to Monocle for the missing instances for `ListMap`? Yes we did! So how about removing our custom instances?
+
+```txt
+[warn] 62 warnings found
+[success] ...
+```
+
+Nice! Always remember: It pays off to provide your custom extensions and patches upstream!
+
+However now we get a lot of errors if we try to compile our tests. So we need to investigate.
+
+[^41] https://github.com/optics-dev/Monocle/issues/1001
+
 

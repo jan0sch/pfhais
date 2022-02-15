@@ -13,7 +13,6 @@ package com.wegtam.books.pfhais.tapir
 
 import java.util.concurrent.{ ExecutorService, Executors }
 
-import cats._
 import cats.effect._
 import cats.implicits._
 import com.typesafe.config._
@@ -24,7 +23,6 @@ import com.wegtam.books.pfhais.tapir.models.LanguageCode
 import doobie._
 import eu.timepit.refined.auto._
 import monocle._
-import monocle.function.{ At, Each, Index }
 import monocle.function.all._
 import monocle.macros.GenLens
 import org.http4s.implicits._
@@ -108,21 +106,6 @@ object Tapir extends IOApp.WithContext {
     * @return An updated documentation structure.
     */
   private def updateDocumentation(docs: OpenAPI): OpenAPI = {
-    // Define needed type class instances for Monocle
-    implicit def atListMap[K, V]: At[ListMap[K, V], K, Option[V]] = At(
-      i => Lens((_: ListMap[K, V]).get(i))(optV => map => optV.fold(map - i)(v => map + (i -> v)))
-    )
-    implicit def listMapIndex[K, V]: Index[ListMap[K, V], K, V] = Index.fromAt
-    implicit def listMapTraversal[K, V]: Traversal[ListMap[K, V], V] =
-      new Traversal[ListMap[K, V], V] {
-        def modifyF[F[_]: Applicative](f: V => F[V])(s: ListMap[K, V]): F[ListMap[K, V]] =
-          s.foldLeft(Applicative[F].pure(ListMap.empty[K, V])) {
-            case (acc, (k, v)) =>
-              Applicative[F].map2(f(v), acc)((head, tail) => tail + (k -> head))
-          }
-      }
-    implicit def listMapEach[K, V]: Each[ListMap[K, V], V] =
-      Each(listMapTraversal)
     // Generate some lenses.
     val components: Lens[OpenAPI, Option[Components]] = GenLens[OpenAPI](_.components)
     val componentsSchemas: Lens[Components, ListMap[String, OpenAPI.ReferenceOr[Schema]]] =
