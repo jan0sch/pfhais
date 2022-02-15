@@ -314,3 +314,13 @@ Last but not least some dependencies need to be updated further to support Scala
 
 So it looks like we won't get away without doing major upgrades anyway. While at it we might as well add Monocle to our upgrade list because it looks like it will be quite some work either way.
 
+The attentive reader will have noted that the recommended dependency updates have pre-release version numbers and she'll ask if we really should upgrade them or wait until proper releases have been published. And yes, she is right: Though shall not use pre-release software in production!
+
+For our example here however we do it for demonstrating the upgrade process. In production I would advise you to wait or maybe upgrade and test in a separate environment.
+
+Q> But where to start?
+
+"Oh what tangled web we weave when our deps are transitive!" -- With apologies to Sir Walter Scott
+
+So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving.
+
