@@ -16,7 +16,7 @@ Code and book source can be found in the following repository: https://github.co
 
 ## Copyleft Notice
 
-This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC BY-SA 4.0) license[^11]. The code snippets in this book are licensed under CC0[^12] which means you can use them without restriction. Excerpts from libraries maintain their license.
+This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC BY-SA 4.0) license. The code snippets in this book are licensed under CC0 which means you can use them without restriction. Excerpts from libraries maintain their license.
 
 # Thanks
 
@@ -43,6 +43,3 @@ Also I send a big thank you to alle the nice people from the Scala community whi
 
 [^10]: https://github.com/julien-truffaut/Monocle
 
-[^11]: https://creativecommons.org/licenses/by-sa/4.0/legalcode
-
-[^12]: https://wiki.creativecommons.org/wiki/CC0
