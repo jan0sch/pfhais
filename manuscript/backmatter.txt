@@ -322,5 +322,6 @@ Q> But where to start?
 
 "Oh what tangled web we weave when our deps are transitive!" -- With apologies to Sir Walter Scott
 
-So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving.
+So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving. After increasing the version number for Monocle and changing also the artefact group and removing the laws package we are greeted by a number of deprecation warnings and one errors upon compilation. This doesn't look too bad so maybe we are lucky after all, are we?
+
 

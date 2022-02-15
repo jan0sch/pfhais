@@ -48,12 +48,10 @@ lazy val tapir =
 	library.tapirOpenApiYaml,
 	library.tapirSwaggerUi,
 	library.doobieScalaTest   % IntegrationTest,
-	library.monocleLaw        % IntegrationTest,
         library.refinedScalaCheck % IntegrationTest,
         library.scalaCheck        % IntegrationTest,
         library.scalaTest         % IntegrationTest,
 	library.doobieScalaTest   % Test,
-	library.monocleLaw        % Test,
         library.refinedScalaCheck % Test,
         library.scalaCheck        % Test,
         library.scalaTest         % Test
@@ -74,7 +72,7 @@ lazy val library =
       val http4s        = "0.21.31"
       val kittens       = "3.0.0-M3"
       val logback       = "1.2.10"
-      val monocle       = "2.0.0"
+      val monocle       = "3.1.0"
       val postgresql    = "42.3.2"
       val pureConfig    = "0.17.1"
       val refined       = "0.9.28"
@@ -83,41 +81,40 @@ lazy val library =
       val scalaTestPlus = "3.2.11.0"
       val tapir         = "0.12.28"
     }
-    val catsCore          = "org.typelevel"                   %% "cats-core"                % Version.cats
-    val circeCore         = "io.circe"                        %% "circe-core"               % Version.circe
-    val circeGeneric      = "io.circe"                        %% "circe-generic"            % Version.circe
-    val circeRefined      = "io.circe"                        %% "circe-refined"            % Version.circe
-    val circeParser       = "io.circe"                        %% "circe-parser"             % Version.circe
-    val doobieCore        = "org.tpolecat"                    %% "doobie-core"              % Version.doobie
-    val doobieHikari      = "org.tpolecat"                    %% "doobie-hikari"            % Version.doobie
-    val doobiePostgres    = "org.tpolecat"                    %% "doobie-postgres"          % Version.doobie
-    val doobieRefined     = "org.tpolecat"                    %% "doobie-refined"           % Version.doobie
-    val doobieScalaTest   = "org.tpolecat"                    %% "doobie-scalatest"         % Version.doobie
-    val flywayCore        = "org.flywaydb"                    %  "flyway-core"              % Version.flyway
-    val http4sCirce       = "org.http4s"                      %% "http4s-circe"             % Version.http4s
-    val http4sDsl         = "org.http4s"                      %% "http4s-dsl"               % Version.http4s
-    val http4sEmberServer = "org.http4s"                      %% "http4s-ember-server"      % Version.http4s
-    val http4sEmberClient = "org.http4s"                      %% "http4s-ember-client"      % Version.http4s
-    val kittens           = "org.typelevel"                   %% "kittens"                  % Version.kittens
-    val logback           = "ch.qos.logback"                  %  "logback-classic"          % Version.logback
-    val monocleCore       = "com.github.julien-truffaut"      %% "monocle-core"             % Version.monocle
-    val monocleMacro      = "com.github.julien-truffaut"      %% "monocle-macro"            % Version.monocle
-    val monocleLaw        = "com.github.julien-truffaut"      %% "monocle-law"              % Version.monocle
-    val postgresql        = "org.postgresql"                  %  "postgresql"               % Version.postgresql
-    val pureConfig        = "com.github.pureconfig"           %% "pureconfig"               % Version.pureConfig
-    val refinedCore       = "eu.timepit"                      %% "refined"                  % Version.refined
-    val refinedCats       = "eu.timepit"                      %% "refined-cats"             % Version.refined
-    val refinedPureConfig = "eu.timepit"                      %% "refined-pureconfig"       % Version.refined
-    val refinedScalaCheck = "eu.timepit"                      %% "refined-scalacheck"       % Version.refined
-    val scalaCheck        = "org.scalacheck"                  %% "scalacheck"               % Version.scalaCheck
-    val scalaTest         = "org.scalatest"                   %% "scalatest"                % Version.scalaTest
-    val scalaTestPlus     = "org.scalatestplus"               %% "scalacheck-1-15"          % Version.scalaTestPlus
-    val tapirCirce        = "com.softwaremill.sttp.tapir"     %% "tapir-json-circe"         % Version.tapir
-    val tapirCore         = "com.softwaremill.sttp.tapir"     %% "tapir-core"               % Version.tapir
-    val tapirHttp4s       = "com.softwaremill.sttp.tapir"     %% "tapir-http4s-server"      % Version.tapir
-    val tapirOpenApiDocs  = "com.softwaremill.sttp.tapir"     %% "tapir-openapi-docs"       % Version.tapir
-    val tapirOpenApiYaml  = "com.softwaremill.sttp.tapir"     %% "tapir-openapi-circe-yaml" % Version.tapir
-    val tapirSwaggerUi    = "com.softwaremill.sttp.tapir"     %% "tapir-swagger-ui-http4s"  % Version.tapir
+    val catsCore          = "org.typelevel"               %% "cats-core"                % Version.cats
+    val circeCore         = "io.circe"                    %% "circe-core"               % Version.circe
+    val circeGeneric      = "io.circe"                    %% "circe-generic"            % Version.circe
+    val circeRefined      = "io.circe"                    %% "circe-refined"            % Version.circe
+    val circeParser       = "io.circe"                    %% "circe-parser"             % Version.circe
+    val doobieCore        = "org.tpolecat"                %% "doobie-core"              % Version.doobie
+    val doobieHikari      = "org.tpolecat"                %% "doobie-hikari"            % Version.doobie
+    val doobiePostgres    = "org.tpolecat"                %% "doobie-postgres"          % Version.doobie
+    val doobieRefined     = "org.tpolecat"                %% "doobie-refined"           % Version.doobie
+    val doobieScalaTest   = "org.tpolecat"                %% "doobie-scalatest"         % Version.doobie
+    val flywayCore        = "org.flywaydb"                %  "flyway-core"              % Version.flyway
+    val http4sCirce       = "org.http4s"                  %% "http4s-circe"             % Version.http4s
+    val http4sDsl         = "org.http4s"                  %% "http4s-dsl"               % Version.http4s
+    val http4sEmberServer = "org.http4s"                  %% "http4s-ember-server"      % Version.http4s
+    val http4sEmberClient = "org.http4s"                  %% "http4s-ember-client"      % Version.http4s
+    val kittens           = "org.typelevel"               %% "kittens"                  % Version.kittens
+    val logback           = "ch.qos.logback"              %  "logback-classic"          % Version.logback
+    val monocleCore       = "dev.optics"                  %% "monocle-core"             % Version.monocle
+    val monocleMacro      = "dev.optics"                  %% "monocle-macro"            % Version.monocle
+    val postgresql        = "org.postgresql"              %  "postgresql"               % Version.postgresql
+    val pureConfig        = "com.github.pureconfig"       %% "pureconfig"               % Version.pureConfig
+    val refinedCore       = "eu.timepit"                  %% "refined"                  % Version.refined
+    val refinedCats       = "eu.timepit"                  %% "refined-cats"             % Version.refined
+    val refinedPureConfig = "eu.timepit"                  %% "refined-pureconfig"       % Version.refined
+    val refinedScalaCheck = "eu.timepit"                  %% "refined-scalacheck"       % Version.refined
+    val scalaCheck        = "org.scalacheck"              %% "scalacheck"               % Version.scalaCheck
+    val scalaTest         = "org.scalatest"               %% "scalatest"                % Version.scalaTest
+    val scalaTestPlus     = "org.scalatestplus"           %% "scalacheck-1-15"          % Version.scalaTestPlus
+    val tapirCirce        = "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % Version.tapir
+    val tapirCore         = "com.softwaremill.sttp.tapir" %% "tapir-core"               % Version.tapir
+    val tapirHttp4s       = "com.softwaremill.sttp.tapir" %% "tapir-http4s-server"      % Version.tapir
+    val tapirOpenApiDocs  = "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs"       % Version.tapir
+    val tapirOpenApiYaml  = "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % Version.tapir
+    val tapirSwaggerUi    = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s"  % Version.tapir
   }
 
 // *****************************************************************************
@@ -163,6 +160,7 @@ def compilerSettings(sv: String) =
 	"-Xlint:private-shadow",
 	"-Xlint:stars-align",
 	"-Xlint:type-parameter-shadow",
+	"-Ymacro-annotations",
 	"-Ywarn-dead-code",
 	"-Ywarn-extra-implicit",
 	"-Ywarn-numeric-widen",
