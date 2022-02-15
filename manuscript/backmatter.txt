@@ -233,5 +233,55 @@ After digging a bit through the tapir code we can see that we simply have to pas
 
 This is good news and furthermore starting our service via `sbt run` looks good also. :-)
 
+Now we could move on to the next step or we might try updating some more dependencies. For starters we remove the wartremover plugin because it isn't available for Scala 3 anyway. Besides the plugin we must remove the settings in the `build.sbt` and the annotations within the code (see the `@SuppressWarnings` annotations). As a bonus we get rid of some warnings about `Any` type inference which are false positives anyway. Next is the move to the Ember server for http4s from the Blaze one because Ember is the new default and recommended one. For this the our main entry point in `Tapir.scala` has to be adjusted a bit.
+
+First we change from `IOApp` to `IOApp.WithContext` and implement the `executionContextResource` function. In addition we adjust our blocking thread pool to use 2 threads or half of the available processors.
+
+```scala
+object Tapir extends IOApp.WithContext {
+  val availableProcessors: Int =
+    Runtime.getRuntime().availableProcessors() / 2
+  val blockingCores: Int =
+    if (availableProcessors < 2) 2 else availableProcessors
+  val blockingPool: ExecutorService =
+    Executors.newFixedThreadPool(blockingCores)
+  val ec: ExecutionContext =
+    ExecutionContext.global
+
+  override protected def executionContextResource: 
+    Resource[SyncIO, ExecutionContext] = Resource.eval(SyncIO(ec))
+
+  def run(args: List[String]): IO[ExitCode] = {
+    val blocker = Blocker.liftExecutorService(blockingPool)
+    val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
+    // ...
+      resource = EmberServerBuilder
+        .default[IO]
+        .withBlocker(blocker)
+        .withHost(apiConfig.host)
+        .withPort(apiConfig.port)
+        .withHttpApp(httpApp)
+        .build
+      fiber = resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
+    // ...
+```
+
+W> Please beware that the `availableProcessors` function might report wrong values if the JVM is running within a docker container!
+
+The update of the refined library requires us to update pureconfig as well in one step but it just works after increasing the version numbers. The same can be said about logback, cats and kittens. For the latter we make some small adjustment to get rid of a deprecation warning.
+
+Some more changes are required for updating ScalaTest and ScalaCheck but they boil down to changing some imports and names (i.e. `Matchers` instead of `MustMatchers`) and the inclusion of the ScalaTestPlus library which acts as a bridge to ScalaCheck now.
+
+I> Note that we run tests and integration tests after each dependency update to be sure!
+
+The things left to update look like they might be a bit more involving:
+
+1. Doobie (database layer)
+2. http4s (might not be that difficult as we switched to Ember already)
+3. Monocle (version 3.x brings huge improvements but will require many changes)
+4. tapir (contains breaking changes and might introduce more dependency trouble)
+
+As mentioned before we shouldn't simply dive in but check what is really needed.
+
 ### Step 2: Migrating to Scala 3
 
