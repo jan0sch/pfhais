@@ -357,6 +357,15 @@ This is strange not only because Monocle has no apparent connection to our testi
 
 Ignoring the remaining deprecation warnings our tests are running fine and we take another look at the output of `migrate-libs tapir` within sbt. It seems we have to at least upgrade to tapir 0.18.x. The current stable version being 0.19.x we can see that it depends on http4s 0.23.x which in turn depends on cats-effect 3. Being a major rewrite version 3 of cats-effect will clash with our doobie version. So we will have to switch to the current pre-release version of it. But at least it is close to being released. :-)
 
+Because the dependencies are so much weaved together we have no choice but to update them all in one step. We won't have compiling code either way and will likely get misleading error messages if we do them step by step. So let's increase some version numbers, take a deep breath and parse some compiler errors. To summarise: We update doobie to 1.0.0-RC2, http4s to 0.23.10 and tapir to 0.19.4. Additionally we have to adjust the tapir swagger ui package because some packaging changed.
+
+```txt
+[warn] 5 warnings found
+[error] 33 errors found
+[error] (Compile / compileIncremental) Compilation failed
+```
+
+Okay, that doesn't look too bad. Remember, we fixed similar numbers already.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 

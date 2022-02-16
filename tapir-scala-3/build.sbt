@@ -70,9 +70,9 @@ lazy val library =
       val cats          = "2.7.0"
       val circe         = "0.14.1"
       val disciplineST  = "2.1.5"
-      val doobie        = "0.8.8"
+      val doobie        = "1.0.0-RC2"
       val flyway        = "8.4.4"
-      val http4s        = "0.21.31"
+      val http4s        = "0.23.10"
       val kittens       = "3.0.0-M3"
       val logback       = "1.2.10"
       val monocle       = "3.1.0"
@@ -82,7 +82,7 @@ lazy val library =
       val scalaCheck    = "1.15.4"
       val scalaTest     = "3.2.11"
       val scalaTestPlus = "3.2.11.0"
-      val tapir         = "0.12.28"
+      val tapir         = "0.19.4"
     }
     val catsCore          = "org.typelevel"               %% "cats-core"                % Version.cats
     val circeCore         = "io.circe"                    %% "circe-core"               % Version.circe
@@ -118,7 +118,7 @@ lazy val library =
     val tapirHttp4s       = "com.softwaremill.sttp.tapir" %% "tapir-http4s-server"      % Version.tapir
     val tapirOpenApiDocs  = "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs"       % Version.tapir
     val tapirOpenApiYaml  = "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % Version.tapir
-    val tapirSwaggerUi    = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s"  % Version.tapir
+    val tapirSwaggerUi    = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui"         % Version.tapir
   }
 
 // *****************************************************************************
