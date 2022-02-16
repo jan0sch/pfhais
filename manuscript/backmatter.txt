@@ -347,8 +347,17 @@ This might look intimidating but actually it is just complaining about a missing
 
 Nice! Always remember: It pays off to provide your custom extensions and patches upstream!
 
-However now we get a lot of errors if we try to compile our tests. So we need to investigate. But before we do that let's fix all these deprecation warnings to get our code clean. Some things are pretty trivial but if we remove the `possible` command which has no replacement then our code does not compile any longer. We could just ignore it because it is a warning but it is a deprecation one therefore it definitely *will* come back later to bite us.
+However now we get a lot of errors if we try to compile our tests. So we need to investigate. But before we do that let's fix all these deprecation warnings to get our code clean. Some things are pretty trivial but if we remove the `possible` command which has no replacement then our code does not compile any longer. We could just ignore it because it is a warning but it is a deprecation one therefore it definitely *will* come back later to bite us. However we ignore it for now and look at our weird compile error in the tests.
 
-[^41] https://github.com/optics-dev/Monocle/issues/1001
+```txt
+[error] ... object scalatestplus is not a member of package org
+```
+
+This is strange not only because Monocle has no apparent connection to our testing libraries. But doing our research we find an issue in the bugtracker of scalatestplus[^42] and applying the workaround from there (manually including a dependency to discipline-scalatest) solves our issue. Hooray! But to be honest: I have no idea what is going on behind the scenes here. Likely some dependency issues which cannot be resolved and are silently dropped or so. While we're at it we simply upgrade our Scala version to 2.13.8.
+
+Ignoring the remaining deprecation warnings our tests are running fine and we take another look at the output of `migrate-libs tapir` within sbt. It seems we have to at least upgrade to tapir 0.18.x. The current stable version being 0.19.x we can see that it depends on http4s 0.23.x which in turn depends on cats-effect 3. Being a major rewrite version 3 of cats-effect will clash with our doobie version. So we will have to switch to the current pre-release version of it. But at least it is close to being released. :-)
 
 
+[^41]: https://github.com/optics-dev/Monocle/issues/1001
+
+[^41]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36

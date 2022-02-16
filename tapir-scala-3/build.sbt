@@ -47,10 +47,12 @@ lazy val tapir =
 	library.tapirOpenApiDocs,
 	library.tapirOpenApiYaml,
 	library.tapirSwaggerUi,
+        library.disciplineScalaT  % IntegrationTest,
 	library.doobieScalaTest   % IntegrationTest,
         library.refinedScalaCheck % IntegrationTest,
         library.scalaCheck        % IntegrationTest,
         library.scalaTest         % IntegrationTest,
+        library.disciplineScalaT  % Test,
 	library.doobieScalaTest   % Test,
         library.refinedScalaCheck % Test,
         library.scalaCheck        % Test,
@@ -67,6 +69,7 @@ lazy val library =
     object Version {
       val cats          = "2.7.0"
       val circe         = "0.14.1"
+      val disciplineST  = "2.1.5"
       val doobie        = "0.8.8"
       val flyway        = "8.4.4"
       val http4s        = "0.21.31"
@@ -86,6 +89,7 @@ lazy val library =
     val circeGeneric      = "io.circe"                    %% "circe-generic"            % Version.circe
     val circeRefined      = "io.circe"                    %% "circe-refined"            % Version.circe
     val circeParser       = "io.circe"                    %% "circe-parser"             % Version.circe
+    val disciplineScalaT  = "org.typelevel"               %% "discipline-scalatest"     % Version.disciplineST
     val doobieCore        = "org.tpolecat"                %% "doobie-core"              % Version.doobie
     val doobieHikari      = "org.tpolecat"                %% "doobie-hikari"            % Version.doobie
     val doobiePostgres    = "org.tpolecat"                %% "doobie-postgres"          % Version.doobie
@@ -179,7 +183,7 @@ def compilerSettings(sv: String) =
 
 lazy val commonSettings =
   Seq(
-    scalaVersion := "2.13.7",
+    scalaVersion := "2.13.8",
     crossScalaVersions := Seq(scalaVersion.value),
     organization := "com.wegtam",
     organizationName := "Jens Grassel",
