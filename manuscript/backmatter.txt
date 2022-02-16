@@ -347,7 +347,7 @@ This might look intimidating but actually it is just complaining about a missing
 
 Nice! Always remember: It pays off to provide your custom extensions and patches upstream!
 
-However now we get a lot of errors if we try to compile our tests. So we need to investigate.
+However now we get a lot of errors if we try to compile our tests. So we need to investigate. But before we do that let's fix all these deprecation warnings to get our code clean. Some things are pretty trivial but if we remove the `possible` command which has no replacement then our code does not compile any longer. We could just ignore it because it is a warning but it is a deprecation one therefore it definitely *will* come back later to bite us.
 
 [^41] https://github.com/optics-dev/Monocle/issues/1001
 

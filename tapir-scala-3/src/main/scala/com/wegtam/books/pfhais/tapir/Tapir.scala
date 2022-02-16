@@ -124,23 +124,17 @@ object Tapir extends IOApp.WithContext {
     val langRegex = "/" + typeRegex + "/" // convert to Javascript regular expression
     val uuidRegex = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i"
     val updateGetProductId =
-      (paths composeLens at("/product/{id}") composeOptional possible composeLens getOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
-        .set(uuidRegex.some)(docs)
+      (paths at ("/product/{id}") composeOptional possible andThen getOps composeOptional possible andThen operationParams composeTraversal each composeOptional possible andThen parameterSchema composeOptional possible andThen schemaPattern)
+        .replace(uuidRegex.some)(docs)
     val updatePutProductId =
-      (paths composeLens at("/product/{id}") composeOptional possible composeLens putOps composeOptional possible composeLens operationParams composeTraversal each composeOptional possible composeLens parameterSchema composeOptional possible composeLens schemaPattern)
-        .set(uuidRegex.some)(updateGetProductId)
+      (paths at ("/product/{id}") composeOptional possible andThen putOps composeOptional possible andThen operationParams composeTraversal each composeOptional possible andThen parameterSchema composeOptional possible andThen schemaPattern)
+        .replace(uuidRegex.some)(updateGetProductId)
     val updateModelProduct =
-      (components composeOptional possible composeLens componentsSchemas composeLens at("Product") composeOptional possible composeOptional possible composeLens schemaProperties composeLens at(
-        "id"
-      ) composeOptional possible composeOptional possible composeLens schemaPattern)
-        .set(uuidRegex.some)(updatePutProductId)
+      (components composeOptional possible andThen componentsSchemas at ("Product") composeOptional possible composeOptional possible andThen schemaProperties at ("id") composeOptional possible composeOptional possible andThen schemaPattern)
+        .replace(uuidRegex.some)(updatePutProductId)
     val updateModelTranslation =
-      (components composeOptional possible composeLens componentsSchemas composeLens at(
-        "Translation"
-      ) composeOptional possible composeOptional possible composeLens schemaProperties composeLens at(
-        "lang"
-      ) composeOptional possible composeOptional possible composeLens schemaPattern)
-        .set(langRegex.some)(updateModelProduct)
+      (components composeOptional possible andThen componentsSchemas at ("Translation") composeOptional possible composeOptional possible andThen schemaProperties at ("lang") composeOptional possible composeOptional possible andThen schemaPattern)
+        .replace(langRegex.some)(updateModelProduct)
     updateModelTranslation
   }
 }
