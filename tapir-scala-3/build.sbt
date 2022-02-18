@@ -147,6 +147,7 @@ def compilerSettings(sv: String) =
 	"-feature",
 	"-language:higherKinds",
 	"-unchecked",
+        "-P:semanticdb:synthetics:on",
 	"-Xcheckinit",
 	//"-Xfatal-warnings", // Disable for migraton
 	"-Xlint:adapted-args",
