@@ -14,6 +14,7 @@ package com.wegtam.books.pfhais.tapir
 import java.util.concurrent.{ ExecutorService, Executors }
 
 import cats.effect._
+import cats.syntax.all._
 import com.typesafe.config._
 import com.wegtam.books.pfhais.tapir.api._
 import com.wegtam.books.pfhais.tapir.config._

@@ -331,9 +331,9 @@ For the deprecations there is an open issue for providing Scalafix rules for aut
         Missing implementation for:
 [error]   def modifyA[F[_]](f: V => F[V])
             (s: scala.collection.immutable.ListMap[K,V])
-	    (implicit evidence$1: cats.Applicative[F]):
-	    F[scala.collection.immutable.ListMap[K,V]]
-	    // inherited from trait PTraversal
+            (implicit evidence$1: cats.Applicative[F]):
+            F[scala.collection.immutable.ListMap[K,V]]
+            // inherited from trait PTraversal
 [error]       new Traversal[ListMap[K, V], V] {
 [error]           ^
 ```
@@ -466,6 +466,34 @@ object Product {
 ```
 
 So far so good. If we really nailed it we will only know later when if may blow up in our faces or not. ;-)
+
+Further on we need to replace the `Sync` type in our routing classes with `Async` to fix two more errors. The route creation changed so we have to use a `Http4sServerInterpreter[F]().toRoutes(...)` function now to create our routes. It still gives some errors but let's look at our endpoint definitions first. The type signature for endpoints changes from `[I, E, O, S]` to `[A, I, E, O, R]`. Sorry for the abbreviation overkill here. The details can be looked up at the tapir docs but the gist is that we have an additional type ("security input") at the start and instead of the "streaming type" we have a "capabilities type" now at the end. Because we don't use the security input type we can set it to `Unit` or could also use the `PublicEndpoint` type alias which is provided by tapir. In the case of streaming endpoints the output type stays as before (`Stream[F, Byte]`) and the capabilities type at the end becomes `Fs2Streams[F]` or `Any` for all non streaming endpoints.
+
+For our streaming endpoint (`getProducts`) we get an error about the `streamBody` specification so we can adjust that one or replace it with the new `streamTextBody` directive. Both ways should work.
+
+```scala
+streamTextBody(Fs2Streams[F])(CodecFormat.Json(),
+  Option(StandardCharsets.UTF_8))
+```
+
+We are down to a single digit number of compiler errors for our main code. This looks not bad so let's head on. The main issue now seems to stem from the `toRoutes` functionality.
+
+```txt
+[error] overloaded method toRoutes with alternatives:
+[error]   (serverEndpoints: List[sttp.tapir.server.ServerEndpoint[
+            sttp.capabilities.fs2.Fs2Streams[F],F]])
+              org.http4s.HttpRoutes[F] <and>
+[error]   (se: sttp.tapir.server.ServerEndpoint[
+            sttp.capabilities.fs2.Fs2Streams[F],F])
+              org.http4s.HttpRoutes[F]
+[error]  cannot be applied to (sttp.tapir.Endpoint[
+           Unit,ProductId,StatusCode,Product,Any])
+[error]     Http4sServerInterpreter[F]().toRoutes(...) { id =>
+[error]                                  ^
+```
+
+For me this looks like the function will only accept streaming endpoints which doesn't make sense and would have surely been mentioned in the documentation or some release notes of the tapir project.
+
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
