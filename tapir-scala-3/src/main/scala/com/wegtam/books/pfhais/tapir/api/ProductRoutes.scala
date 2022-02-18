@@ -18,37 +18,39 @@ import cats.implicits._
 import com.wegtam.books.pfhais.tapir.db._
 import com.wegtam.books.pfhais.tapir.models._
 import eu.timepit.refined.auto._
-import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
+import org.http4s.{ EntityDecoder, EntityEncoder, HttpRoutes }
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.http4s._
 
-final class ProductRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
+final class ProductRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product]                    = jsonOf
   implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
 
-  private val getRoute: HttpRoutes[F] = ProductRoutes.getProduct.toRoutes { id =>
-    for {
-      rows <- repo.loadProduct(id)
-      resp = Product
-        .fromDatabase(rows)
-        .fold(StatusCode.NotFound.asLeft[Product])(_.asRight[StatusCode])
-    } yield resp
-  }
-
-  private val updateRoute: HttpRoutes[F] = ProductRoutes.updateProduct.toRoutes {
-    case (_, p) =>
+  private val getRoute: HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.getProduct) { id =>
       for {
-        cnt <- repo.updateProduct(p)
-        res = cnt match {
-          case 0 => StatusCode.NotFound.asLeft[Unit]
-          case _ => ().asRight[StatusCode]
-        }
-      } yield res
-  }
+        rows <- repo.loadProduct(id)
+        resp = Product
+          .fromDatabase(rows)
+          .fold(StatusCode.NotFound.asLeft[Product])(_.asRight[StatusCode])
+      } yield resp
+    }
+
+  private val updateRoute: HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.updateProduct) {
+      case (_, p) =>
+        for {
+          cnt <- repo.updateProduct(p)
+          res = cnt match {
+            case 0 => StatusCode.NotFound.asLeft[Unit]
+            case _ => ().asRight[StatusCode]
+          }
+        } yield res
+    }
 
   val routes: HttpRoutes[F] = getRoute <+> updateRoute
 
@@ -77,7 +79,7 @@ object ProductRoutes {
       )
   )
 
-  val getProduct: Endpoint[ProductId, StatusCode, Product, Nothing] = endpoint.get
+  val getProduct: Endpoint[Unit, ProductId, StatusCode, Product, Any] = endpoint.get
     .in(
       "product" / path[ProductId]("id")
         .description("The ID of a product which is a UUID.")
@@ -91,7 +93,7 @@ object ProductRoutes {
       "Returns the product specified by the ID given in the URL path. If the product does not exist then a HTTP 404 error is returned."
     )
 
-  val updateProduct: Endpoint[(ProductId, Product), StatusCode, Unit, Nothing] =
+  val updateProduct: Endpoint[Unit, (ProductId, Product), StatusCode, Unit, Any] =
     endpoint.put
       .in(
         "product" / path[ProductId]("id")

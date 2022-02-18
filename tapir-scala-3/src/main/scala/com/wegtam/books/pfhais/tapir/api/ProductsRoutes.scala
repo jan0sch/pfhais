@@ -22,15 +22,17 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.http4s._
+import java.nio.charset.StandardCharsets
 
-final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
+final class ProductsRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
 
-  val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {
+  val getRoute: HttpRoutes[F] = Http4sServerInterpreter[F]().toRoutes(ProductsRoutes.getProducts) {
     val prefix = Stream.eval("[".pure[F])
     val suffix = Stream.eval("]".pure[F])
     val ps = repo
@@ -50,73 +52,72 @@ final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F]
     (_: Unit) => response.pure[F]
   }
 
-  val createRoute: HttpRoutes[F] = ProductsRoutes.createProduct.toRoutes { product =>
-    for {
-      cnt <- repo.saveProduct(product)
-      res = cnt match {
-        case 0 => StatusCode.InternalServerError.asLeft[Unit]
-        case _ => ().asRight[StatusCode]
-      }
-    } yield res
-  }
+  val createRoute: HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(ProductsRoutes.createProduct) { product =>
+      for {
+        cnt <- repo.saveProduct(product)
+        res = cnt match {
+          case 0 => StatusCode.InternalServerError.asLeft[Unit]
+          case _ => ().asRight[StatusCode]
+        }
+      } yield res
+    }
 
   val routes: HttpRoutes[F] = createRoute <+> getRoute
 
 }
 
 object ProductsRoutes {
-  val examples = NonEmptyList.one(
-      Product(
-        id = java.util.UUID.randomUUID,
-        names = NonEmptySet.one(
-            Translation(
-              lang = "de",
-              name = "Das ist ein Name."
-            )
-          ) ++
-          NonEmptySet.one(
-            Translation(
-              lang = "en",
-              name = "That's a name."
-            )
-          ) ++
-          NonEmptySet.one(
-            Translation(
-              lang = "es",
-              name = "Ese es un nombre."
-            )
+  val examples = NonEmptyList.of(
+    Product(
+      id = java.util.UUID.randomUUID,
+      names = NonEmptySet.one(
+          Translation(
+            lang = "de",
+            name = "Das ist ein Name."
           )
-      )
-    ) :::
-    NonEmptyList.one(
-      Product(
-        id = java.util.UUID.randomUUID,
-        names = NonEmptySet.one(
-            Translation(
-              lang = "de",
-              name = "Das sind nicht die Droiden, nach denen sie suchen!"
-            )
-          ) ++
-          NonEmptySet.one(
-            Translation(
-              lang = "en",
-              name = "These are not the droids you're looking for!"
-            )
+        ) ++
+        NonEmptySet.one(
+          Translation(
+            lang = "en",
+            name = "That's a name."
           )
-      )
+        ) ++
+        NonEmptySet.one(
+          Translation(
+            lang = "es",
+            name = "Ese es un nombre."
+          )
+        )
+    ),
+    Product(
+      id = java.util.UUID.randomUUID,
+      names = NonEmptySet.one(
+          Translation(
+            lang = "de",
+            name = "Das sind nicht die Droiden, nach denen sie suchen!"
+          )
+        ) ++
+        NonEmptySet.one(
+          Translation(
+            lang = "en",
+            name = "These are not the droids you're looking for!"
+          )
+        )
     )
+  )
 
-  def getProducts[F[_]]: Endpoint[Unit, StatusCode, Stream[F, Byte], Stream[F, Byte]] =
+  def getProducts[F[_]]: Endpoint[Unit, Unit, StatusCode, Stream[F, Byte], Fs2Streams[F]] =
     endpoint.get
       .in("products")
       .errorOut(statusCode)
       .out(
-        streamBody[Stream[F, Byte]](schemaFor[Byte], CodecFormat.Json())
-          .example(examples.toList.asJson.spaces2)
+        streamTextBody(Fs2Streams[F])(CodecFormat.Json(), Option(StandardCharsets.UTF_8))
+        //  .example(examples.toList.asJson.spaces2)
       )
       .description("Return all existing products in JSON format as a stream of bytes.")
 
-  val createProduct: Endpoint[Product, StatusCode, Unit, Nothing] =
+  val createProduct: Endpoint[Unit, Product, StatusCode, Unit, Any] =
     endpoint.post
       .in("products")
       .in(
