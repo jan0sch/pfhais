@@ -31,17 +31,17 @@ final class ProductRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F]
   implicit def encodeProduct[A[_]: Applicative]: EntityEncoder[A, Product] = jsonEncoderOf
 
   private val getRoute: HttpRoutes[F] =
-    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.getProduct) { id =>
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.getProduct.serverLogic { id =>
       for {
         rows <- repo.loadProduct(id)
         resp = Product
           .fromDatabase(rows)
           .fold(StatusCode.NotFound.asLeft[Product])(_.asRight[StatusCode])
       } yield resp
-    }
+    })
 
   private val updateRoute: HttpRoutes[F] =
-    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.updateProduct) {
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.updateProduct.serverLogic {
       case (_, p) =>
         for {
           cnt <- repo.updateProduct(p)
@@ -50,7 +50,7 @@ final class ProductRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F]
             case _ => ().asRight[StatusCode]
           }
         } yield res
-    }
+    })
 
   val routes: HttpRoutes[F] = getRoute <+> updateRoute
 

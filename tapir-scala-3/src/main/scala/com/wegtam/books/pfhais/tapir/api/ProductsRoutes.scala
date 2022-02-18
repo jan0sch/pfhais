@@ -32,28 +32,29 @@ import java.nio.charset.StandardCharsets
 final class ProductsRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
 
-  val getRoute: HttpRoutes[F] = Http4sServerInterpreter[F]().toRoutes(ProductsRoutes.getProducts) {
-    val prefix = Stream.eval("[".pure[F])
-    val suffix = Stream.eval("]".pure[F])
-    val ps = repo
-      .loadProducts()
-      .groupAdjacentBy(_._1)
-      .map {
-        case (_, rows) => Product.fromDatabase(rows.toList)
-      }
-      .collect {
-        case Some(p) => p
-      }
-      .map(_.asJson.noSpaces)
-      .intersperse(",")
-    val result: Stream[F, String]                     = prefix ++ ps ++ suffix
-    val bytes: Stream[F, Byte]                        = result.through(fs2.text.utf8Encode)
-    val response: Either[StatusCode, Stream[F, Byte]] = Right(bytes)
-    (_: Unit) => response.pure[F]
-  }
+  val getRoute: HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(ProductsRoutes.getProducts.serverLogic {
+      val prefix = Stream.eval("[".pure[F])
+      val suffix = Stream.eval("]".pure[F])
+      val ps = repo
+        .loadProducts()
+        .groupAdjacentBy(_._1)
+        .map {
+          case (_, rows) => Product.fromDatabase(rows.toList)
+        }
+        .collect {
+          case Some(p) => p
+        }
+        .map(_.asJson.noSpaces)
+        .intersperse(",")
+      val result: Stream[F, String]                     = prefix ++ ps ++ suffix
+      val bytes: Stream[F, Byte]                        = result.through(fs2.text.utf8.encode)
+      val response: Either[StatusCode, Stream[F, Byte]] = Right(bytes)
+      (_: Unit) => response.pure[F]
+    })
 
   val createRoute: HttpRoutes[F] =
-    Http4sServerInterpreter[F]().toRoutes(ProductsRoutes.createProduct) { product =>
+    Http4sServerInterpreter[F]().toRoutes(ProductsRoutes.createProduct.serverLogic { product =>
       for {
         cnt <- repo.saveProduct(product)
         res = cnt match {
@@ -61,7 +62,7 @@ final class ProductsRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F
           case _ => ().asRight[StatusCode]
         }
       } yield res
-    }
+    })
 
   val routes: HttpRoutes[F] = createRoute <+> getRoute
 

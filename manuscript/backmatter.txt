@@ -492,8 +492,51 @@ We are down to a single digit number of compiler errors for our main code. This 
 [error]                                  ^
 ```
 
-For me this looks like the function will only accept streaming endpoints which doesn't make sense and would have surely been mentioned in the documentation or some release notes of the tapir project.
+For me this looks like the function will only accept streaming endpoints which doesn't make sense and would have surely been mentioned in the documentation or some release notes of the tapir project. But we take a closer look and we see that it actually expects `ServerEndpoint` instances here, not `Endpoint` ones. Or to quote from the documentation:
 
+*To interpret a single endpoint, or multiple endpoints as a server, the endpoint descriptions must be coupled with functions which implement the server logic. The shape of these functions must match the types of the inputs and outputs of the endpoint.*
+
+So server logic is added to an endpoint via one of the functions starting with `serverLogic` of course. ;-)
+
+For our purpose we will use the default one (simply `serverLogic`). Let's test it out on one route:
+
+```scala
+final class ProductRoutes[F[_]: Async] ... {
+  //...
+  private val getRoute: HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.getProduct
+      .serverLogic { id =>
+        for {
+          rows <- repo.loadProduct(id)
+          resp = Product
+            .fromDatabase(rows)
+            .fold(StatusCode.NotFound.asLeft[Product])(_.asRight[StatusCode])
+        } yield resp
+      })
+
+  private val updateRoute: HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.updateProduct
+      .serverLogic {
+        case (_, p) =>
+          for {
+            cnt <- repo.updateProduct(p)
+            res = cnt match {
+              case 0 => StatusCode.NotFound.asLeft[Unit]
+              case _ => ().asRight[StatusCode]
+            }
+          } yield res
+      })
+  //...
+}
+```
+
+And it compiles fine! So we just need to move our logic into the `serverLogic` function part and we are set. Pretty cool but once we fix it we get another error from our main entry point:
+
+```txt
+Tapir.scala:42:26: method executionContextResource overrides nothing
+```
+
+However we can simply remove it and are done. Oh wait! We are skipped two things: first there is still the optics implementation left and second we want to fix this `example` problem in the one endpoint definition.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 

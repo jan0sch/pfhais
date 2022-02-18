@@ -39,9 +39,6 @@ object Tapir extends IOApp {
   val blockingPool: ExecutorService = Executors.newFixedThreadPool(blockingCores)
   val ec: ExecutionContext          = ExecutionContext.global
 
-  override protected def executionContextResource: Resource[SyncIO, ExecutionContext] =
-    Resource.eval(SyncIO(ec))
-
   @SuppressWarnings(Array("scalafix:DisableSyntax.null"))
   def run(args: List[String]): IO[ExitCode] = {
     val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
