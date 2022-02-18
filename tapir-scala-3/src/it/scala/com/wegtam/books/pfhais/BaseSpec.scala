@@ -33,6 +33,8 @@ abstract class BaseSpec
   protected val config   = ConfigFactory.load()
   protected val dbConfig = ConfigSource.fromConfig(config).at("database").load[DatabaseConfig]
 
+  implicit val runtime = cats.effect.unsafe.IORuntime.global
+
   override def beforeAll(): Unit = {
     val _ = withClue("Database configuration could not be loaded!") {
       dbConfig.isRight must be(true)

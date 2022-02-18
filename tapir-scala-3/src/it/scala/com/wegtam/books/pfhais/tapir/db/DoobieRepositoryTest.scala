@@ -22,8 +22,6 @@ import org.flywaydb.core.Flyway
 
 final class DoobieRepositoryTest extends BaseSpec {
 
-  implicit val cs = IO.contextShift(ExecutionContexts.synchronous)
-
   override def beforeAll(): Unit = {
     super.beforeAll()
     dbConfig.foreach { cfg =>

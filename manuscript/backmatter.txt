@@ -536,7 +536,7 @@ And it compiles fine! So we just need to move our logic into the `serverLogic` f
 Tapir.scala:42:26: method executionContextResource overrides nothing
 ```
 
-However we can simply remove it and are done. Oh wait! We are skipped two things: first there is still the optics implementation left and second we want to fix this `example` problem in the one endpoint definition. Besides that we also get a lot of compilation errors for our tests.
+However we can simply remove it and are done. Oh wait! We are skipped two things: first there is still the optics implementation left and second we want to fix this `example` problem in the one endpoint definition. Besides that we also get a lot of compilation errors for our tests. We turn there first an can very quickly fix our integration tests by removing the no longer used `IO.contextShift` from our `DoobieRepositoryTest` and by providing an implicit `IORuntime` within our `BaseSpec` class.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
