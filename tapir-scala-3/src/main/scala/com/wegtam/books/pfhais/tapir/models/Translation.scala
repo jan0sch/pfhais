@@ -37,11 +37,8 @@ object Translation {
     derived.semiauto.order[Translation]
   }
 
-  implicit val schemaFor: Schema[Translation] = Schema(
-    SchemaType.SProduct(
-      SchemaType.SObjectInfo("Translation"),
-      List(("lang", Schema(SchemaType.SString)), ("name", Schema(SchemaType.SString)))
-    )
-  )
+  implicit val schemaForLanguageCode: Schema[LanguageCode] = Schema.string
+  implicit val schemaForProductName: Schema[ProductName]   = Schema.string
+  implicit val schemaFor: Schema[Translation]              = Schema.derived[Translation]
 
 }

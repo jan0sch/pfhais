@@ -37,15 +37,12 @@ object Product {
     def compare(x: Product, y: Product): Int = x.id.compare(y.id)
   }
 
-  implicit def schemaForNeS[T](implicit a: Schema[T]): Schema[NonEmptySet[T]] =
-    Schema(SchemaType.SArray(a))
+  implicit val schemaForProductId: Schema[ProductId] = Schema.string
 
-  implicit val schemaFor: Schema[Product] = Schema(
-    SchemaType.SProduct(
-      SchemaType.SObjectInfo("Product"),
-      List(("id", Schema(SchemaType.SString)), ("names", schemaForNeS[Translation]))
-    )
-  )
+  implicit def schemaForNeS[T](implicit a: Schema[T]): Schema[NonEmptySet[T]] =
+    Schema(SchemaType.SArray(a)(_.toIterable))
+
+  implicit val schemaFor: Schema[Product] = Schema.derived[Product]
 
   /**
     * Try to create a Product from the given list of database rows.

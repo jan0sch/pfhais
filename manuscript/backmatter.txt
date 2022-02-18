@@ -438,6 +438,29 @@ Another step done, nice! Let's enjoy the moment and move on to the other errors 
 
 But let's save this for later because the really nice features are Scala 3 only. So we just stub our function out and make it simply return the parameter it receives to make it compile again.
 
+Some of the errors left are related to tapir schemas so let's try them first because they are few and directly related to our data models. Instead of specifying everything manually we try the semi-automatic derivation this time. We soon realise that we still have to specify some instances but the code we need to make it compile looks cleaner than the one before:
+
+```scala
+object Translation {
+  //...
+  implicit val schemaForLanguageCode: Schema[LanguageCode] =
+    Schema.string
+  implicit val schemaForProductName: Schema[ProductName] =
+    Schema.string
+  implicit val schemaFor: Schema[Translation] =
+    Schema.derived[Translation]
+}
+object Product {
+  //...
+  implicit val schemaForProductId: Schema[ProductId] = Schema.string
+
+  implicit def schemaForNeS[T](implicit a: Schema[T]):
+    Schema[NonEmptySet[T]] = Schema(SchemaType.SArray(a)(_.toIterable))
+
+  implicit val schemaFor: Schema[Product] = Schema.derived[Product]
+}
+```
+
 ```scala
 private def updateDocumentation(docs: OpenAPI): OpenAPI = docs
 ```
