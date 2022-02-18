@@ -27,7 +27,7 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.http4s._
 
-final class ProductsRoutes[F[_]: Sync: ContextShift](repo: Repository[F]) extends Http4sDsl[F] {
+final class ProductsRoutes[F[_]: Sync](repo: Repository[F]) extends Http4sDsl[F] {
   implicit def decodeProduct: EntityDecoder[F, Product] = jsonOf
 
   val getRoute: HttpRoutes[F] = ProductsRoutes.getProducts.toRoutes {

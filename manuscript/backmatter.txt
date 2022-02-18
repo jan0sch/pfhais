@@ -465,6 +465,8 @@ object Product {
 }
 ```
 
+So far so good. If we really nailed it we will only know later when if may blow up in our faces or not. ;-)
+
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
 [^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
