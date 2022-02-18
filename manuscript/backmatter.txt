@@ -324,7 +324,7 @@ Q> But where to start?
 
 So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving. After increasing the version number for Monocle and changing also the artefact group and removing the laws package we are greeted by a number of deprecation warnings and one errors upon compilation. This doesn't look too bad so maybe we are lucky after all, are we?
 
-For the deprecations there is an open issue for providing scalafix rules for automatic code rewrite but it is not yet done[^41] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
+For the deprecations there is an open issue for providing Scalafix rules for automatic code rewrite but it is not yet done[^41] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
 
 ```txt
 [error] .../Tapir.scala:117:11: object creation impossible.
@@ -365,7 +365,11 @@ Because the dependencies are so much weaved together we have no choice but to up
 [error] (Compile / compileIncremental) Compilation failed
 ```
 
-Okay, that doesn't look too bad. Remember, we fixed similar numbers already.
+Okay, that doesn't look too bad. Remember, we fixed similar numbers already. But where to start?
+
+One of the libraries in the background that all others are using is cats-effect so maybe we should start with that one. Reading the migration guide we realise that there is a Scalafix migration which we could use for automatic conversion of our code. But it says: "Remember to run it *before* making any changes to your dependencies' versions." ;-)
+
+So then let us rollback our versions and take a stab at the migration to cats effect 3 via Scalafix.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
