@@ -18,4 +18,6 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 /**
   * A base class for our tests.
   */
-abstract class BaseSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks {}
+abstract class BaseSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks {
+  implicit val runtime = cats.effect.unsafe.IORuntime.global
+}

@@ -11,20 +11,28 @@
 
 package com.wegtam.books.pfhais.tapir.config
 
-import com.wegtam.books.pfhais.tapir.{ NonEmptyString, PortNumber }
-import eu.timepit.refined.api.RefType
-import eu.timepit.refined.auto._
+import com.comcast.ip4s._
 import org.scalacheck.{ Arbitrary, Gen }
 
 object ApiConfigGenerators {
-  val DefaultHost: NonEmptyString = "api.example.com"
-  val DefaultPort: PortNumber     = 1234
+  val DefaultHost: Host = host"127.0.0.1"
+  val DefaultPort: Port = port"80"
+
+  val genHost: Gen[Host] = Gen
+    .nonEmptyListOf(Gen.alphaNumChar)
+    .map(_.mkString)
+    .map(Host.fromString)
+    .map(_.getOrElse(DefaultHost))
+
+  implicit val arbitraryHost: Arbitrary[Host] = Arbitrary(genHost)
+
+  val genPort: Gen[Port] = Gen.choose(1, 65535).map(Port.fromInt).map(_.getOrElse(DefaultPort))
+
+  implicit val arbitraryPort: Arbitrary[Port] = Arbitrary(genPort)
 
   val genApiConfig: Gen[ApiConfig] = for {
-    gh <- Gen.nonEmptyListOf(Gen.alphaNumChar)
-    gp <- Gen.choose(1, 65535)
-    h = RefType.applyRef[NonEmptyString](gh.mkString).getOrElse(DefaultHost)
-    p = RefType.applyRef[PortNumber](gp).getOrElse(DefaultPort)
+    h <- genHost
+    p <- genPort
   } yield ApiConfig(host = h, port = p)
 
   implicit val arbitraryApiConfig: Arbitrary[ApiConfig] = Arbitrary(genApiConfig)

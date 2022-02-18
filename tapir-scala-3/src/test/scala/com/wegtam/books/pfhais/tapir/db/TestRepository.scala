@@ -18,7 +18,7 @@ import fs2.Stream
 
 import scala.collection.immutable._
 
-class TestRepository[F[_]: Effect](data: Seq[Product]) extends Repository[F] {
+class TestRepository[F[_]: Async](data: Seq[Product]) extends Repository[F] {
   override def loadProduct(id: ProductId): F[List[(ProductId, LanguageCode, ProductName)]] =
     data.find(_.id === id) match {
       case None => List.empty.pure[F]

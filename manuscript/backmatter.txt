@@ -538,6 +538,8 @@ Tapir.scala:42:26: method executionContextResource overrides nothing
 
 However we can simply remove it and are done. Oh wait! We are skipped two things: first there is still the optics implementation left and second we want to fix this `example` problem in the one endpoint definition. Besides that we also get a lot of compilation errors for our tests. We turn there first an can very quickly fix our integration tests by removing the no longer used `IO.contextShift` from our `DoobieRepositoryTest` and by providing an implicit `IORuntime` within our `BaseSpec` class.
 
+It turns out that for our regular tests we can apply the same fix to the `BaseSpec` there and also remove some obsolete code and adjust our imports because the http4s library has now a type called `ProductId` which clashes with our own one. After changing the `Effect` type in our `TestRepository` to `Async` the only thing left seems to be the ScalaCheck generators for our `ApiConfig` but these are also fixed easily.
+
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
 [^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
