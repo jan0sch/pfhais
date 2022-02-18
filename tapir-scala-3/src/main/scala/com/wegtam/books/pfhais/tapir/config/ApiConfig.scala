@@ -11,9 +11,7 @@
 
 package com.wegtam.books.pfhais.tapir.config
 
-import com.wegtam.books.pfhais.tapir.{ NonEmptyString, PortNumber }
-import eu.timepit.refined.auto._
-import eu.timepit.refined.pureconfig._
+import com.comcast.ip4s.{ Host, Port }
 import pureconfig._
 import pureconfig.generic.semiauto._
 
@@ -23,9 +21,12 @@ import pureconfig.generic.semiauto._
   * @param host The hostname or ip address on which the service shall listen.
   * @param port The port number on which the service shall listen.
   */
-final case class ApiConfig(host: NonEmptyString, port: PortNumber)
+final case class ApiConfig(host: Host, port: Port)
 
 object ApiConfig {
+
+  implicit val hostReader: ConfigReader[Host] = ConfigReader.fromStringOpt[Host](Host.fromString)
+  implicit val portReader: ConfigReader[Port] = ConfigReader.fromStringOpt[Port](Port.fromString)
 
   implicit val configReader: ConfigReader[ApiConfig] = deriveReader[ApiConfig]
 
