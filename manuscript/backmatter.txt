@@ -369,8 +369,82 @@ Okay, that doesn't look too bad. Remember, we fixed similar numbers already. But
 
 One of the libraries in the background that all others are using is cats-effect so maybe we should start with that one. Reading the migration guide we realise that there is a Scalafix migration which we could use for automatic conversion of our code. But it says: "Remember to run it *before* making any changes to your dependencies' versions." ;-)
 
-So then let us rollback our versions and take a stab at the migration to cats effect 3 via Scalafix.
+So then let us rollback our versions and take a stab at the migration to cats effect 3 via Scalafix. The guide to manually applying the migration is straightforward however the results are a bit underwhelming as nearly nothing is changed. But the migration guide has lots of additional information about changed type hierarchies and so on so we are not left in the dark. Therefore we re-apply our version upgrades again and go on fixing the compilation errors. For convenience we start at our main entry point which is in `Tapir.scala`.
+
+Concentrating on cats-effect first we need to adjust our `IOApp.WithContext` into a simply `IOApp` and can remove some code which is not needed any longer. Afterwards we have fixed some errors and the ones that still show up seem to be related to tapir and http4s. On the http4s side it seems that we now need a proper `Host` class instead of our non-empty string. So one option would be do to something like this:
+
+```scala
+host <- IO(
+  com.comcast.ip4s.Host
+    .fromString(apiConfig.host)
+    .getOrElse(throw new RuntimeException("Invalid hostname!"))
+)
+```
+
+It will work but why do we have introduced properly typed configuration then? On the other hand we might have to drop pureconfig because the migrate plugin told us that there is no version of it for Scala 3 yet. However looking at the repository and bugtracker [^43]we can see that basic Scala 3 support is supposed to be there. So let's try to do it the proper way first!
+
+While we're at it we realise that we also need a `Port` type also instead of custom `PortNumber` and of course pureconfig needs to be provided with type classes which can read these types.
+
+```scala
+import com.comcast.ip4s.{ Host, Port }
+import pureconfig._
+import pureconfig.generic.semiauto._
+
+final case class ApiConfig(host: Host, port: Port)
+
+object ApiConfig {
+  implicit val hostReader: ConfigReader[Host] =
+    ConfigReader.fromStringOpt[Host](Host.fromString)
+  implicit val portReader: ConfigReader[Port] =
+    ConfigReader.fromStringOpt[Port](Port.fromString)
+
+  implicit val configReader: ConfigReader[ApiConfig] =
+    deriveReader[ApiConfig]
+}
+```
+
+This is our new `ApiConfig` class (comments removed from the snippet) and it looks like it works because we have even less compiler errors now. :-)
+
+However there is a new one now for the last part of our for comprehension returning the `fiber`:
+
+```txt
+found   : cats.effect.IO[cats.effect.ExitCode]
+required: cats.effect.ExitCode
+```
+
+This is fixed easily though by just changing the `fiber = ...` to `fiber <- ...` within the for comprehension. After that we take a look at the error we get from tapir. They are related to the swagger UI and API documentation stuff. Referring to the tapir documentation the changes are quite simple, we just change an import and the way we construct our documentation structure.
+
+```scala
+import sttp.tapir.swagger.SwaggerUI
+//...
+docs = OpenAPIDocsInterpreter().toOpenAPI(
+  List(
+    ProductRoutes.getProduct,
+    ProductRoutes.updateProduct,
+    ProductsRoutes.getProducts,
+    ProductsRoutes.createProduct
+  ),
+  "Pure Tapir API",
+  "1.0.0"
+)
+updatedDocs = updateDocumentation(docs)
+docsRoutes  = Http4sServerInterpreter[IO]()
+                .toRoutes(SwaggerUI[IO](updatedDocs.toYaml))
+//...
+httpApp     = Router("/" -> routes, "/docs" -> docsRoutes).orNotFound
+```
+
+Another step done, nice! Let's enjoy the moment and move on to the other errors which are in our optics part of the file where we define lenses on the `OpenAPI` structure of tapir which seems to have changed quite a lot. So for starters there is the `ReferenceOr` structure which simply moved to another place so we can just add an import and reference it directly instead of `OpenAPI.ReferenceOr` and some errors are gone. Others are about the internal structure for example we now get a `Paths` type instead of a `ListMap` on some attributes. But before we dive to deep into this one we might as well thing about refactoring our optics part a bit more because we basically kept our old approach and just changed it so far as to compile with the latest Monocle library. But what about actually utilising the shiny new features? ;-)
+
+But let's save this for later because the really nice features are Scala 3 only. So we just stub our function out and make it simply return the parameter it receives to make it compile again.
+
+```scala
+private def updateDocumentation(docs: OpenAPI): OpenAPI = docs
+```
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
-[^41]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
+[^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
+
+[^43]: https://github.com/pureconfig/pureconfig/issues/970
+
