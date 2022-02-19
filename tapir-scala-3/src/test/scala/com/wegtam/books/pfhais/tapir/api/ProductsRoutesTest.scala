@@ -18,16 +18,7 @@ import com.wegtam.books.pfhais.tapir.db._
 import com.wegtam.books.pfhais.tapir.models._
 import com.wegtam.books.pfhais.tapir.models.TypeGenerators._
 import io.circe.syntax._
-import org.http4s.{
-  EntityDecoder,
-  EntityEncoder,
-  HttpRoutes,
-  Method,
-  Request,
-  Response,
-  Status,
-  Uri
-}
+import org.http4s.{ EntityDecoder, EntityEncoder, HttpRoutes, Method, Request, Response, Status }
 import org.http4s.circe._
 import org.http4s.implicits._
 import org.http4s.server.Router
@@ -49,7 +40,7 @@ final class ProductsRoutesTest extends BaseSpec {
           def service: HttpRoutes[IO] =
             Router("/" -> new ProductsRoutes(emptyRepository).routes)
           val response: IO[Response[IO]] = service.orNotFound.run(
-            Request(method = Method.GET, uri = Uri.uri("/products"))
+            Request(method = Method.GET, uri = uri"/products")
           )
           val result = response.unsafeRunSync()
           result.status must be(expectedStatusCode)
@@ -66,7 +57,7 @@ final class ProductsRoutesTest extends BaseSpec {
             def service: HttpRoutes[IO] =
               Router("/" -> new ProductsRoutes(repo).routes)
             val response: IO[Response[IO]] = service.orNotFound.run(
-              Request(method = Method.GET, uri = Uri.uri("/products"))
+              Request(method = Method.GET, uri = uri"/products")
             )
             val result = response.unsafeRunSync()
             result.status must be(expectedStatusCode)
@@ -85,7 +76,7 @@ final class ProductsRoutesTest extends BaseSpec {
             Router("/" -> new ProductsRoutes(emptyRepository).routes)
           val payload = scala.util.Random.alphanumeric.take(256).mkString
           val response: IO[Response[IO]] = service.orNotFound.run(
-            Request(method = Method.POST, uri = Uri.uri("/products"))
+            Request(method = Method.POST, uri = uri"/products")
               .withEntity(payload.asJson.noSpaces)
           )
           val result = response.unsafeRunSync()
@@ -105,7 +96,7 @@ final class ProductsRoutesTest extends BaseSpec {
               def service: HttpRoutes[IO] =
                 Router("/" -> new ProductsRoutes(repo).routes)
               val response: IO[Response[IO]] = service.orNotFound.run(
-                Request(method = Method.POST, uri = Uri.uri("/products"))
+                Request(method = Method.POST, uri = uri"/products")
                   .withEntity(p)
               )
               val result = response.unsafeRunSync()
@@ -123,7 +114,7 @@ final class ProductsRoutesTest extends BaseSpec {
               def service: HttpRoutes[IO] =
                 Router("/" -> new ProductsRoutes(emptyRepository).routes)
               val response: IO[Response[IO]] = service.orNotFound.run(
-                Request(method = Method.POST, uri = Uri.uri("/products"))
+                Request(method = Method.POST, uri = uri"/products")
                   .withEntity(p)
               )
               val result = response.unsafeRunSync()
