@@ -11,6 +11,8 @@
 
 package com.wegtam.books.pfhais.tapir.config
 
+import cats.kernel.Eq
+import cats.syntax.eq._
 import com.comcast.ip4s.{ Host, Port }
 import pureconfig._
 import pureconfig.generic.semiauto._
@@ -24,6 +26,9 @@ import pureconfig.generic.semiauto._
 final case class ApiConfig(host: Host, port: Port)
 
 object ApiConfig {
+  implicit val eqApiConfig: Eq[ApiConfig] = Eq.instance { (a, b) =>
+    a.host === b.host && a.port === b.port
+  }
 
   implicit val hostReader: ConfigReader[Host] = ConfigReader.fromStringOpt[Host](Host.fromString)
   implicit val portReader: ConfigReader[Port] = ConfigReader.fromStringOpt[Port](Port.fromString)

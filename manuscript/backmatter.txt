@@ -34,7 +34,8 @@ The first step should be to switch to Scala 2.13 as major version and update all
 Since version 1.5 the sbt build tool supports Scala 3 directly so there is no more need to add the sbt-dotty plugin to your build. Additionally it supports a new syntax for dependencies which will allow us to use 2.13 libraries in 3 and vice versa.
 
 ```
-libraryDependency += ("my.domain" %% "my-lib" % "x.y.z").cross(CrossVersion.for3Use2_13)
+libraryDependency +=
+  ("my.domain" %% "my-lib" % "x.y.z").cross(CrossVersion.for3Use2_13)
 ```
 
 The example above instructs sbt to use a Scala 2.13 library for Scala 3. If you want to do the opposite then you have to use `CrossVersion.for2_13Use3` instead which will make sbt use a Scala 3 library for Scala 2.13.
@@ -78,18 +79,18 @@ So far compiling our main code resulted in nagging us to fix several issues with
 Now onwards to compiling the tests and we have some more issues. So far the integration tests compile fine but the unit tests spill out an error:
 
 ```txt
-[error] .../src/test/scala/com/wegtam/books/pfhais/tapir/db/TestRepository.scala:26:51: trait Seq takes type parameters
+[error] .../TestRepository.scala:26:51: trait Seq takes type parameters
 [error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
 [error]                                                   ^
-[error] .../src/test/scala/com/wegtam/books/pfhais/tapir/db/TestRepository.scala:26:50: missing argument list for method to in trait IterableOnceOps
+[error] .../TestRepository.scala:26:50: missing argument list for method to in trait IterableOnceOps
 [error] Unapplied methods are only converted to functions when a function type is expected.
 [error] You can make this conversion explicit by writing `to _` or `to(_)` instead of `to`.
 [error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
 [error]                                                  ^
-[error] .../src/test/scala/com/wegtam/books/pfhais/tapir/db/TestRepository.scala:32:49: trait Seq takes type parameters
+[error] .../TestRepository.scala:32:49: trait Seq takes type parameters
 [error]       val ns = p.names.toNonEmptyList.toList.to[Seq]
 [error]                                                 ^
-[error] .../src/test/scala/com/wegtam/books/pfhais/tapir/db/TestRepository.scala:32:48: missing argument list for method to in trait IterableOnceOps
+[error] .../TestRepository.scala:32:48: missing argument list for method to in trait IterableOnceOps
 [error] Unapplied methods are only converted to functions when a function type is expected.
 [error] You can make this conversion explicit by writing `to _` or `to(_)` instead of `to`.
 [error]       val ns = p.names.toNonEmptyList.toList.to[Seq]
@@ -541,6 +542,31 @@ However we can simply remove it and are done. Oh wait! We are skipped two things
 It turns out that for our regular tests we can apply the same fix to the `BaseSpec` there and also remove some obsolete code and adjust our imports because the http4s library has now a type called `ProductId` which clashes with our own one. After changing the `Effect` type in our `TestRepository` to `Async` the only thing left seems to be the ScalaCheck generators for our `ApiConfig` but these are also fixed easily.
 
 So we fixed the compilation errors in our tests, but alas some tests are failing. :-(
+
+At least the integration tests look fine, so let's take a look at the possible reasons for our failing tests. The failing ones are: `ApiConfigTest`, `ProductRoutesTest` and `ProductsRoutesTest`. The first one spills out the following message:
+
+```txt
+ApiConfig(127.0.0.1,34019) was not equal to ApiConfig(127.0.0.1,34019)
+```
+
+I don't know about you dear reader but I have stumbled into equality issues frequently (not *always* though but regular) so this should be resolvable by changing the `c must be(expected)` line in the test.
+
+```scala
+ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
+  case Left(e)  => fail(s"Parsing a valid configuration must succeed! ($e)")
+  case Right(c) => withClue("Config must be equal!")(c === expected)
+}
+```
+
+In addition we add an implicit instance for the `Eq` of cats into the companion object of the `ApiConfig` class.
+
+```scala
+implicit val eqApiConfig: Eq[ApiConfig] = Eq.instance { (a, b) =>
+  a.host === b.host && a.port === b.port
+}
+```
+
+This fixes it and we can turn to the two remaining one.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 

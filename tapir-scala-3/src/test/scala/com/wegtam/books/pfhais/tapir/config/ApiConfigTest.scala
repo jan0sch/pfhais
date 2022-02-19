@@ -54,7 +54,7 @@ class ApiConfigTest extends BaseSpec {
               )
             ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
               case Left(e)  => fail(s"Parsing a valid configuration must succeed! ($e)")
-              case Right(c) => c must be(expected)
+              case Right(c) => withClue("Config must be equal!")(c === expected)
             }
           }
         }
