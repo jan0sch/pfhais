@@ -412,7 +412,7 @@ It will work but why do we have introduced properly typed configuration then? On
 
 While we're at it we realise that we also need a `Port` type also instead of custom `PortNumber` and of course pureconfig needs to be provided with type classes which can read these types.
 
-{caption: "A cleaner solution to the configuration type problem"}
+{caption: "A cleaner solution for the configuration type problem"}
 ```scala
 import com.comcast.ip4s.{ Host, Port }
 import pureconfig._
