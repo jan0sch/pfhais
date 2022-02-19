@@ -566,7 +566,7 @@ implicit val eqApiConfig: Eq[ApiConfig] = Eq.instance { (a, b) =>
 }
 ```
 
-This fixes it and we can turn to the two remaining one.
+This fixes it and we can turn to the two remaining one. We soon find that the error message returned by tapir (which we check in the tests) has changed and is now more detailed so we simply adjust the according line in both tests and we are done here.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
