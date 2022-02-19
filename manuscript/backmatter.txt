@@ -497,7 +497,7 @@ object Product {
 }
 ```
 
-So far so good. If we really nailed it we will only know later when if may blow up in our faces or not. ;-)
+So far so good. If we really nailed it we will only know later when it might blow up in our faces or not. ;-)
 
 Further on we need to replace the `Sync` type in our routing classes with `Async` to fix two more errors. The route creation changed so we have to use a `Http4sServerInterpreter[F]().toRoutes(...)` function now to create our routes. It still gives some errors but let's look at our endpoint definitions first. The type signature for endpoints changes from `[I, E, O, S]` to `[A, I, E, O, R]`. Sorry for the abbreviation overkill here. The details can be looked up at the tapir docs but the gist is that we have an additional type ("security input") at the start and instead of the "streaming type" we have a "capabilities type" now at the end. Because we don't use the security input type we can set it to `Unit` or could also use the `PublicEndpoint` type alias which is provided by tapir. In the case of streaming endpoints the output type stays as before (`Stream[F, Byte]`) and the capabilities type at the end becomes `Fs2Streams[F]` or `Any` for all non streaming endpoints.
 
