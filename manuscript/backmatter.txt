@@ -80,6 +80,7 @@ So far compiling our main code resulted in nagging us to fix several issues with
 
 Now onwards to compiling the tests and we have some more issues. So far the integration tests compile fine but the unit tests spill out an error:
 
+{caption: "Compiler errors in the tests"}
 ```text
 [error] .../TestRepository.scala:26:51: trait Seq takes type parameters
 [error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
@@ -110,8 +111,9 @@ This looks big at first but let us stay calm an read the error messages. So the 
 
 Q> What can we do?
 
-Well, we fire up a REPL of course and as we are (or should be) in sbt we can simply use the `console` command. This will only work if we fixed all our compilation errors in the main code.
+Well, we fire up a REPL of course and as we are (or should be) in sbt we can simply use the `console` command. The sbt console will only work if we fixed all our compilation errors in the main code.
 
+{caption: "Check for possible function for converting List"}
 ```scala
 scala> List(1, 2, 3).to<TAB>
 // This should show a list of possible functions.
@@ -119,6 +121,7 @@ scala> List(1, 2, 3).to<TAB>
 
 So it seems we are missing our plain old (`.to[T]`). While there is a `.to()` function it requires a collection factory. So what about `.toSeq`? We did not use it in the past because it converted into a mutable sequence. But what about now?
 
+{caption: "Test List conversion in the REPL"}
 ```scala
 scala> val a: scala.collection.immutable.Seq[Int] = List(1, 2, 3).toSeq
 val a: Seq[Int] = List(1, 2, 3)
@@ -134,6 +137,7 @@ val res2: String = scala.collection.immutable.$colon$colon
 
 Well, well this looks pretty good I'd say so let's adjust the code. And quickly we get a big type error but the gist of it is:
 
+{caption: "Compiler error about invariant types"}
 ```text
 [error] Note: List[...] <: Seq[...], but type F is invariant in type _.
 [error] You may wish to define _$$1 as +_$$1 instead. (SLS 4.5)
@@ -150,6 +154,7 @@ Okay, onwards to... Did you run the tests? ;-)
 
 While executing the tests we discover that some unit tests are failing and the integration tests look good. Additionally I get a warning that the Flyway library should be updated. But we save this for later. Let us take a look at our failing tests first. We can see that they error out because of an exception:
 
+{caption: "The dreaded NoSuchMethodError after a dependency upgrade"}
 ```text
 java.lang.NoSuchMethodError: 'cats.data.Kleisli
   org.http4s.HttpRoutes$.apply(scala.Function1, cats.effect.Sync)'
@@ -163,6 +168,7 @@ Q> So what could be the root cause here?
 
 Most likely we are in trouble due to updating dependencies and running into some binary incompatibility issues. The error message indicates that it might either be cats or http4s related. To get some more insights we should issue the `sbt evicted` command and take a look at the output. We find some messages about replaced versions.
 
+{caption: "Output snippets from the sbt evicted command"}
 ```text
 * org.http4s:http4s-dsl_2.13:0.21.31 is selected over 0.21.0-M5
 ...
