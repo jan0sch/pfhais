@@ -82,17 +82,23 @@ Now onwards to compiling the tests and we have some more issues. So far the inte
 [error] .../TestRepository.scala:26:51: trait Seq takes type parameters
 [error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
 [error]                                                   ^
-[error] .../TestRepository.scala:26:50: missing argument list for method to in trait IterableOnceOps
-[error] Unapplied methods are only converted to functions when a function type is expected.
-[error] You can make this conversion explicit by writing `to _` or `to(_)` instead of `to`.
+[error] .../TestRepository.scala:26:50: missing argument list for method to 
+          in trait IterableOnceOps
+[error] Unapplied methods are only converted to functions when a function type
+          is expected.
+[error] You can make this conversion explicit by writing `to _` or `to(_)`
+          instead of `to`.
 [error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
 [error]                                                  ^
 [error] .../TestRepository.scala:32:49: trait Seq takes type parameters
 [error]       val ns = p.names.toNonEmptyList.toList.to[Seq]
 [error]                                                 ^
-[error] .../TestRepository.scala:32:48: missing argument list for method to in trait IterableOnceOps
-[error] Unapplied methods are only converted to functions when a function type is expected.
-[error] You can make this conversion explicit by writing `to _` or `to(_)` instead of `to`.
+[error] .../TestRepository.scala:32:48: missing argument list for method to
+          in trait IterableOnceOps
+[error] Unapplied methods are only converted to functions when a function type
+          is expected.
+[error] You can make this conversion explicit by writing `to _` or `to(_)`
+          instead of `to`.
 [error]       val ns = p.names.toNonEmptyList.toList.to[Seq]
 [error]                                                ^
 [error] four errors found
