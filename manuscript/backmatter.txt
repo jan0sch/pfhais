@@ -78,7 +78,7 @@ So far compiling our main code resulted in nagging us to fix several issues with
 
 Now onwards to compiling the tests and we have some more issues. So far the integration tests compile fine but the unit tests spill out an error:
 
-```txt
+```text
 [error] .../TestRepository.scala:26:51: trait Seq takes type parameters
 [error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
 [error]                                                   ^
@@ -126,7 +126,7 @@ val res2: String = scala.collection.immutable.$colon$colon
 
 Well, well this looks pretty good I'd say so let's adjust the code. And quickly we get a big type error but the gist of it is:
 
-```txt
+```text
 [error] Note: List[...] <: Seq[...], but type F is invariant in type _.
 [error] You may wish to define _$$1 as +_$$1 instead. (SLS 4.5)
 [error]         ns.map(n => (p.id, n.lang, n.name)).pure[F]
@@ -142,7 +142,7 @@ Okay, onwards to... Did you run the tests? ;-)
 
 While executing the tests we discover that some unit tests are failing and the integration tests look good. Additionally I get a warning that the Flyway library should be updated. But we save this for later. Let us take a look at our failing tests first. We can see that they error out because of an exception:
 
-```txt
+```text
 java.lang.NoSuchMethodError: 'cats.data.Kleisli
   org.http4s.HttpRoutes$.apply(scala.Function1, cats.effect.Sync)'
 ```
@@ -155,7 +155,7 @@ Q> So what could be the root cause here?
 
 Most likely we are in trouble due to updating dependencies and running into some binary incompatibility issues. The error message indicates that it might either be cats or http4s related. To get some more insights we should issue the `sbt evicted` command and take a look at the output. We find some messages about replaced versions.
 
-```txt
+```text
 * org.http4s:http4s-dsl_2.13:0.21.31 is selected over 0.21.0-M5
 ...
 * org.typelevel:cats-effect_2.13:2.5.1 is selected over {2.0.0, ...}
@@ -172,7 +172,7 @@ I> The more you run into problems when updating your applications the more you c
 
 But before we tackle this problem we might as well quickly update the Flyway library to get rid of the warning in our tests. Brave as we are we jump to the most recent release and also update the driver for PostgreSQL as well. But what is this?
 
-```txt
+```text
 [error] .../FlywayDatabaseMigrator.scala:35:21: type mismatch;
 [error]  found   : org.flywaydb.core.api.output.MigrateResult
 [error]  required: Int
@@ -211,7 +211,7 @@ Okay after fixing that and the change of `StatusCode` and `StatusCodes` from tap
 
 We still get a bunch of errors now but they are less in number and seem mostly related to schema creation and derivation. Also not the most easy topic but as we get the same errors on 0.17.x plus a load more we might as well try to fix them. The first guess is that some code has been moved and indeed it seems that our `Schema.SWhatever` types are now under `SchemaType.SWhatever` so this should be fixed easily. Additionally we need to do small adjustments regarding changed signatures and use `Schema(SchemaType.SWhatever)` instead of `Schema.SWhatever` in some places.
 
-```txt
+```text
 ...
 [warn] two warnings found
 [error] 6 errors found
@@ -219,7 +219,7 @@ We still get a bunch of errors now but they are less in number and seem mostly r
 
 Nice! We are down to a single digit number of errors. It looks like I didn't fix the `StatusCodes` issue correctly so after some changes we are down to one error:
 
-```txt
+```text
 [error] .../ProductsRoutes.scala:117:54: not found: value tapir
 [error] streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
 [error]                                              ^
@@ -228,7 +228,7 @@ Nice! We are down to a single digit number of errors. It looks like I didn't fix
 
 After digging a bit through the tapir code we can see that we simply have to pass a `CodecFormat.Json()` here now. Hooray, it compiles! But before we become too confident, let us run some tests.
 
-```txt
+```text
 [info] All tests passed.
 ```
 
@@ -288,7 +288,7 @@ As mentioned before we shouldn't simply dive in but check what is really needed.
 
 We have prepared our battle ground and already included the sbt plugin so we can just issue the `migrate-libs tapir` command to get some output. This is quite a lot so let's concentrate on the important parts. First there is some explanation on the top:
 
-```txt
+```text
 [info] X             : Cannot be updated to scala 3
 [info] Valid         : Already a valid version for Scala 3
 [info] To be updated : Need to be updated to the following version
@@ -327,7 +327,7 @@ So, tapir has dependencies on http4s and also cats-effect it will surely influen
 
 For the deprecations there is an open issue for providing Scalafix rules for automatic code rewrite but it is not yet done[^41] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
 
-```txt
+```text
 [error] .../Tapir.scala:117:11: object creation impossible.
         Missing implementation for:
 [error]   def modifyA[F[_]](f: V => F[V])
@@ -341,7 +341,7 @@ For the deprecations there is an open issue for providing Scalafix rules for aut
 
 This might look intimidating but actually it is just complaining about a missing implementation so we will have to adjust or rewrite the one we are providing. But wait! Didn't we provide patches to Monocle for the missing instances for `ListMap`? Yes we did! So how about removing our custom instances?
 
-```txt
+```text
 [warn] 62 warnings found
 [success] ...
 ```
@@ -350,7 +350,7 @@ Nice! Always remember: It pays off to provide your custom extensions and patches
 
 However now we get a lot of errors if we try to compile our tests. So we need to investigate. But before we do that let's fix all these deprecation warnings to get our code clean. Some things are pretty trivial but if we remove the `possible` command which has no replacement then our code does not compile any longer. We could just ignore it because it is a warning but it is a deprecation one therefore it definitely *will* come back later to bite us. However we ignore it for now and look at our weird compile error in the tests.
 
-```txt
+```text
 [error] ... object scalatestplus is not a member of package org
 ```
 
@@ -360,7 +360,7 @@ Ignoring the remaining deprecation warnings our tests are running fine and we ta
 
 Because the dependencies are so much weaved together we have no choice but to update them all in one step. We won't have compiling code either way and will likely get misleading error messages if we do them step by step. So let's increase some version numbers, take a deep breath and parse some compiler errors. To summarise: We update doobie to 1.0.0-RC2, http4s to 0.23.10 and tapir to 0.19.4. Additionally we have to adjust the tapir swagger ui package because some packaging changed.
 
-```txt
+```text
 [warn] 5 warnings found
 [error] 33 errors found
 [error] (Compile / compileIncremental) Compilation failed
@@ -408,7 +408,7 @@ This is our new `ApiConfig` class (comments removed from the snippet) and it loo
 
 However there is a new one now for the last part of our for comprehension returning the `fiber`:
 
-```txt
+```text
 found   : cats.effect.IO[cats.effect.ExitCode]
 required: cats.effect.ExitCode
 ```
@@ -479,7 +479,7 @@ streamTextBody(Fs2Streams[F])(CodecFormat.Json(),
 
 We are down to a single digit number of compiler errors for our main code. This looks not bad so let's head on. The main issue now seems to stem from the `toRoutes` functionality.
 
-```txt
+```text
 [error] overloaded method toRoutes with alternatives:
 [error]   (serverEndpoints: List[sttp.tapir.server.ServerEndpoint[
             sttp.capabilities.fs2.Fs2Streams[F],F]])
@@ -533,7 +533,7 @@ final class ProductRoutes[F[_]: Async] ... {
 
 And it compiles fine! So we just need to move our logic into the `serverLogic` function part and we are set. Pretty cool but once we fix it we get another error from our main entry point:
 
-```txt
+```text
 Tapir.scala:42:26: method executionContextResource overrides nothing
 ```
 
@@ -545,7 +545,7 @@ So we fixed the compilation errors in our tests, but alas some tests are failing
 
 At least the integration tests look fine, so let's take a look at the possible reasons for our failing tests. The failing ones are: `ApiConfigTest`, `ProductRoutesTest` and `ProductsRoutesTest`. The first one spills out the following message:
 
-```txt
+```text
 ApiConfig(127.0.0.1,34019) was not equal to ApiConfig(127.0.0.1,34019)
 ```
 
