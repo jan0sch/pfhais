@@ -186,6 +186,7 @@ I> The more you run into problems when updating your applications the more you c
 
 But before we tackle this problem we might as well quickly update the Flyway library to get rid of the warning in our tests. Brave as we are we jump to the most recent release and also update the driver for PostgreSQL as well. But what is this?
 
+{caption: "Type error after Flyway upgrade"}
 ```text
 [error] .../FlywayDatabaseMigrator.scala:35:21: type mismatch;
 [error]  found   : org.flywaydb.core.api.output.MigrateResult
@@ -213,6 +214,7 @@ Upgrading software is not for the faint hearted so let's be brave and try to upd
 
 The first thing we stumble upon is of course a ton of errors because the namespace for tapir changed. Because changing it is simple but tedious it screams for automation and therefore we'll use a shell script.
 
+{caption: "Shell script to fix import namespace errors"}
 ```sh
 % for i in `find tapir-scala-3 -name "*.scala"`; do
 %   sed -i '' -e s/'import tapir'/'import sttp.tapir'/g $i
@@ -225,6 +227,7 @@ Okay after fixing that and the change of `StatusCode` and `StatusCodes` from tap
 
 We still get a bunch of errors now but they are less in number and seem mostly related to schema creation and derivation. Also not the most easy topic but as we get the same errors on 0.17.x plus a load more we might as well try to fix them. The first guess is that some code has been moved and indeed it seems that our `Schema.SWhatever` types are now under `SchemaType.SWhatever` so this should be fixed easily. Additionally we need to do small adjustments regarding changed signatures and use `Schema(SchemaType.SWhatever)` instead of `Schema.SWhatever` in some places.
 
+{caption: "Total error count so far"}
 ```text
 ...
 [warn] two warnings found
@@ -233,6 +236,7 @@ We still get a bunch of errors now but they are less in number and seem mostly r
 
 Nice! We are down to a single digit number of errors. It looks like I didn't fix the `StatusCodes` issue correctly so after some changes we are down to one error:
 
+{caption: "Last remaining compiler error after the tapir upgrade"}
 ```text
 [error] .../ProductsRoutes.scala:117:54: not found: value tapir
 [error] streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
@@ -242,6 +246,7 @@ Nice! We are down to a single digit number of errors. It looks like I didn't fix
 
 After digging a bit through the tapir code we can see that we simply have to pass a `CodecFormat.Json()` here now. Hooray, it compiles! But before we become too confident, let us run some tests.
 
+{caption: "All our tests passed"}
 ```text
 [info] All tests passed.
 ```
@@ -252,6 +257,7 @@ Now we could move on to the next step or we might try updating some more depende
 
 First we change from `IOApp` to `IOApp.WithContext` and implement the `executionContextResource` function. In addition we adjust our blocking thread pool to use 2 threads or half of the available processors.
 
+{caption: "Adjustments in the main entry point"}
 ```scala
 object Tapir extends IOApp.WithContext {
   val availableProcessors: Int =
@@ -302,6 +308,7 @@ As mentioned before we shouldn't simply dive in but check what is really needed.
 
 We have prepared our battle ground and already included the sbt plugin so we can just issue the `migrate-libs tapir` command to get some output. This is quite a lot so let's concentrate on the important parts. First there is some explanation on the top:
 
+{caption: "Possible status flags for dependencies for Scala 3 migration"}
 ```text
 [info] X             : Cannot be updated to scala 3
 [info] Valid         : Already a valid version for Scala 3
@@ -335,7 +342,7 @@ For our example here however we do it for demonstrating the upgrade process. In 
 
 Q> But where to start?
 
-"Oh what tangled web we weave when our deps are transitive!" -- With apologies to Sir Walter Scott
+"Oh what tangled web we weave when our deps are transitive!" -- with apologies to Sir Walter Scott
 
 So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving. After increasing the version number for Monocle and changing also the artefact group and removing the laws package we are greeted by a number of deprecation warnings and one errors upon compilation. This doesn't look too bad so maybe we are lucky after all, are we?
 
