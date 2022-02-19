@@ -33,7 +33,8 @@ The first step should be to switch to Scala 2.13 as major version and update all
 
 Since version 1.5 the sbt build tool supports Scala 3 directly so there is no more need to add the sbt-dotty plugin to your build. Additionally it supports a new syntax for dependencies which will allow us to use 2.13 libraries in 3 and vice versa.
 
-```
+{caption: "Using Scala 2.13 libraries in Scala 3 projects"}
+```text
 libraryDependency +=
   ("my.domain" %% "my-lib" % "x.y.z").cross(CrossVersion.for3Use2_13)
 ```
@@ -50,6 +51,7 @@ The currently recommended version to start a migration from is 2.13.7 so we will
 
 First steps include updating sbt to a recent version as well as updating the sbt-plugins that we are using to their latest versions. Also some changes are made in regard to the compiler plugins. The kind-projector plugin needs a different way to be specififed (see `cross CrossVersion.full` in `build.sbt`) and the monadic-for plugin stays for now but will have to be removed when we're on Scala 3. And while at it the migration plugin to support us is added as well:
 
+{caption: "Add the scala3-migrate plugin to sbt"}
 ```
 addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.5.0")
 ```
