@@ -348,6 +348,7 @@ So, tapir has dependencies on http4s and also cats-effect it will surely influen
 
 For the deprecations there is an open issue for providing Scalafix rules for automatic code rewrite but it is not yet done[^41] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
 
+{caption: "Compiler error related to Monocle"}
 ```text
 [error] .../Tapir.scala:117:11: object creation impossible.
         Missing implementation for:
@@ -362,6 +363,7 @@ For the deprecations there is an open issue for providing Scalafix rules for aut
 
 This might look intimidating but actually it is just complaining about a missing implementation so we will have to adjust or rewrite the one we are providing. But wait! Didn't we provide patches to Monocle for the missing instances for `ListMap`? Yes we did! So how about removing our custom instances?
 
+{caption: "Monocle error is gone and only warnings remain"}
 ```text
 [warn] 62 warnings found
 [success] ...
@@ -371,6 +373,7 @@ Nice! Always remember: It pays off to provide your custom extensions and patches
 
 However now we get a lot of errors if we try to compile our tests. So we need to investigate. But before we do that let's fix all these deprecation warnings to get our code clean. Some things are pretty trivial but if we remove the `possible` command which has no replacement then our code does not compile any longer. We could just ignore it because it is a warning but it is a deprecation one therefore it definitely *will* come back later to bite us. However we ignore it for now and look at our weird compile error in the tests.
 
+{caption: "Weird error after upgrading another dependency"}
 ```text
 [error] ... object scalatestplus is not a member of package org
 ```
@@ -381,6 +384,7 @@ Ignoring the remaining deprecation warnings our tests are running fine and we ta
 
 Because the dependencies are so much weaved together we have no choice but to update them all in one step. We won't have compiling code either way and will likely get misleading error messages if we do them step by step. So let's increase some version numbers, take a deep breath and parse some compiler errors. To summarise: We update doobie to 1.0.0-RC2, http4s to 0.23.10 and tapir to 0.19.4. Additionally we have to adjust the tapir swagger ui package because some packaging changed.
 
+{caption: "Total error count in the main code after major upgrades"}
 ```text
 [warn] 5 warnings found
 [error] 33 errors found
@@ -393,8 +397,9 @@ One of the libraries in the background that all others are using is cats-effect 
 
 So then let us rollback our versions and take a stab at the migration to cats effect 3 via Scalafix. The guide to manually applying the migration is straightforward however the results are a bit underwhelming as nearly nothing is changed. But the migration guide has lots of additional information about changed type hierarchies and so on so we are not left in the dark. Therefore we re-apply our version upgrades again and go on fixing the compilation errors. For convenience we start at our main entry point which is in `Tapir.scala`.
 
-Concentrating on cats-effect first we need to adjust our `IOApp.WithContext` into a simply `IOApp` and can remove some code which is not needed any longer. Afterwards we have fixed some errors and the ones that still show up seem to be related to tapir and http4s. On the http4s side it seems that we now need a proper `Host` class instead of our non-empty string. So one option would be do to something like this:
+Concentrating on cats-effect first we need to adjust our `IOApp.WithContext` into a simply `IOApp` (Basically reverting our changes from some pages back.) and can remove some code which is not needed any longer. Afterwards we have fixed some errors and the ones that still show up seem to be related to tapir and http4s. On the http4s side it seems that we now need a proper `Host` class instead of our non-empty string. So one option would be do to something like this:
 
+{caption: "Possible solution for the configuration type problem"}
 ```scala
 host <- IO(
   com.comcast.ip4s.Host
@@ -407,6 +412,7 @@ It will work but why do we have introduced properly typed configuration then? On
 
 While we're at it we realise that we also need a `Port` type also instead of custom `PortNumber` and of course pureconfig needs to be provided with type classes which can read these types.
 
+{caption: "A cleaner solution to the configuration type problem"}
 ```scala
 import com.comcast.ip4s.{ Host, Port }
 import pureconfig._
@@ -429,6 +435,7 @@ This is our new `ApiConfig` class (comments removed from the snippet) and it loo
 
 However there is a new one now for the last part of our for comprehension returning the `fiber`:
 
+{caption: "Cats effect related type error in the main entry point"}
 ```text
 found   : cats.effect.IO[cats.effect.ExitCode]
 required: cats.effect.ExitCode
@@ -436,6 +443,7 @@ required: cats.effect.ExitCode
 
 This is fixed easily though by just changing the `fiber = ...` to `fiber <- ...` within the for comprehension. After that we take a look at the error we get from tapir. They are related to the swagger UI and API documentation stuff. Referring to the tapir documentation the changes are quite simple, we just change an import and the way we construct our documentation structure.
 
+{caption: "Fix the swagger UI problems in the code"}
 ```scala
 import sttp.tapir.swagger.SwaggerUI
 //...
@@ -460,12 +468,14 @@ Another step done, nice! Let's enjoy the moment and move on to the other errors 
 
 But let's save this for later because the really nice features are Scala 3 only. So we just stub our function out and make it simply return the parameter it receives to make it compile again.
 
+{caption: "Workaround for the needed Monocle adjustments"}
 ```scala
 private def updateDocumentation(docs: OpenAPI): OpenAPI = docs
 ```
 
 Some of the errors left are related to tapir schemas so let's try them first because they are few and directly related to our data models. Instead of specifying everything manually we try the semi-automatic derivation this time. We soon realise that we still have to specify some instances but the code we need to make it compile looks cleaner than the one before:
 
+{caption: "Changes to the tapir schema definitions for our models"}
 ```scala
 object Translation {
   //...
@@ -493,6 +503,7 @@ Further on we need to replace the `Sync` type in our routing classes with `Async
 
 For our streaming endpoint (`getProducts`) we get an error about the `streamBody` specification so we can adjust that one or replace it with the new `streamTextBody` directive. Both ways should work.
 
+{caption: "Adjust the stream return type for our tapir endpoint"}
 ```scala
 streamTextBody(Fs2Streams[F])(CodecFormat.Json(),
   Option(StandardCharsets.UTF_8))
@@ -500,6 +511,7 @@ streamTextBody(Fs2Streams[F])(CodecFormat.Json(),
 
 We are down to a single digit number of compiler errors for our main code. This looks not bad so let's head on. The main issue now seems to stem from the `toRoutes` functionality.
 
+{caption: "Type errors about the toRoutes function from tapir"}
 ```text
 [error] overloaded method toRoutes with alternatives:
 [error]   (serverEndpoints: List[sttp.tapir.server.ServerEndpoint[
@@ -522,6 +534,7 @@ So server logic is added to an endpoint via one of the functions starting with `
 
 For our purpose we will use the default one (simply `serverLogic`). Let's test it out on one route:
 
+{caption: "Fix the toRoutes errors using the serverLogic functionality"}
 ```scala
 final class ProductRoutes[F[_]: Async] ... {
   //...
@@ -554,6 +567,7 @@ final class ProductRoutes[F[_]: Async] ... {
 
 And it compiles fine! So we just need to move our logic into the `serverLogic` function part and we are set. Pretty cool but once we fix it we get another error from our main entry point:
 
+{caption: "A new error from our main entry point"}
 ```text
 Tapir.scala:42:26: method executionContextResource overrides nothing
 ```
@@ -566,12 +580,14 @@ So we fixed the compilation errors in our tests, but alas some tests are failing
 
 At least the integration tests look fine, so let's take a look at the possible reasons for our failing tests. The failing ones are: `ApiConfigTest`, `ProductRoutesTest` and `ProductsRoutesTest`. The first one spills out the following message:
 
+{caption: "Equality issue causing a failing test"}
 ```text
 ApiConfig(127.0.0.1,34019) was not equal to ApiConfig(127.0.0.1,34019)
 ```
 
 I don't know about you dear reader but I have stumbled into equality issues frequently (not *always* though but regular) so this should be resolvable by changing the `c must be(expected)` line in the test.
 
+{caption: "Fix for the equality issue in the ApiConfig test"}
 ```scala
 ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
   case Left(e)  => fail(s"Parsing a valid configuration must succeed! ($e)")
@@ -581,6 +597,7 @@ ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
 
 In addition we add an implicit instance for the `Eq` of cats into the companion object of the `ApiConfig` class.
 
+{caption: "Instance for cats Eq and ApiConfig"}
 ```scala
 implicit val eqApiConfig: Eq[ApiConfig] = Eq.instance { (a, b) =>
   a.host === b.host && a.port === b.port
