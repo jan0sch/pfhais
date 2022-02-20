@@ -15,7 +15,6 @@ import cats.kernel.Eq
 import cats.syntax.eq._
 import com.comcast.ip4s.{ Host, Port }
 import pureconfig._
-import pureconfig.generic.semiauto._
 
 /**
   * The configuration for our HTTP API.
@@ -33,6 +32,7 @@ object ApiConfig {
   implicit val hostReader: ConfigReader[Host] = ConfigReader.fromStringOpt[Host](Host.fromString)
   implicit val portReader: ConfigReader[Port] = ConfigReader.fromStringOpt[Port](Port.fromString)
 
-  implicit val configReader: ConfigReader[ApiConfig] = deriveReader[ApiConfig]
+  implicit val configReader: ConfigReader[ApiConfig] =
+    ConfigReader.forProduct2("host", "port")(ApiConfig(_, _))
 
 }

@@ -40,7 +40,7 @@ lazy val tapir =
         library.pureConfig,
         library.refinedCats,
         library.refinedCore,
-        //library.refinedPureConfig.cross(CrossVersion.for3Use2_13),
+        library.refinedPureConfig,
         library.tapirCirce,
         library.tapirCore,
         library.tapirHttp4s,
@@ -186,7 +186,6 @@ def compilerSettings(sv: String) =
         "-language:higherKinds",
         "-unchecked",
         //"-Xfatal-warnings", // Disable for migration
-        "-Ycheck-init",
         "-Ykind-projector",
         "-source:3.0-migration", // Gives warnings instead of errors on most syntax changes.
         "-rewrite",              // Resolve warnings via the compiler of possible.

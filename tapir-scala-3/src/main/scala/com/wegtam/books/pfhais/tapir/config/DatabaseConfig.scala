@@ -20,7 +20,6 @@ import com.wegtam.books.pfhais.tapir.{
 import eu.timepit.refined.auto._
 import eu.timepit.refined.pureconfig._
 import pureconfig._
-import pureconfig.generic.semiauto._
 
 /**
   * The configuration for our database connection.
@@ -39,6 +38,7 @@ final case class DatabaseConfig(
 
 object DatabaseConfig {
 
-  implicit val configReader: ConfigReader[DatabaseConfig] = deriveReader[DatabaseConfig]
+  implicit val configReader: ConfigReader[DatabaseConfig] =
+    ConfigReader.forProduct4("driver", "url", "user", "pass")(DatabaseConfig(_, _, _, _))
 
 }

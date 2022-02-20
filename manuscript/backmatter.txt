@@ -701,15 +701,24 @@ Time for a first test run! We switch to Scala 3 by using `++3.1.1` in the sbt sh
 
 Looks like we have a problem here. The libraries that we include in the version for 2.13 depend on other which collide with transitive dependencies of others using Scala 3. Digging through the maven central we can see that there are artefacts published for Scala 3 for pureconfig and refined, so what about removing our cross version settings and try them directly?
 
-Please note that the artefact name for pureconfig has changed to `pureconfig-core` and that we can remove the `refinedPureConfig` dependency because we don't use refined types in our configuration any longer (Remember switching to the `Host` and `Port` type?). A quick run of the `update` task in sbt downloads our dependencies and we can try to compile it now.
+We soon find out that the refined module for pureconfig is not available for Scala 3 and in addition it seems that the generic derivation module is also not there. :-(
 
-{caption: "Compiler error count with Scala 3"}
-```text
-[warn] one warning found
-[error] 33 errors found
+Q> So what now?
+
+We could call it a day and stick with Scala 2 for the time being. However maybe there is a strong need for an upgrade. A library which only works partially under Scala 2 or other reasons. So imagine that we refactor our service a bit by removing some dependencies and add some more boilerplate to make up for it. At first we could simply remove the `CrossVersion` settings and use only libraries which are released for Scala 3. This move leaves us with hundreds of compiler errors. Many of them seem to be related to refined.
+
+On a side note: We have used package objects in our code which have been dropped in Scala 3. Therefore we need to refactor these also.
+
+Because we have to start *somewhere* we try to create our `ConfigReader` instances for pureconfig manually to avoid the dependency to the derivation module. Luckily there are some helpers like the `ConfigReader.forProductX` methods which make this quite easy.
+
+{caption: "A manual constructed reader for pureconfig"}
+```scala
+implicit val configReader: ConfigReader[DatabaseConfig] =
+  ConfigReader.forProduct4("driver", "url", "user", "pass")
+    (DatabaseConfig(_, _, _, _))
 ```
 
-Well, that is somewhat underwhelming but hey, let's roll up our sleeves and dive right in.
+The code compiles again (on 2.13!) and the tests are looking good.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
