@@ -798,22 +798,33 @@ val all: Seq[LanguageCode] = Seq(
 This is not the nicest solution but it leaves us with only 17 errors to fix and they look like they have the same cause. So after fixing the same thing in our routing examples we are down to one error:
 
 ```text
-[error] -- [E008] Not Found Error: /usr/home/jens/Dokumente/Buecher/pfhais/tapir-scala-3/src/main/scala/com/wegtam/books/pfhais/tapir/Tapir.scala:47:31
+[error] -- [E008] Not Found Error: .../Tapir.scala:47:31
 [error] 47 |      (apiConfig, dbConfig) <- IO {
 [error]    |                               ^
-[error]    |value withFilter is not a member of cats.effect.IO[(com.wegtam.books.pfhais.tapir.config.ApiConfig,
+[error]    |value withFilter is not a member of 
+[error]    |  cats.effect.IO[(com.wegtam.books.pfhais.tapir.config.ApiConfig,
 [error]    |  com.wegtam.books.pfhais.tapir.config.DatabaseConfig
 [error]    |)]
-[error] 48 |        val cfg = ConfigFactory.load(getClass().getClassLoader())
-[error] 49 |        // TODO Think about alternatives to `Throw`.
-[error] 50 |        (
-[error] 51 |          ConfigSource.fromConfig(cfg).at("api").loadOrThrow[ApiConfig],
-[error] 52 |          ConfigSource.fromConfig(cfg).at("database").loadOrThrow[DatabaseConfig]
-[error] 53 |        )
-[error] 54 |      }
 [error] one error found
 [error] one error found
 ```
+
+Well the only time I got that one was when I removed the better-monadic-for compiler plugin and it won't be available for Scala 3 because it shouldn't be needed. But we can solve it by de-composing our code into several chunks.
+
+{caption: "Fixing the withFilter error in Tapir.scala"}
+```scala
+for {
+  cfg       <- IO(ConfigFactory.load(getClass().getClassLoader()))
+  apiConfig <- IO(ConfigSource.fromConfig(cfg).at("api")
+    .loadOrThrow[ApiConfig])
+  dbConfig  <- IO(ConfigSource.fromConfig(cfg).at("database")
+    .loadOrThrow[DatabaseConfig])
+  //...
+```
+
+Awesome! We have our main code compiling under Scala 3 now! :-D
+
+Compiling the tests suites greets us with a couple of errors though, so no celebrations just yet.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 

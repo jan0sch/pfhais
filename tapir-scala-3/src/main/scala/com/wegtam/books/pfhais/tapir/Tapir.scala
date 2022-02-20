@@ -44,15 +44,10 @@ object Tapir extends IOApp {
     val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
 
     for {
-      (apiConfig, dbConfig) <- IO {
-        val cfg = ConfigFactory.load(getClass().getClassLoader())
-        // TODO Think about alternatives to `Throw`.
-        (
-          ConfigSource.fromConfig(cfg).at("api").loadOrThrow[ApiConfig],
-          ConfigSource.fromConfig(cfg).at("database").loadOrThrow[DatabaseConfig]
-        )
-      }
-      ms <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
+      cfg       <- IO(ConfigFactory.load(getClass().getClassLoader()))
+      apiConfig <- IO(ConfigSource.fromConfig(cfg).at("api").loadOrThrow[ApiConfig])
+      dbConfig  <- IO(ConfigSource.fromConfig(cfg).at("database").loadOrThrow[DatabaseConfig])
+      ms        <- migrator.migrate(dbConfig.url, dbConfig.user, dbConfig.pass)
       tx = Transactor
         .fromDriverManager[IO](dbConfig.driver, dbConfig.url, dbConfig.user, dbConfig.pass)
       repo           = new DoobieRepository(tx)
