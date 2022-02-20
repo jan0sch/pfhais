@@ -37,10 +37,10 @@ lazy val tapir =
         library.monocleCore,
         library.monocleMacro,
         library.postgresql,
-        library.pureConfig.cross(CrossVersion.for3Use2_13),
-        library.refinedCats.cross(CrossVersion.for3Use2_13),
-        library.refinedCore.cross(CrossVersion.for3Use2_13),
-        library.refinedPureConfig.cross(CrossVersion.for3Use2_13),
+        library.pureConfig,
+        library.refinedCats,
+        library.refinedCore,
+        //library.refinedPureConfig.cross(CrossVersion.for3Use2_13),
         library.tapirCirce,
         library.tapirCore,
         library.tapirHttp4s,
@@ -105,7 +105,7 @@ lazy val library =
     val monocleCore       = "dev.optics"                  %% "monocle-core"             % Version.monocle
     val monocleMacro      = "dev.optics"                  %% "monocle-macro"            % Version.monocle
     val postgresql        = "org.postgresql"              %  "postgresql"               % Version.postgresql
-    val pureConfig        = "com.github.pureconfig"       %% "pureconfig"               % Version.pureConfig
+    val pureConfig        = "com.github.pureconfig"       %% "pureconfig-core"          % Version.pureConfig
     val refinedCore       = "eu.timepit"                  %% "refined"                  % Version.refined
     val refinedCats       = "eu.timepit"                  %% "refined-cats"             % Version.refined
     val refinedPureConfig = "eu.timepit"                  %% "refined-pureconfig"       % Version.refined

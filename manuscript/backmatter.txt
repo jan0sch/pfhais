@@ -678,6 +678,39 @@ crossScalaVersions := Seq(scalaVersion.value, "3.1.1"),
 //...
 ```
 
+Time for a first test run! We switch to Scala 3 by using `++3.1.1` in the sbt shell and issue a `clean` followed by a `compile`. Please not that you should have reloaded or restarted your sbt instance before to make it reflect all of our changes.
+
+{caption: "Errors about conflicting dependencies versions"}
+```text
+[error] Modules were resolved with conflicting cross-version suffixes in 
+  ProjectRef(uri(".../tapir-scala-3/"), "tapir"):
+[error]    org.scala-lang.modules:scala-xml _2.13, _3
+[error]    org.typelevel:simulacrum-scalafix-annotations _3, _2.13
+[error]    org.typelevel:cats-kernel _3, _2.13
+[error]    eu.timepit:refined _2.13, _3
+[error]    org.typelevel:cats-core _3, _2.13
+[error] stack trace is suppressed; run last update for the full output
+[error] (update) Conflicting cross-version suffixes in:
+  org.scala-lang.modules:scala-xml,
+  org.typelevel:simulacrum-scalafix-annotations,
+  org.typelevel:cats-kernel,
+  eu.timepit:refined,
+  org.typelevel:cats-core
+[error]
+```
+
+Looks like we have a problem here. The libraries that we include in the version for 2.13 depend on other which collide with transitive dependencies of others using Scala 3. Digging through the maven central we can see that there are artefacts published for Scala 3 for pureconfig and refined, so what about removing our cross version settings and try them directly?
+
+Please note that the artefact name for pureconfig has changed to `pureconfig-core` and that we can remove the `refinedPureConfig` dependency because we don't use refined types in our configuration any longer (Remember switching to the `Host` and `Port` type?). A quick run of the `update` task in sbt downloads our dependencies and we can try to compile it now.
+
+{caption: "Compiler error count with Scala 3"}
+```text
+[warn] one warning found
+[error] 33 errors found
+```
+
+Well, that is somewhat underwhelming but hey, let's roll up our sleeves and dive right in.
+
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
 [^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
