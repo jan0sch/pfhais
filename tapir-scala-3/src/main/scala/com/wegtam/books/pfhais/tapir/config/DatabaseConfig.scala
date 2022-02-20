@@ -11,6 +11,7 @@
 
 package com.wegtam.books.pfhais.tapir.config
 
+import com.typesafe.config.ConfigValue
 import com.wegtam.books.pfhais.tapir.{
   DatabaseLogin,
   DatabasePassword,
@@ -20,6 +21,7 @@ import com.wegtam.books.pfhais.tapir.{
 import eu.timepit.refined.api._
 import eu.timepit.refined.auto._
 import pureconfig._
+import pureconfig.error._
 
 /**
   * The configuration for our database connection.
@@ -38,12 +40,36 @@ final case class DatabaseConfig(
 
 object DatabaseConfig {
 
-  implicit val loginReader: ConfigReader[DatabaseLogin] =
-    ConfigReader.fromStringOpt(s => DatabaseLogin.from(s).toOption)
-  implicit val passReader: ConfigReader[DatabasePassword] =
-    ConfigReader.fromStringOpt(s => DatabasePassword.from(s).toOption)
-  implicit val urlReader: ConfigReader[DatabaseUrl] =
-    ConfigReader.fromStringOpt(s => DatabaseUrl.from(s).toOption)
+  implicit def refTypeConfigConvert[F[_, _], T, P](
+      implicit configConvert: ConfigConvert[T],
+      refType: RefType[F],
+      validate: Validate[T, P]
+  ): ConfigConvert[F[T, P]] =
+    new ConfigConvert[F[T, P]] {
+      override def from(cur: ConfigCursor): ConfigReader.Result[F[T, P]] =
+        configConvert.from(cur) match {
+          case Left(es) => Left(es)
+          case Right(t) =>
+            refType.refine[P](t) match {
+              case Left(because) =>
+                Left(
+                  ConfigReaderFailures(
+                    ConvertFailure(
+                      reason = CannotConvert(
+                        value = cur.valueOpt.map(_.render()).getOrElse("none"),
+                        toType = "a refined type",
+                        because = because
+                      ),
+                      cur = cur
+                    )
+                  )
+                )
+              case Right(refined) => Right(refined)
+            }
+        }
+      override def to(t: F[T, P]): ConfigValue =
+        configConvert.to(refType.unwrap(t))
+    }
 
   implicit val configReader: ConfigReader[DatabaseConfig] =
     ConfigReader.forProduct4("driver", "url", "user", "pass")(DatabaseConfig(_, _, _, _))

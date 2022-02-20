@@ -40,7 +40,6 @@ lazy val tapir =
         library.pureConfig,
         library.refinedCats,
         library.refinedCore,
-        library.refinedPureConfig,
         library.tapirCirce,
         library.tapirCore,
         library.tapirHttp4s,
@@ -108,7 +107,6 @@ lazy val library =
     val pureConfig        = "com.github.pureconfig"       %% "pureconfig-core"          % Version.pureConfig
     val refinedCore       = "eu.timepit"                  %% "refined"                  % Version.refined
     val refinedCats       = "eu.timepit"                  %% "refined-cats"             % Version.refined
-    val refinedPureConfig = "eu.timepit"                  %% "refined-pureconfig"       % Version.refined
     val refinedScalaCheck = "eu.timepit"                  %% "refined-scalacheck"       % Version.refined
     val scalaCheck        = "org.scalacheck"              %% "scalacheck"               % Version.scalaCheck
     val scalaTest         = "org.scalatest"               %% "scalatest"                % Version.scalaTest

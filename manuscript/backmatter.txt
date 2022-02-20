@@ -743,7 +743,43 @@ But wait we get the dreaded "ambiguous implicit values" compiler error now. Sinc
 
 Q> Can we solve it in a more general way?
 
+Well, it seems that we don't need to because the pureconfig module of refined is a thing. But we cannot use it as it is because the usage of reflection is a no-go with Scala 3. But we can try to copy the base function and make some adjustments.
 
+{caption: "Copied and adjusted converter function from refined-pureconfig"}
+```scala
+implicit def refTypeConfigConvert[F[_, _], T, P](
+    implicit configConvert: ConfigConvert[T],
+    refType: RefType[F],
+    validate: Validate[T, P]
+): ConfigConvert[F[T, P]] =
+  new ConfigConvert[F[T, P]] {
+    override def from(cur: ConfigCursor): ConfigReader.Result[F[T, P]] =
+      configConvert.from(cur) match {
+        case Left(es) => Left(es)
+        case Right(t) =>
+          refType.refine[P](t) match {
+            case Left(because) =>
+              Left(
+                ConfigReaderFailures(
+                  ConvertFailure(
+                    reason = CannotConvert(
+                      value = cur.valueOpt.map(_.render()).getOrElse("none"),
+                      toType = "a refined type",
+                      because = because
+                    ),
+                    cur = cur
+                  )
+                )
+              )
+            case Right(refined) => Right(refined)
+          }
+      }
+    override def to(t: F[T, P]): ConfigValue =
+      configConvert.to(refType.unwrap(t))
+  }
+```
+
+So we copied it and simply omitted the type tag stuff which is based on reflection. This way we loose some information for our error message but we gain a hopefully Scala 3 compatible refined type reader for pureconfig. Many thanks again at this point to Frank S. Thomas the creator of the wonderful refined library and all the contributors!
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
