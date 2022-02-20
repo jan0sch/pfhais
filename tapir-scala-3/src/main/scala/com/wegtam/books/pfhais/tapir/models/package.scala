@@ -23,7 +23,7 @@ import eu.timepit.refined.string._
 package object models {
 
   // A language code format according to ISO 639-1. Please note that this only verifies the format!
-  type LanguageCode = String Refined MatchesRegex[W.`"^[a-z]{2}$"`.T]
+  type LanguageCode = String Refined MatchesRegex["^[a-z]{2}$"]
   object LanguageCode extends RefinedTypeOps[LanguageCode, String] with CatsRefinedTypeOpsSyntax
   // A product id which must be a valid UUID in version 4.
   type ProductId = UUID

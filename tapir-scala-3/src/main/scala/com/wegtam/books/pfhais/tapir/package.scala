@@ -35,7 +35,7 @@ package object tapir {
   type NonEmptyString = String Refined NonEmpty
   object NonEmptyString extends RefinedTypeOps[NonEmptyString, String] with CatsRefinedTypeOpsSyntax
   // A TCP port number which is valid in the range of 1 to 65535.
-  type PortNumber = Int Refined Interval.Closed[W.`1`.T, W.`65535`.T]
+  type PortNumber = Int Refined Interval.Closed[1, 65535]
   object PortNumber extends RefinedTypeOps[PortNumber, Int] with CatsRefinedTypeOpsSyntax
 
 }

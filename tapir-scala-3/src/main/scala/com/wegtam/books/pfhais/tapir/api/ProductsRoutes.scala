@@ -74,20 +74,20 @@ object ProductsRoutes {
       id = java.util.UUID.randomUUID,
       names = NonEmptySet.one(
           Translation(
-            lang = "de",
-            name = "Das ist ein Name."
+            lang = LanguageCode.unsafeFrom("de"),
+            name = ProductName.unsafeFrom("Das ist ein Name.")
           )
         ) ++
         NonEmptySet.one(
           Translation(
-            lang = "en",
-            name = "That's a name."
+            lang = LanguageCode.unsafeFrom("en"),
+            name = ProductName.unsafeFrom("That's a name.")
           )
         ) ++
         NonEmptySet.one(
           Translation(
-            lang = "es",
-            name = "Ese es un nombre."
+            lang = LanguageCode.unsafeFrom("es"),
+            name = ProductName.unsafeFrom("Ese es un nombre.")
           )
         )
     ),
@@ -95,14 +95,14 @@ object ProductsRoutes {
       id = java.util.UUID.randomUUID,
       names = NonEmptySet.one(
           Translation(
-            lang = "de",
-            name = "Das sind nicht die Droiden, nach denen sie suchen!"
+            lang = LanguageCode.unsafeFrom("de"),
+            name = ProductName.unsafeFrom("Das sind nicht die Droiden, nach denen sie suchen!")
           )
         ) ++
         NonEmptySet.one(
           Translation(
-            lang = "en",
-            name = "These are not the droids you're looking for!"
+            lang = LanguageCode.unsafeFrom("en"),
+            name = ProductName.unsafeFrom("These are not the droids you're looking for!")
           )
         )
     )

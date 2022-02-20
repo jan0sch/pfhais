@@ -781,6 +781,40 @@ implicit def refTypeConfigConvert[F[_, _], T, P](
 
 So we copied it and simply omitted the type tag stuff which is based on reflection. This way we loose some information for our error message but we gain a hopefully Scala 3 compatible refined type reader for pureconfig. Many thanks again at this point to Frank S. Thomas the creator of the wonderful refined library and all the contributors!
 
+Good, let's switch to Scala 3 (`++3.1.1` in the sbt shell) and try a clean compile which will give us a lot of errors still. However first things first. We notice some refined related ones in the top and fix them. The notation changed and we finally can use literal types so there is no longer a need for this weird `W.andsoon.T` constructs.
+
+After fixing them we get 266 errors. Oh why cruel fate? But looking at them we can see that a lot of them come from our `LanguageCodes` class. As we remember that due to macro issues several things are not there yet in libraries under Scala 3 we are again faced with the decision to abandon refined types or find yet another workaround. To keep this chapter from growing exponentially I'll pick the lazy (and dirty) workaround for this time. A simple nudge in your favourite editor should convert the code in the file to something like this:
+
+{caption: "Workaround for missing refined macros"}
+```scala
+val all: Seq[LanguageCode] = Seq(
+  LanguageCode.unsafeFrom("ad"),
+  LanguageCode.unsafeFrom("ae"),
+  LanguageCode.unsafeFrom("af"),
+  //...
+)
+```
+
+This is not the nicest solution but it leaves us with only 17 errors to fix and they look like they have the same cause. So after fixing the same thing in our routing examples we are down to one error:
+
+```text
+[error] -- [E008] Not Found Error: /usr/home/jens/Dokumente/Buecher/pfhais/tapir-scala-3/src/main/scala/com/wegtam/books/pfhais/tapir/Tapir.scala:47:31
+[error] 47 |      (apiConfig, dbConfig) <- IO {
+[error]    |                               ^
+[error]    |value withFilter is not a member of cats.effect.IO[(com.wegtam.books.pfhais.tapir.config.ApiConfig,
+[error]    |  com.wegtam.books.pfhais.tapir.config.DatabaseConfig
+[error]    |)]
+[error] 48 |        val cfg = ConfigFactory.load(getClass().getClassLoader())
+[error] 49 |        // TODO Think about alternatives to `Throw`.
+[error] 50 |        (
+[error] 51 |          ConfigSource.fromConfig(cfg).at("api").loadOrThrow[ApiConfig],
+[error] 52 |          ConfigSource.fromConfig(cfg).at("database").loadOrThrow[DatabaseConfig]
+[error] 53 |        )
+[error] 54 |      }
+[error] one error found
+[error] one error found
+```
+
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
 [^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
