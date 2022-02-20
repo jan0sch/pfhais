@@ -718,11 +718,38 @@ implicit val configReader: ConfigReader[DatabaseConfig] =
     (DatabaseConfig(_, _, _, _))
 ```
 
-The code compiles again (on 2.13!) and the tests are looking good.
+The code compiles again (on 2.13!) and the tests are looking good. On Scala 3 we run again into the problem that the refined pureconfig module is not available. So we could either drop our beloved refined types or we write manual readers for them. In Scala 3 we could use the opaque type aliases[^4] to get more type safety but they are much less powerful than refined types. Well, we'll see how it goes, so at first we define companion objects for our refined types to gain some more functionality i.e. the `from` method to convert arbitrary types into refined ones.
+
+{caption: "A companion object for a refined type providing more functionality"}
+```scala
+type DatabaseLogin = String Refined NonEmpty
+object DatabaseLogin extends RefinedTypeOps[DatabaseLogin, String]
+  with CatsRefinedTypeOpsSyntax
+```
+
+As you can see this is pretty simple, we don't even need to implement something ourselves. Getting the instances for `ConfigReader` looks pretty simple too.
+
+{caption: "ConfigReader instances for refined types - Take 1"}
+```scala
+implicit val loginReader: ConfigReader[DatabaseLogin] =
+  ConfigReader.fromStringOpt(s => DatabaseLogin.from(s).toOption)
+implicit val passReader: ConfigReader[DatabasePassword] =
+  ConfigReader.fromStringOpt(s => DatabasePassword.from(s).toOption)
+implicit val urlReader: ConfigReader[DatabaseUrl] =
+  ConfigReader.fromStringOpt(s => DatabaseUrl.from(s).toOption)
+```
+
+But wait we get the dreaded "ambiguous implicit values" compiler error now. Since our types are all refined from `String` under the hood, the compiler throws an error at us.
+
+Q> Can we solve it in a more general way?
+
+
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
 [^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
 
 [^43]: https://github.com/pureconfig/pureconfig/issues/970
+
+[^44]: https://docs.scala-lang.org/scala3/reference/other-new-features/opaques.html
 

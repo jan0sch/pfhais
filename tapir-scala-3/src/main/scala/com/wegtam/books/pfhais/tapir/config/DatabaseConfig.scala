@@ -17,8 +17,8 @@ import com.wegtam.books.pfhais.tapir.{
   DatabaseUrl,
   NonEmptyString
 }
+import eu.timepit.refined.api._
 import eu.timepit.refined.auto._
-import eu.timepit.refined.pureconfig._
 import pureconfig._
 
 /**
@@ -37,6 +37,13 @@ final case class DatabaseConfig(
 )
 
 object DatabaseConfig {
+
+  implicit val loginReader: ConfigReader[DatabaseLogin] =
+    ConfigReader.fromStringOpt(s => DatabaseLogin.from(s).toOption)
+  implicit val passReader: ConfigReader[DatabasePassword] =
+    ConfigReader.fromStringOpt(s => DatabasePassword.from(s).toOption)
+  implicit val urlReader: ConfigReader[DatabaseUrl] =
+    ConfigReader.fromStringOpt(s => DatabaseUrl.from(s).toOption)
 
   implicit val configReader: ConfigReader[DatabaseConfig] =
     ConfigReader.forProduct4("driver", "url", "user", "pass")(DatabaseConfig(_, _, _, _))
