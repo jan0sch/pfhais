@@ -221,5 +221,5 @@ lazy val commonSettings =
 
 lazy val scalafmtSettings =
   Seq(
-    scalafmtOnCompile := true,
+    scalafmtOnCompile := false,
   )
