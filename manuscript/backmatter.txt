@@ -342,8 +342,6 @@ For our example here however we do it for demonstrating the upgrade process. In 
 
 Q> But where to start?
 
-"Oh what tangled web we weave when our deps are transitive!" -- with apologies to Sir Walter Scott
-
 So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving. After increasing the version number for Monocle and changing also the artefact group and removing the laws package we are greeted by a number of deprecation warnings and one errors upon compilation. This doesn't look too bad so maybe we are lucky after all, are we?
 
 For the deprecations there is an open issue for providing Scalafix rules for automatic code rewrite but it is not yet done[^41] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
@@ -605,6 +603,80 @@ implicit val eqApiConfig: Eq[ApiConfig] = Eq.instance { (a, b) =>
 ```
 
 This fixes it and we can turn to the two remaining one. We soon find that the error message returned by tapir (which we check in the tests) has changed and is now more detailed so we simply adjust the according line in both tests and we are done here.
+
+Nice, we have a compiling project again and if ignore our stubbed out Monocle function for now the `migrate-libs` task output some good looking results. So we execute the `migrate-scalacOptions` task next and take a look at the results. It uses the same notifications like the `migrate-libs` task to highlight problems. So far we have a couple of flags that the plugin could not recognize, quite a lot which are not valid any longer and some which we can use or have to rename.
+
+First we change our `compilerSettings` function and add a case for Scala 3.
+
+{caption: "Compiler settings for Scala 3 in build.sbt"}
+```scala
+//...
+case Some((3, _)) =>
+  Seq(
+    "-deprecation",
+    "-explain-types",
+    "-feature",
+    "-language:higherKinds",
+    "-unchecked",
+    //"-Xfatal-warnings", // Disable for migration
+    "-Ycheck-init",
+    "-Ykind-projector"
+  )
+//...
+```
+
+Also we add a `libraryDependencies` setting into our `commonSettings` block to only activate plugins for Scala 2.
+
+{caption: "Load compiler plugins only for Scala 2 in build.sbt"}
+```scala
+//...
+libraryDependencies ++= (
+  if (scalaVersion.value.startsWith("2")) {
+    Seq(
+      compilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
+      compilerPlugin("org.typelevel" % "kind-projector"      % "0.13.2" cross CrossVersion.full)
+    )
+  } else {
+    Seq()
+  }
+),
+//...
+```
+
+Next is settings some flags for dependencies of which we want the 2.13 version.
+
+{caption: "Using the 2.13 version for some dependencies in build.sbt"}
+```scala
+library.pureConfig.cross(CrossVersion.for3Use2_13),
+library.refinedCats.cross(CrossVersion.for3Use2_13),
+library.refinedCore.cross(CrossVersion.for3Use2_13),
+library.refinedPureConfig.cross(CrossVersion.for3Use2_13),
+```
+
+Last but not least the big topic "new syntax" is lurking around the corner. But we will first add two more compiler flags which should make our 2.13 code compile in Scala 3 and add Scala 3 to the `crossScalaVersions` setting.
+
+{caption: "Two migration compiler flags and the 3 version in build.sbt"}
+```scala
+//...
+case Some((3, _)) =>
+  Seq(
+    "-deprecation",
+    "-explain-types",
+    "-feature",
+    "-language:higherKinds",
+    "-unchecked",
+    //"-Xfatal-warnings", // Disable for migration
+    "-Ycheck-init",
+    "-Ykind-projector",
+    // Gives warnings instead of errors on most syntax changes.
+    "-source:3.0-migration",
+    // Resolve warnings via the compiler of possible.
+    "-rewrite",
+  )
+//..
+crossScalaVersions := Seq(scalaVersion.value, "3.1.1"),
+//...
+```
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
