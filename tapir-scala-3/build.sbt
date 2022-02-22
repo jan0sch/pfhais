@@ -138,44 +138,6 @@ val licenseText = s"""CC0 1.0 Universal (CC0 1.0) - Public Domain Dedication
 
 def compilerSettings(sv: String) =
   CrossVersion.partialVersion(sv) match {
-    case Some((2, 13)) =>
-      Seq(
-        "-deprecation",
-        "-explaintypes",
-        "-feature",
-        "-language:higherKinds",
-        "-unchecked",
-        "-Xcheckinit",
-        //"-Xfatal-warnings", // Disable for migration
-        "-Xlint:adapted-args",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        //"-Xlint:nullary-override", // Flag was removed
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Ymacro-annotations",
-        "-Ywarn-dead-code",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-numeric-widen",
-        //"-Ywarn-unused:implicits",
-        "-Ywarn-unused:imports",
-        //"-Ywarn-unused:locals",
-        //"-Ywarn-unused:params",
-        "-Ywarn-unused:patvars",
-        "-Ywarn-unused:privates",
-        "-Ywarn-value-discard",
-        "-Ycache-plugin-class-loader:last-modified",
-        "-Ycache-macro-class-loader:last-modified",
-      )
     case Some((3, _)) =>
       Seq(
         "-deprecation",
@@ -193,22 +155,12 @@ def compilerSettings(sv: String) =
 
 lazy val commonSettings =
   Seq(
-    scalaVersion := "2.13.8",
-    crossScalaVersions := Seq(scalaVersion.value, "3.1.1"),
+    scalaVersion := "3.1.1",
+    crossScalaVersions := Seq(scalaVersion.value),
     organization := "com.wegtam",
     organizationName := "Jens Grassel",
     startYear := Some(2019),
     headerLicense := Some(HeaderLicense.Custom(licenseText)),
-    libraryDependencies ++= (
-      if (scalaVersion.value.startsWith("2")) {
-        Seq(
-          compilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
-          compilerPlugin("org.typelevel" % "kind-projector"      % "0.13.2" cross CrossVersion.full)
-        )
-      } else {
-        Seq()
-      }
-    ),
     scalacOptions ++= compilerSettings(scalaVersion.value),
     Compile / console / scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused-import"),
     Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),

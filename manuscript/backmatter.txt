@@ -846,7 +846,17 @@ This is awesome but according to the official migration guide we should also try
 
 Looking at the source we can see that only some annotations have been added. And finally we run `migrate tapir` and it bails out with an error. I'll spare you the gory details but I did not have any clue about what was going wrong. But we know that everything is fine under Scala 3 anyway. So what about simply ignoring the tools lamentations and move on with our lives? Sounds good? Yeah, to me too. :-)
 
-Before calling it a day we should switch back to 2.13 and do a clean compile to see some unused imports warnings be printed out. These are easy to fix and cleaner code is easier to maintain.
+Before calling it a day we should switch back to 2.13 and do a clean compile to see some unused imports warnings be printed out. These are easy to fix and cleaner code is easier to maintain. Finally we adjust our `build.sbt` to make the switch permanent.
+
+{caption: "Switch to Scala 3 by default"}
+```scala
+  //...
+  scalaVersion := "3.1.1",
+  crossScalaVersions := Seq(scalaVersion.value),
+  //...
+```
+
+We can also remove some code related to Scala 2 (plugins and compiler settings).
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
