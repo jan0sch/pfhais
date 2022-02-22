@@ -3966,6 +3966,875 @@ I> While I'm writing these lines the awesome tapir project has merged a pull-req
 
 However don't forget about optics because their usage goes far beyond what we have done here.
 
+## Moving to Scala 3...
+
+When I wrote this book version 2.12 was the thing and 2.13 was not yet released. While I did enable cross-building for 2.13 after it was released the next big version was still far away. But then it happened and Scala 3 was released. However it took some time until libraries and frameworks moved to support it. As I am writing this some still have not added support for it because in some areas this involves a significant amount of work.
+
+However, I always wanted to do an update to Scala 3 and while I might still find time to write a complete book about that, I chose not to wait longer although some libraries I would like to use are still not ported. Therefore the topic of this chapter will be to update our small service (the tapir version) to Scala 3 while dropping some not yet ported libraries.
+
+But instead of jumping right into the middle of it we might be better of to look at our options and plan our migration accordingly.
+
+The first step should be to switch to Scala 2.13 as major version and update all dependencies to their latest versions. This alone will be quite some work but it will ease the migration to Scala 3 for which we will try to use some tools which are available.
+
+Since version 1.5 the sbt build tool supports Scala 3 directly so there is no more need to add the sbt-dotty plugin to your build. Additionally it supports a new syntax for dependencies which will allow us to use 2.13 libraries in 3 and vice versa.
+
+{caption: "Using Scala 2.13 libraries in Scala 3 projects"}
+```text
+libraryDependency +=
+  ("my.domain" %% "my-lib" % "x.y.z").cross(CrossVersion.for3Use2_13)
+```
+
+The example above instructs sbt to use a Scala 2.13 library for Scala 3. If you want to do the opposite then you have to use `CrossVersion.for2_13Use3` instead which will make sbt use a Scala 3 library for Scala 2.13.
+
+Furthermore there is the Scala-3-Migrate plugin for sbt which supports on a variety of topics when migration a project to Scala 3.
+
+So the second step would be to use the Scala-3-Migrate plugin to guide our migration to Scala 3. During this phase we will see what can be kept, what can be used with some restrictions and what has to be dropped.
+
+### Step 1: Updating to 2.13.x
+
+The currently recommended version to start a migration from is 2.13.7 so we will target this Scala version for updating our project. In the source code you can see that I simply copied the `tapir` folder of our project and named it `tapir-scala-3` to not mess with our existing code.
+
+First steps include updating sbt to a recent version as well as updating the sbt-plugins that we are using to their latest versions. Also some changes are made in regard to the compiler plugins. The kind-projector plugin needs a different way to be specififed (see `cross CrossVersion.full` in `build.sbt`) and the monadic-for plugin stays for now but will have to be removed when we're on Scala 3. And while at it the migration plugin to support us is added as well:
+
+{caption: "Add the scala3-migrate plugin to sbt"}
+```
+addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.5.0")
+```
+
+Now we switch the default version for Scala to `2.13.7` and try to compile the project. We run into some missing dependencies errors which will force our hand into upgrading several dependencies. In addition we stumble upon the matter that the compiler flag `-Xlint:nullary-override` has been dropped so we remove it or comment it out.
+
+I> As much as I like it to turn any warning into an error, for a migration like this I recommend to fix only the deprecation issues and then turn of the `Xfatal-warnings` flag.
+
+Furthermore to reduce the clutter in our build file we remove support for Scala 2.12 and the related compiler options. In the case that you have to support older versions of Scala (cross compilation) things get more complicated. In our case we can move completely to Scala 3. :-)
+
+#### Details and some compiling issues
+
+So what was done until now?
+
+1. include kind-projector plugin via CrossVersion.full
+2. switch to Scala 2.13.7 aus default version
+3. remove Scala 2.12 and related settings
+4. update doobie to 0.8.8
+5. update http4s to 0.21.31
+6. update tapir to 0.11.11
+7. update circe to 0.14.1
+8. remove dropped compiler flags (for 2.13!)
+9. disable `Xfatal-warnings`
+
+So far compiling our main code resulted in nagging us to fix several issues with auto-application of missing brackets for function calls, the main culprit being `unsafeRunSync` here which has to be `unsafeRunSync()`. Also some unused variable issues were popping up and are fixed easily too.
+
+Now onwards to compiling the tests and we have some more issues. So far the integration tests compile fine but the unit tests spill out an error:
+
+{caption: "Compiler errors in the tests"}
+```text
+[error] .../TestRepository.scala:26:51: trait Seq takes type parameters
+[error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
+[error]                                                   ^
+[error] .../TestRepository.scala:26:50: missing argument list for method to 
+          in trait IterableOnceOps
+[error] Unapplied methods are only converted to functions when a function type
+          is expected.
+[error] You can make this conversion explicit by writing `to _` or `to(_)`
+          instead of `to`.
+[error]         val ns = p.names.toNonEmptyList.toList.to[Seq]
+[error]                                                  ^
+[error] .../TestRepository.scala:32:49: trait Seq takes type parameters
+[error]       val ns = p.names.toNonEmptyList.toList.to[Seq]
+[error]                                                 ^
+[error] .../TestRepository.scala:32:48: missing argument list for method to
+          in trait IterableOnceOps
+[error] Unapplied methods are only converted to functions when a function type
+          is expected.
+[error] You can make this conversion explicit by writing `to _` or `to(_)`
+          instead of `to`.
+[error]       val ns = p.names.toNonEmptyList.toList.to[Seq]
+[error]                                                ^
+[error] four errors found
+```
+
+This looks big at first but let us stay calm an read the error messages. So the "trait Seq takes takes type parameters" eh? The second one says something about "unapplied methods" but isn't exactly helpful either.
+
+Q> What can we do?
+
+Well, we fire up a REPL of course and as we are (or should be) in sbt we can simply use the `console` command. The sbt console will only work if we fixed all our compilation errors in the main code.
+
+{caption: "Check for possible function for converting List"}
+```scala
+scala> List(1, 2, 3).to<TAB>
+// This should show a list of possible functions.
+```
+
+So it seems we are missing our plain old (`.to[T]`). While there is a `.to()` function it requires a collection factory. So what about `.toSeq`? We did not use it in the past because it converted into a mutable sequence. But what about now?
+
+{caption: "Test List conversion in the REPL"}
+```scala
+scala> val a: scala.collection.immutable.Seq[Int] = List(1, 2, 3).toSeq
+val a: Seq[Int] = List(1, 2, 3)
+scala> a.getClass
+val res0: Class[_ <: Seq[Int]] = class scala.collection.immutable.$colon$colon
+
+scala> a.getClass.getCanonicalName
+val res1: String = scala.collection.immutable.$colon$colon
+
+scala> a.getClass.getName
+val res2: String = scala.collection.immutable.$colon$colon
+```
+
+Well, well this looks pretty good I'd say so let's adjust the code. And quickly we get a big type error but the gist of it is:
+
+{caption: "Compiler error about invariant types"}
+```text
+[error] Note: List[...] <: Seq[...], but type F is invariant in type _.
+[error] You may wish to define _$$1 as +_$$1 instead. (SLS 4.5)
+[error]         ns.map(n => (p.id, n.lang, n.name)).pure[F]
+[error]                                                 ^
+[error] one error found
+```
+
+Good news first: The original error is gone and we can even simplify the code around the second error source by removing the `toSeq` completely. But the remaining one is heavier. So let's take a step back and take a deep breathe. If we take a look at our function signature we can see that it requires a `Seq` but what if we simply change it to `List`?
+
+So let us try it and see how far we get. First we have to change the type signature of the function `loadProduct` in `Repository` to have a `List` instead of a `Seq` in its return type. Afterwards the compiler will tell us exactly in which places we have to make changes. Furthermore we can also remove some imports (`scala.collection.immutable.Seq`) which are no longer needed.
+
+Okay, onwards to... Did you run the tests? ;-)
+
+While executing the tests we discover that some unit tests are failing and the integration tests look good. Additionally I get a warning that the Flyway library should be updated. But we save this for later. Let us take a look at our failing tests first. We can see that they error out because of an exception:
+
+{caption: "The dreaded NoSuchMethodError after a dependency upgrade"}
+```text
+java.lang.NoSuchMethodError: 'cats.data.Kleisli
+  org.http4s.HttpRoutes$.apply(scala.Function1, cats.effect.Sync)'
+```
+
+This does not look good and it seems to be not caught by the compiler. We should start our service to see if it happens there too. So after a `sbt run` we can see that it affects our main code also.
+
+Nice we just broke our service. Welcome to the world of software development! :-)
+
+Q> So what could be the root cause here?
+
+Most likely we are in trouble due to updating dependencies and running into some binary incompatibility issues. The error message indicates that it might either be cats or http4s related. To get some more insights we should issue the `sbt evicted` command and take a look at the output. We find some messages about replaced versions.
+
+{caption: "Output snippets from the sbt evicted command"}
+```text
+* org.http4s:http4s-dsl_2.13:0.21.31 is selected over 0.21.0-M5
+...
+* org.typelevel:cats-effect_2.13:2.5.1 is selected over {2.0.0, ...}
+...
+* org.typelevel:cats-core_2.13:2.6.1 is selected over {2.0.0, ...}
+...
+* org.http4s:http4s-blaze-server_2.13:0.21.31 is selected over 0.21.0-M5
+...
+```
+
+Now we need to perform some investigations regarding the libraries which means digging into changelog entries, release notes and bug reports which might support our idea of something was broken. The cats part of the equation looks fine but there were some changes in the http4s library which might be the cause for our problem here. As the older version (`0.21.0-M5`) is a pre-release this is something that is totally valid and should always be on our radar. The older version is a dependency of tapir so that means we have to upgrade tapir as well which means "More breaking changes, yeah!" ;-)
+
+I> The more you run into problems when updating your applications the more you come to understand the restraint to updates. But if your application is still actively maintained then updates are a part of life and regular updates save you the pain of doing a major one every couple of years.
+
+But before we tackle this problem we might as well quickly update the Flyway library to get rid of the warning in our tests. Brave as we are we jump to the most recent release and also update the driver for PostgreSQL as well. But what is this?
+
+{caption: "Type error after Flyway upgrade"}
+```text
+[error] .../FlywayDatabaseMigrator.scala:35:21: type mismatch;
+[error]  found   : org.flywaydb.core.api.output.MigrateResult
+[error]  required: Int
+[error]       flyway.migrate()
+[error]                     ^
+[info] org.flywaydb.core.api.output.MigrateResult <: Int?
+[info] false
+[error] one error found
+```
+
+You didn't expect this to be easy, did you? ;-) But this doesn't look like a big issue. The return type of the migrate function was changed upstream and the only decision we have to make is if we want to change our function return type accordingly and simply pass the information onwards or do we change the function a bit and still only return the number of applied migrations. I pick the lazy route this time and simply append `.migrationsExecuted` to the call to `.migrate()` and we're done with it.
+
+Now onwards to our tapir update. Before we simply upgrade to the latest version we should give it some more thought. Tapir is still in a heavy development phase and might depend on pre-release versions of other libraries again. So we better look some things up. The file `project/Versions.scala` within the tapir source repository gives us our needed insights. If we do not want to upgrade http4s even higher then it seems we will have to pick a tapir 0.17.x release. Such a jump will likely include lots of breaking changes so another option would be to pick the lowest possible tapir release with a compatible http4s dependency.
+
+Q> So what are our options?
+
+We can either upgrade to the highest tapir version with a still compatible http4s dependency. Or we try to do the "minimum viable upgrade" and pick the lowest possible tapir version with a compatible http4s dependency to reduce our changes to a minimum. Last but not least we have the option to upgrade to the latest tapir version and upgrade all other dependencies as well.
+
+The last option might be tempting but it will force us to upgrade not only http4s but other dependencies as well and we will likely head straight into "upgrade dependency hell" and may not even succeed.
+
+Of our other options we can pick either the version 0.17.20 or something from the 0.12.x line of the tapir releases. Please not that the artefact organization name for tapir has changed! If you simply change the version number you will get unresolved dependency errors.
+
+Upgrading software is not for the faint hearted so let's be brave and try to update to 0.17.20. The line between bravery and stupidity is a bit hazy but we'll see how we do. :-)
+
+The first thing we stumble upon is of course a ton of errors because the namespace for tapir changed. Because changing it is simple but tedious it screams for automation and therefore we'll use a shell script.
+
+{caption: "Shell script to fix import namespace errors"}
+```sh
+% for i in `find tapir-scala-3 -name "*.scala"`; do
+%   sed -i '' -e s/'import tapir'/'import sttp.tapir'/g $i
+% done
+```
+
+This script is specific to the `sed` version used in the BSD operating systems! It is a simple loop being fed from a `find` command and uses `sed` to perform a search and replace operation directly in the file. The `-i ''` parameter ensures that no backup is saved (We are within in version control anyway.).
+
+Okay after fixing that and the change of `StatusCode` and `StatusCodes` from tapir to sttp we still get a log of errors which look quite intimidating. Deciding that bravery is all good and so we turn to plan B switching the tapir version to 0.12.28. ;-)
+
+We still get a bunch of errors now but they are less in number and seem mostly related to schema creation and derivation. Also not the most easy topic but as we get the same errors on 0.17.x plus a load more we might as well try to fix them. The first guess is that some code has been moved and indeed it seems that our `Schema.SWhatever` types are now under `SchemaType.SWhatever` so this should be fixed easily. Additionally we need to do small adjustments regarding changed signatures and use `Schema(SchemaType.SWhatever)` instead of `Schema.SWhatever` in some places.
+
+{caption: "Total error count so far"}
+```text
+...
+[warn] two warnings found
+[error] 6 errors found
+```
+
+Nice! We are down to a single digit number of errors. It looks like I didn't fix the `StatusCodes` issue correctly so after some changes we are down to one error:
+
+{caption: "Last remaining compiler error after the tapir upgrade"}
+```text
+[error] .../ProductsRoutes.scala:117:54: not found: value tapir
+[error] streamBody[Stream[F, Byte]](schemaFor[Byte], tapir.MediaType.Json())
+[error]                                              ^
+[error] one error found
+```
+
+After digging a bit through the tapir code we can see that we simply have to pass a `CodecFormat.Json()` here now. Hooray, it compiles! But before we become too confident, let us run some tests.
+
+{caption: "All our tests passed"}
+```text
+[info] All tests passed.
+```
+
+This is good news and furthermore starting our service via `sbt run` looks good also. :-)
+
+Now we could move on to the next step or we might try updating some more dependencies. For starters we remove the wartremover plugin because it isn't available for Scala 3 anyway. Besides the plugin we must remove the settings in the `build.sbt` and the annotations within the code (see the `@SuppressWarnings` annotations). As a bonus we get rid of some warnings about `Any` type inference which are false positives anyway. Next is the move to the Ember server for http4s from the Blaze one because Ember is the new default and recommended one. For this the our main entry point in `Tapir.scala` has to be adjusted a bit.
+
+First we change from `IOApp` to `IOApp.WithContext` and implement the `executionContextResource` function. In addition we adjust our blocking thread pool to use 2 threads or half of the available processors.
+
+{caption: "Adjustments in the main entry point"}
+```scala
+object Tapir extends IOApp.WithContext {
+  val availableProcessors: Int =
+    Runtime.getRuntime().availableProcessors() / 2
+  val blockingCores: Int =
+    if (availableProcessors < 2) 2 else availableProcessors
+  val blockingPool: ExecutorService =
+    Executors.newFixedThreadPool(blockingCores)
+  val ec: ExecutionContext =
+    ExecutionContext.global
+
+  override protected def executionContextResource: 
+    Resource[SyncIO, ExecutionContext] = Resource.eval(SyncIO(ec))
+
+  def run(args: List[String]): IO[ExitCode] = {
+    val blocker = Blocker.liftExecutorService(blockingPool)
+    val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
+    // ...
+      resource = EmberServerBuilder
+        .default[IO]
+        .withBlocker(blocker)
+        .withHost(apiConfig.host)
+        .withPort(apiConfig.port)
+        .withHttpApp(httpApp)
+        .build
+      fiber = resource.use(_ => IO(StdIn.readLine())).as(ExitCode.Success)
+    // ...
+```
+
+W> Please beware that the `availableProcessors` function might report wrong values if the JVM is running within a docker container!
+
+The update of the refined library requires us to update pureconfig as well in one step but it just works after increasing the version numbers. The same can be said about logback, cats and kittens. For the latter we make some small adjustment to get rid of a deprecation warning.
+
+Some more changes are required for updating ScalaTest and ScalaCheck but they boil down to changing some imports and names (i.e. `Matchers` instead of `MustMatchers`) and the inclusion of the ScalaTestPlus library which acts as a bridge to ScalaCheck now.
+
+I> Note that we run tests and integration tests after each dependency update to be sure!
+
+The things left to update look like they might be a bit more involving:
+
+1. Doobie (database layer)
+2. http4s (might not be that difficult as we switched to Ember already)
+3. Monocle (version 3.x brings huge improvements but will require many changes)
+4. tapir (contains breaking changes and might introduce more dependency trouble)
+
+As mentioned before we shouldn't simply dive in but check what is really needed. To gather the necessary information we move on to the next step.
+
+### Step 2: Migrating to Scala 3
+
+We have prepared our battle ground and already included the sbt plugin so we can just issue the `migrate-libs tapir` command to get some output. This is quite a lot so let's concentrate on the important parts. First there is some explanation on the top:
+
+{caption: "Possible status flags for dependencies for Scala 3 migration"}
+```text
+[info] X             : Cannot be updated to scala 3
+[info] Valid         : Already a valid version for Scala 3
+[info] To be updated : Need to be updated to the following version
+```
+
+We should not see the `X` mark (usually red in the terminal) but here we are and I count two of them. So what do we have?
+
+1. The better-monadic-for plugin.
+2. The pureconfig library.
+
+The first one is no problem because we can simply drop it and the underlying problem is supposed to be solved in Scala 3. But what about pureconfig? Well let's worry later and process the output further. We have quite some `Valid` marks which is great! Several others have other notes on them so onward to take a closer look.
+
+The following dependencies are supposed to work with `CrossVersion.for3Use2_13`:
+
+1. Monocle
+2. Refined
+
+Last but not least some dependencies need to be updated further to support Scala 3:
+
+1. Doobie
+2. http4s
+3. kittens
+4. tapir
+
+So it looks like we won't get away without doing major upgrades anyway. While at it we might as well add Monocle to our upgrade list because it looks like it will be quite some work either way.
+
+The attentive reader will have noted that the recommended dependency updates have pre-release version numbers and she'll ask if we really should upgrade them or wait until proper releases have been published. And yes, she is right: Though shall not use pre-release software in production!
+
+For our example here however we do it for demonstrating the upgrade process. In production I would advise you to wait or maybe upgrade and test in a separate environment.
+
+Q> But where to start?
+
+So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving. After increasing the version number for Monocle and changing also the artefact group and removing the laws package we are greeted by a number of deprecation warnings and one errors upon compilation. This doesn't look too bad so maybe we are lucky after all, are we?
+
+For the deprecations there is an open issue for providing Scalafix rules for automatic code rewrite but it is not yet done[^41] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
+
+{caption: "Compiler error related to Monocle"}
+```text
+[error] .../Tapir.scala:117:11: object creation impossible.
+        Missing implementation for:
+[error]   def modifyA[F[_]](f: V => F[V])
+            (s: scala.collection.immutable.ListMap[K,V])
+            (implicit evidence$1: cats.Applicative[F]):
+            F[scala.collection.immutable.ListMap[K,V]]
+            // inherited from trait PTraversal
+[error]       new Traversal[ListMap[K, V], V] {
+[error]           ^
+```
+
+This might look intimidating but actually it is just complaining about a missing implementation so we will have to adjust or rewrite the one we are providing. But wait! Didn't we provide patches to Monocle for the missing instances for `ListMap`? Yes we did! So how about removing our custom instances?
+
+{caption: "Monocle error is gone and only warnings remain"}
+```text
+[warn] 62 warnings found
+[success] ...
+```
+
+Nice! Always remember: It pays off to provide your custom extensions and patches upstream!
+
+However now we get a lot of errors if we try to compile our tests. So we need to investigate. But before we do that let's fix all these deprecation warnings to get our code clean. Some things are pretty trivial but if we remove the `possible` command which has no replacement then our code does not compile any longer. We could just ignore it because it is a warning but it is a deprecation one therefore it definitely *will* come back later to bite us. However we ignore it for now and look at our weird compile error in the tests.
+
+{caption: "Weird error after upgrading another dependency"}
+```text
+[error] ... object scalatestplus is not a member of package org
+```
+
+This is strange not only because Monocle has no apparent connection to our testing libraries. But doing our research we find an issue in the bugtracker of scalatestplus[^42] and applying the workaround from there (manually including a dependency to discipline-scalatest) solves our issue. Hooray! But to be honest: I have no idea what is going on behind the scenes here. Likely some dependency issues which cannot be resolved and are silently dropped or so. While we're at it we simply upgrade our Scala version to 2.13.8.
+
+Ignoring the remaining deprecation warnings our tests are running fine and we take another look at the output of `migrate-libs tapir` within sbt. It seems we have to at least upgrade to tapir 0.18.x. The current stable version being 0.19.x we can see that it depends on http4s 0.23.x which in turn depends on cats-effect 3. Being a major rewrite version 3 of cats-effect will clash with our doobie version. So we will have to switch to the current pre-release version of it. But at least it is close to being released. :-)
+
+Because the dependencies are so much weaved together we have no choice but to update them all in one step. We won't have compiling code either way and will likely get misleading error messages if we do them step by step. So let's increase some version numbers, take a deep breath and parse some compiler errors. To summarise: We update doobie to 1.0.0-RC2, http4s to 0.23.10 and tapir to 0.19.4. Additionally we have to adjust the tapir swagger ui package because some packaging changed.
+
+{caption: "Total error count in the main code after major upgrades"}
+```text
+[warn] 5 warnings found
+[error] 33 errors found
+[error] (Compile / compileIncremental) Compilation failed
+```
+
+Okay, that doesn't look too bad. Remember, we fixed similar numbers already. But where to start?
+
+One of the libraries in the background that all others are using is cats-effect so maybe we should start with that one. Reading the migration guide we realise that there is a Scalafix migration which we could use for automatic conversion of our code. But it says: "Remember to run it *before* making any changes to your dependencies' versions." ;-)
+
+So then let us rollback our versions and take a stab at the migration to cats effect 3 via Scalafix. The guide to manually applying the migration is straightforward however the results are a bit underwhelming as nearly nothing is changed. But the migration guide has lots of additional information about changed type hierarchies and so on so we are not left in the dark. Therefore we re-apply our version upgrades again and go on fixing the compilation errors. For convenience we start at our main entry point which is in `Tapir.scala`.
+
+Concentrating on cats-effect first we need to adjust our `IOApp.WithContext` into a simply `IOApp` (Basically reverting our changes from some pages back.) and can remove some code which is not needed any longer. Afterwards we have fixed some errors and the ones that still show up seem to be related to tapir and http4s. On the http4s side it seems that we now need a proper `Host` class instead of our non-empty string. So one option would be do to something like this:
+
+{caption: "Possible solution for the configuration type problem"}
+```scala
+host <- IO(
+  com.comcast.ip4s.Host
+    .fromString(apiConfig.host)
+    .getOrElse(throw new RuntimeException("Invalid hostname!"))
+)
+```
+
+It will work but why do we have introduced properly typed configuration then? On the other hand we might have to drop pureconfig because the migrate plugin told us that there is no version of it for Scala 3 yet. However looking at the repository and bugtracker [^43]we can see that basic Scala 3 support is supposed to be there. So let's try to do it the proper way first!
+
+While we're at it we realise that we also need a `Port` type also instead of custom `PortNumber` and of course pureconfig needs to be provided with type classes which can read these types.
+
+{caption: "A cleaner solution for the configuration type problem"}
+```scala
+import com.comcast.ip4s.{ Host, Port }
+import pureconfig._
+import pureconfig.generic.semiauto._
+
+final case class ApiConfig(host: Host, port: Port)
+
+object ApiConfig {
+  implicit val hostReader: ConfigReader[Host] =
+    ConfigReader.fromStringOpt[Host](Host.fromString)
+  implicit val portReader: ConfigReader[Port] =
+    ConfigReader.fromStringOpt[Port](Port.fromString)
+
+  implicit val configReader: ConfigReader[ApiConfig] =
+    deriveReader[ApiConfig]
+}
+```
+
+This is our new `ApiConfig` class (comments removed from the snippet) and it looks like it works because we have even less compiler errors now. :-)
+
+However there is a new one now for the last part of our for comprehension returning the `fiber`:
+
+{caption: "Cats effect related type error in the main entry point"}
+```text
+found   : cats.effect.IO[cats.effect.ExitCode]
+required: cats.effect.ExitCode
+```
+
+This is fixed easily though by just changing the `fiber = ...` to `fiber <- ...` within the for comprehension. After that we take a look at the error we get from tapir. They are related to the swagger UI and API documentation stuff. Referring to the tapir documentation the changes are quite simple, we just change an import and the way we construct our documentation structure.
+
+{caption: "Fix the swagger UI problems in the code"}
+```scala
+import sttp.tapir.swagger.SwaggerUI
+//...
+docs = OpenAPIDocsInterpreter().toOpenAPI(
+  List(
+    ProductRoutes.getProduct,
+    ProductRoutes.updateProduct,
+    ProductsRoutes.getProducts,
+    ProductsRoutes.createProduct
+  ),
+  "Pure Tapir API",
+  "1.0.0"
+)
+updatedDocs = updateDocumentation(docs)
+docsRoutes  = Http4sServerInterpreter[IO]()
+                .toRoutes(SwaggerUI[IO](updatedDocs.toYaml))
+//...
+httpApp     = Router("/" -> routes, "/docs" -> docsRoutes).orNotFound
+```
+
+Another step done, nice! Let's enjoy the moment and move on to the other errors which are in our optics part of the file where we define lenses on the `OpenAPI` structure of tapir which seems to have changed quite a lot. So for starters there is the `ReferenceOr` structure which simply moved to another place so we can just add an import and reference it directly instead of `OpenAPI.ReferenceOr` and some errors are gone. Others are about the internal structure for example we now get a `Paths` type instead of a `ListMap` on some attributes. But before we dive to deep into this one we might as well thing about refactoring our optics part a bit more because we basically kept our old approach and just changed it so far as to compile with the latest Monocle library. But what about actually utilising the shiny new features? ;-)
+
+But let's save this for later because the really nice features are Scala 3 only. So we just stub our function out and make it simply return the parameter it receives to make it compile again.
+
+{caption: "Workaround for the needed Monocle adjustments"}
+```scala
+private def updateDocumentation(docs: OpenAPI): OpenAPI = docs
+```
+
+Some of the errors left are related to tapir schemas so let's try them first because they are few and directly related to our data models. Instead of specifying everything manually we try the semi-automatic derivation this time. We soon realise that we still have to specify some instances but the code we need to make it compile looks cleaner than the one before:
+
+{caption: "Changes to the tapir schema definitions for our models"}
+```scala
+object Translation {
+  //...
+  implicit val schemaForLanguageCode: Schema[LanguageCode] =
+    Schema.string
+  implicit val schemaForProductName: Schema[ProductName] =
+    Schema.string
+  implicit val schemaFor: Schema[Translation] =
+    Schema.derived[Translation]
+}
+object Product {
+  //...
+  implicit val schemaForProductId: Schema[ProductId] = Schema.string
+
+  implicit def schemaForNeS[T](implicit a: Schema[T]):
+    Schema[NonEmptySet[T]] = Schema(SchemaType.SArray(a)(_.toIterable))
+
+  implicit val schemaFor: Schema[Product] = Schema.derived[Product]
+}
+```
+
+So far so good. If we really nailed it we will only know later when it might blow up in our faces or not. ;-)
+
+Further on we need to replace the `Sync` type in our routing classes with `Async` to fix two more errors. The route creation changed so we have to use a `Http4sServerInterpreter[F]().toRoutes(...)` function now to create our routes. It still gives some errors but let's look at our endpoint definitions first. The type signature for endpoints changes from `[I, E, O, S]` to `[A, I, E, O, R]`. Sorry for the abbreviation overkill here. The details can be looked up at the tapir docs but the gist is that we have an additional type ("security input") at the start and instead of the "streaming type" we have a "capabilities type" now at the end. Because we don't use the security input type we can set it to `Unit` or could also use the `PublicEndpoint` type alias which is provided by tapir. In the case of streaming endpoints the output type stays as before (`Stream[F, Byte]`) and the capabilities type at the end becomes `Fs2Streams[F]` or `Any` for all non streaming endpoints.
+
+For our streaming endpoint (`getProducts`) we get an error about the `streamBody` specification so we can adjust that one or replace it with the new `streamTextBody` directive. Both ways should work.
+
+{caption: "Adjust the stream return type for our tapir endpoint"}
+```scala
+streamTextBody(Fs2Streams[F])(CodecFormat.Json(),
+  Option(StandardCharsets.UTF_8))
+```
+
+We are down to a single digit number of compiler errors for our main code. This looks not bad so let's head on. The main issue now seems to stem from the `toRoutes` functionality.
+
+{caption: "Type errors about the toRoutes function from tapir"}
+```text
+[error] overloaded method toRoutes with alternatives:
+[error]   (serverEndpoints: List[sttp.tapir.server.ServerEndpoint[
+            sttp.capabilities.fs2.Fs2Streams[F],F]])
+              org.http4s.HttpRoutes[F] <and>
+[error]   (se: sttp.tapir.server.ServerEndpoint[
+            sttp.capabilities.fs2.Fs2Streams[F],F])
+              org.http4s.HttpRoutes[F]
+[error]  cannot be applied to (sttp.tapir.Endpoint[
+           Unit,ProductId,StatusCode,Product,Any])
+[error]     Http4sServerInterpreter[F]().toRoutes(...) { id =>
+[error]                                  ^
+```
+
+For me this looks like the function will only accept streaming endpoints which doesn't make sense and would have surely been mentioned in the documentation or some release notes of the tapir project. But we take a closer look and we see that it actually expects `ServerEndpoint` instances here, not `Endpoint` ones. Or to quote from the documentation:
+
+*To interpret a single endpoint, or multiple endpoints as a server, the endpoint descriptions must be coupled with functions which implement the server logic. The shape of these functions must match the types of the inputs and outputs of the endpoint.*
+
+So server logic is added to an endpoint via one of the functions starting with `serverLogic` of course. ;-)
+
+For our purpose we will use the default one (simply `serverLogic`). Let's test it out on one route:
+
+{caption: "Fix the toRoutes errors using the serverLogic functionality"}
+```scala
+final class ProductRoutes[F[_]: Async] ... {
+  //...
+  private val getRoute: HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.getProduct
+      .serverLogic { id =>
+        for {
+          rows <- repo.loadProduct(id)
+          resp = Product
+            .fromDatabase(rows)
+            .fold(StatusCode.NotFound.asLeft[Product])(_.asRight[StatusCode])
+        } yield resp
+      })
+
+  private val updateRoute: HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.updateProduct
+      .serverLogic {
+        case (_, p) =>
+          for {
+            cnt <- repo.updateProduct(p)
+            res = cnt match {
+              case 0 => StatusCode.NotFound.asLeft[Unit]
+              case _ => ().asRight[StatusCode]
+            }
+          } yield res
+      })
+  //...
+}
+```
+
+And it compiles fine! So we just need to move our logic into the `serverLogic` function part and we are set. Pretty cool but once we fix it we get another error from our main entry point:
+
+{caption: "A new error from our main entry point"}
+```text
+Tapir.scala:42:26: method executionContextResource overrides nothing
+```
+
+However we can simply remove it and are done. Oh wait! We are skipped two things: first there is still the optics implementation left and second we want to fix this `example` problem in the one endpoint definition. Besides that we also get a lot of compilation errors for our tests. We turn there first an can very quickly fix our integration tests by removing the no longer used `IO.contextShift` from our `DoobieRepositoryTest` and by providing an implicit `IORuntime` within our `BaseSpec` class.
+
+It turns out that for our regular tests we can apply the same fix to the `BaseSpec` there and also remove some obsolete code and adjust our imports because the http4s library has now a type called `ProductId` which clashes with our own one. After changing the `Effect` type in our `TestRepository` to `Async` the only thing left seems to be the ScalaCheck generators for our `ApiConfig` but these are also fixed easily.
+
+So we fixed the compilation errors in our tests, but alas some tests are failing. :-(
+
+At least the integration tests look fine, so let's take a look at the possible reasons for our failing tests. The failing ones are: `ApiConfigTest`, `ProductRoutesTest` and `ProductsRoutesTest`. The first one spills out the following message:
+
+{caption: "Equality issue causing a failing test"}
+```text
+ApiConfig(127.0.0.1,34019) was not equal to ApiConfig(127.0.0.1,34019)
+```
+
+I don't know about you dear reader but I have stumbled into equality issues frequently (not *always* though but regular) so this should be resolvable by changing the `c must be(expected)` line in the test.
+
+{caption: "Fix for the equality issue in the ApiConfig test"}
+```scala
+ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
+  case Left(e)  => fail(s"Parsing a valid configuration must succeed! ($e)")
+  case Right(c) => withClue("Config must be equal!")(c === expected)
+}
+```
+
+In addition we add an implicit instance for the `Eq` of cats into the companion object of the `ApiConfig` class.
+
+{caption: "Instance for cats Eq and ApiConfig"}
+```scala
+implicit val eqApiConfig: Eq[ApiConfig] = Eq.instance { (a, b) =>
+  a.host === b.host && a.port === b.port
+}
+```
+
+This fixes it and we can turn to the two remaining one. We soon find that the error message returned by tapir (which we check in the tests) has changed and is now more detailed so we simply adjust the according line in both tests and we are done here.
+
+Nice, we have a compiling project again and if ignore our stubbed out Monocle function for now the `migrate-libs` task output some good looking results. So we execute the `migrate-scalacOptions` task next and take a look at the results. It uses the same notifications like the `migrate-libs` task to highlight problems. So far we have a couple of flags that the plugin could not recognize, quite a lot which are not valid any longer and some which we can use or have to rename.
+
+First we change our `compilerSettings` function and add a case for Scala 3.
+
+{caption: "Compiler settings for Scala 3 in build.sbt"}
+```scala
+//...
+case Some((3, _)) =>
+  Seq(
+    "-deprecation",
+    "-explain-types",
+    "-feature",
+    "-language:higherKinds",
+    "-unchecked",
+    //"-Xfatal-warnings", // Disable for migration
+    "-Ycheck-init",
+    "-Ykind-projector"
+  )
+//...
+```
+
+Also we add a `libraryDependencies` setting into our `commonSettings` block to only activate plugins for Scala 2.
+
+{caption: "Load compiler plugins only for Scala 2 in build.sbt"}
+```scala
+//...
+libraryDependencies ++= (
+  if (scalaVersion.value.startsWith("2")) {
+    Seq(
+      compilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
+      compilerPlugin("org.typelevel" % "kind-projector"      % "0.13.2" cross CrossVersion.full)
+    )
+  } else {
+    Seq()
+  }
+),
+//...
+```
+
+Next is settings some flags for dependencies of which we want the 2.13 version.
+
+{caption: "Using the 2.13 version for some dependencies in build.sbt"}
+```scala
+library.pureConfig.cross(CrossVersion.for3Use2_13),
+library.refinedCats.cross(CrossVersion.for3Use2_13),
+library.refinedCore.cross(CrossVersion.for3Use2_13),
+library.refinedPureConfig.cross(CrossVersion.for3Use2_13),
+```
+
+Last but not least the big topic "new syntax" is lurking around the corner. But we will first add two more compiler flags which should make our 2.13 code compile in Scala 3 and add Scala 3 to the `crossScalaVersions` setting.
+
+{caption: "Two migration compiler flags and the 3 version in build.sbt"}
+```scala
+//...
+case Some((3, _)) =>
+  Seq(
+    "-deprecation",
+    "-explain-types",
+    "-feature",
+    "-language:higherKinds",
+    "-unchecked",
+    //"-Xfatal-warnings", // Disable for migration
+    "-Ycheck-init",
+    "-Ykind-projector",
+    // Gives warnings instead of errors on most syntax changes.
+    "-source:3.0-migration",
+    // Resolve warnings via the compiler of possible.
+    "-rewrite",
+  )
+//..
+crossScalaVersions := Seq(scalaVersion.value, "3.1.1"),
+//...
+```
+
+Time for a first test run! We switch to Scala 3 by using `++3.1.1` in the sbt shell and issue a `clean` followed by a `compile`. Please not that you should have reloaded or restarted your sbt instance before to make it reflect all of our changes.
+
+{caption: "Errors about conflicting dependencies versions"}
+```text
+[error] Modules were resolved with conflicting cross-version suffixes in 
+  ProjectRef(uri(".../tapir-scala-3/"), "tapir"):
+[error]    org.scala-lang.modules:scala-xml _2.13, _3
+[error]    org.typelevel:simulacrum-scalafix-annotations _3, _2.13
+[error]    org.typelevel:cats-kernel _3, _2.13
+[error]    eu.timepit:refined _2.13, _3
+[error]    org.typelevel:cats-core _3, _2.13
+[error] stack trace is suppressed; run last update for the full output
+[error] (update) Conflicting cross-version suffixes in:
+  org.scala-lang.modules:scala-xml,
+  org.typelevel:simulacrum-scalafix-annotations,
+  org.typelevel:cats-kernel,
+  eu.timepit:refined,
+  org.typelevel:cats-core
+[error]
+```
+
+Looks like we have a problem here. The libraries that we include in the version for 2.13 depend on other which collide with transitive dependencies of others using Scala 3. Digging through the maven central we can see that there are artefacts published for Scala 3 for pureconfig and refined, so what about removing our cross version settings and try them directly?
+
+We soon find out that the refined module for pureconfig is not available for Scala 3 and in addition it seems that the generic derivation module is also not there. :-(
+
+Q> So what now?
+
+We could call it a day and stick with Scala 2 for the time being. However maybe there is a strong need for an upgrade. A library which only works partially under Scala 2 or other reasons. So imagine that we refactor our service a bit by removing some dependencies and add some more boilerplate to make up for it. At first we could simply remove the `CrossVersion` settings and use only libraries which are released for Scala 3. This move leaves us with hundreds of compiler errors. Many of them seem to be related to refined.
+
+On a side note: We have used package objects in our code which have been dropped in Scala 3. Therefore we need to refactor these also.
+
+Because we have to start *somewhere* we try to create our `ConfigReader` instances for pureconfig manually to avoid the dependency to the derivation module. Luckily there are some helpers like the `ConfigReader.forProductX` methods which make this quite easy.
+
+{caption: "A manual constructed reader for pureconfig"}
+```scala
+implicit val configReader: ConfigReader[DatabaseConfig] =
+  ConfigReader.forProduct4("driver", "url", "user", "pass")
+    (DatabaseConfig(_, _, _, _))
+```
+
+The code compiles again (on 2.13!) and the tests are looking good. On Scala 3 we run again into the problem that the refined pureconfig module is not available. So we could either drop our beloved refined types or we write manual readers for them. In Scala 3 we could use the opaque type aliases[^4] to get more type safety but they are much less powerful than refined types. Well, we'll see how it goes, so at first we define companion objects for our refined types to gain some more functionality i.e. the `from` method to convert arbitrary types into refined ones.
+
+{caption: "A companion object for a refined type providing more functionality"}
+```scala
+type DatabaseLogin = String Refined NonEmpty
+object DatabaseLogin extends RefinedTypeOps[DatabaseLogin, String]
+  with CatsRefinedTypeOpsSyntax
+```
+
+As you can see this is pretty simple, we don't even need to implement something ourselves. Getting the instances for `ConfigReader` looks pretty simple too.
+
+{caption: "ConfigReader instances for refined types - Take 1"}
+```scala
+implicit val loginReader: ConfigReader[DatabaseLogin] =
+  ConfigReader.fromStringOpt(s => DatabaseLogin.from(s).toOption)
+implicit val passReader: ConfigReader[DatabasePassword] =
+  ConfigReader.fromStringOpt(s => DatabasePassword.from(s).toOption)
+implicit val urlReader: ConfigReader[DatabaseUrl] =
+  ConfigReader.fromStringOpt(s => DatabaseUrl.from(s).toOption)
+```
+
+But wait we get the dreaded "ambiguous implicit values" compiler error now. Since our types are all refined from `String` under the hood, the compiler throws an error at us.
+
+Q> Can we solve it in a more general way?
+
+Well, it seems that we don't need to because the pureconfig module of refined is a thing. But we cannot use it as it is because the usage of reflection is a no-go with Scala 3. But we can try to copy the base function and make some adjustments.
+
+{caption: "Copied and adjusted converter function from refined-pureconfig"}
+```scala
+implicit def refTypeConfigConvert[F[_, _], T, P](
+    implicit configConvert: ConfigConvert[T],
+    refType: RefType[F],
+    validate: Validate[T, P]
+): ConfigConvert[F[T, P]] =
+  new ConfigConvert[F[T, P]] {
+    override def from(cur: ConfigCursor): ConfigReader.Result[F[T, P]] =
+      configConvert.from(cur) match {
+        case Left(es) => Left(es)
+        case Right(t) =>
+          refType.refine[P](t) match {
+            case Left(because) =>
+              Left(
+                ConfigReaderFailures(
+                  ConvertFailure(
+                    reason = CannotConvert(
+                      value = cur.valueOpt.map(_.render()).getOrElse("none"),
+                      toType = "a refined type",
+                      because = because
+                    ),
+                    cur = cur
+                  )
+                )
+              )
+            case Right(refined) => Right(refined)
+          }
+      }
+    override def to(t: F[T, P]): ConfigValue =
+      configConvert.to(refType.unwrap(t))
+  }
+```
+
+So we copied it and simply omitted the type tag stuff which is based on reflection. This way we loose some information for our error message but we gain a hopefully Scala 3 compatible refined type reader for pureconfig. Many thanks again at this point to Frank S. Thomas the creator of the wonderful refined library and all the contributors!
+
+Good, let's switch to Scala 3 (`++3.1.1` in the sbt shell) and try a clean compile which will give us a lot of errors still. However first things first. We notice some refined related ones in the top and fix them. The notation changed and we finally can use literal types so there is no longer a need for this weird `W.andsoon.T` constructs.
+
+After fixing them we get 266 errors. Oh why cruel fate? But looking at them we can see that a lot of them come from our `LanguageCodes` class. As we remember that due to macro issues several things are not there yet in libraries under Scala 3 we are again faced with the decision to abandon refined types or find yet another workaround. To keep this chapter from growing exponentially I'll pick the lazy (and dirty) workaround for this time. A simple nudge in your favourite editor should convert the code in the file to something like this:
+
+{caption: "Workaround for missing refined macros"}
+```scala
+val all: Seq[LanguageCode] = Seq(
+  LanguageCode.unsafeFrom("ad"),
+  LanguageCode.unsafeFrom("ae"),
+  LanguageCode.unsafeFrom("af"),
+  //...
+)
+```
+
+This is not the nicest solution but it leaves us with only 17 errors to fix and they look like they have the same cause. So after fixing the same thing in our routing examples we are down to one error:
+
+```text
+[error] -- [E008] Not Found Error: .../Tapir.scala:47:31
+[error] 47 |      (apiConfig, dbConfig) <- IO {
+[error]    |                               ^
+[error]    |value withFilter is not a member of 
+[error]    |  cats.effect.IO[(com.wegtam.books.pfhais.tapir.config.ApiConfig,
+[error]    |  com.wegtam.books.pfhais.tapir.config.DatabaseConfig
+[error]    |)]
+[error] one error found
+[error] one error found
+```
+
+Well the only time I got that one was when I removed the better-monadic-for compiler plugin and it won't be available for Scala 3 because it shouldn't be needed. But we can solve it by de-composing our code into several chunks.
+
+{caption: "Fixing the withFilter error in Tapir.scala"}
+```scala
+for {
+  cfg       <- IO(ConfigFactory.load(getClass().getClassLoader()))
+  apiConfig <- IO(ConfigSource.fromConfig(cfg).at("api")
+    .loadOrThrow[ApiConfig])
+  dbConfig  <- IO(ConfigSource.fromConfig(cfg).at("database")
+    .loadOrThrow[DatabaseConfig])
+  //...
+```
+
+Awesome! We have our main code compiling under Scala 3 now! :-D
+
+Compiling the tests suites greets us with a couple of errors though, so no celebrations just yet. Some of them are refined related like in the main code (missing macros) so we will apply our `unsafeFrom` workaround for them and get rid of them. Then we have an error about implicit values needing an explicit type which is a good practice anyway. The integration tests look similar and are easy to fix too. However we have two failing tests after compilation. One within each route test and both related to checking the some error response for malformed requests. So we simply adjust the error message we test for and we are done.
+
+I> We have a completely compiling project with green tests under Scala 3 now!
+
+This is awesome but according to the official migration guide we should also try to migrate our syntax. So let's run the `migrate-syntax tapir` command in the sbt shell.
+
+{caption: "Result of the migrate-syntax command"}
+```text
+[info]
+[info] The syntax incompatibilities have been fixed in tapir / Test
+[info]
+[info]
+[info] You can now commit the change!
+[info] Then you can run the next command:
+[info]
+[info] migrate tapir
+[info]
+[info]
+```
+
+Looking at the source we can see that only some annotations have been added. And finally we run `migrate tapir` and it bails out with an error. I'll spare you the gory details but I did not have any clue about what was going wrong. But we know that everything is fine under Scala 3 anyway. So what about simply ignoring the tools lamentations and move on with our lives? Sounds good? Yeah, to me too. :-)
+
+Before calling it a day we should switch back to 2.13 and do a clean compile to see some unused imports warnings be printed out. These are easy to fix and cleaner code is easier to maintain. Finally we adjust our `build.sbt` to make the switch permanent.
+
+{caption: "Switch to Scala 3 by default"}
+```scala
+  //...
+  scalaVersion := "3.1.1",
+  crossScalaVersions := Seq(scalaVersion.value),
+  //...
+```
+
+We can also remove some code related to Scala 2 (plugins and compiler settings).
+
+Q> So what is left to do?
+
+Well, we should change our scalafmt configuration because we surely do not want to get our shiny new Scala 3 code formatted according to Scala 2 syntax. ;-)
+
+{caption: "A new configuration for scalafmt"}
+```text
+version        = 3.4.3
+runner.dialect = scala3
+style          = defaultWithAlign
+# Other options...
+danglingParentheses.preset = true
+maxColumn                  = 120
+newlines.forceBeforeMultilineAssign = def
+project.excludeFilters     = [".*\\.sbt"]
+rewrite.rules              = [Imports, RedundantBraces, RedundantParens]
+rewrite.imports.sort       = ascii
+rewriteTokens              = {
+  "⇒" = "=>"
+  "←" = "<-"
+  "→" = "->"
+}
+spaces.inImportCurlyBraces = true
+unindentTopLevelOperators  = true
+```
+
+We used the opportunity to upgrade to the latest scalafmt and use a bit different settings. Running a `scalafmtAll` rewrites a lot of code, so we need to check if it still compiles. This looks fine so we are done, are we?
+
+Q> So what is left to do?
+
+Wait, we've been here before, haven't we? Hint: remember that `updateDocumentation` function using optics that we have stubbed out? Sometimes I wonder how many times smaller (or bigger) things get dropped under the table during such migrations only to be re-implemented later with great effort for new.
+
+
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
 [^12]: https://pureconfig.github.io/
@@ -4025,3 +4894,12 @@ However don't forget about optics because their usage goes far beyond what we ha
 [^39]: https://tools.ietf.org/html/rfc4122
 
 [^40]: https://www.ecma-international.org/ecma-262/5.1/#sec-7.8.5
+
+[^41]: https://github.com/optics-dev/Monocle/issues/1001
+
+[^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
+
+[^43]: https://github.com/pureconfig/pureconfig/issues/970
+
+[^44]: https://docs.scala-lang.org/scala3/reference/other-new-features/opaques.html
+
