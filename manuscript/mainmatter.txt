@@ -3717,7 +3717,7 @@ Okay, so we need to define some (or better exactly 2) regular expressions. But h
 
 Q> How do we use the existing regular expression from our refined type?
 
-Well, using some shapeless[^28] magic we might use an implicit `Witness` which should be provided by our refined type.
+Well, using some shapeless[^38] magic we might use an implicit `Witness` which should be provided by our refined type.
 
 {caption: "Idea to reuse regular expression from refined type"}
 ```scala
@@ -3726,7 +3726,7 @@ def extractRegEx[S <: String](implicit ws: Witness.Aux[S]): String =
 ```
 
 The code above is a rough idea so don't count on it. We'll see later on if I was right or did suffer from the hallucination of actually understanding what I am doing. ;-)
-In the hope that this is settled we need one additional regular expression for a `UUID`. These are defined in RFC-4122[^29] and ignoring the special edge case of a "NIL UUID" we come up with the following solution.
+In the hope that this is settled we need one additional regular expression for a `UUID`. These are defined in RFC-4122[^39] and ignoring the special edge case of a "NIL UUID" we come up with the following solution.
 
 {caption: "Regular expression for matching UUIDs"}
 ```text
@@ -3735,7 +3735,7 @@ In the hope that this is settled we need one additional regular expression for a
 
 Q> What have we overlooked?
 
-According to the OpenAPI specification we are nailed down to Javascript regular expressions (*read* the ECMA 262 regular expression dialect[^30]). Oh why cruel fate? Well, let us deal with that when we have our other puzzle pieces in order.
+According to the OpenAPI specification we are nailed down to Javascript regular expressions (*read* the ECMA 262 regular expression dialect[^40]). Oh why cruel fate? Well, let us deal with that when we have our other puzzle pieces in order.
 
 Before we dive right in let's play around a bit to get used to this fancy optics thing.
 
