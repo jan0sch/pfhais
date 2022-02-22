@@ -52,7 +52,7 @@ final class ProductsRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.Ok
 
         s"return $expectedStatusCode and a list of products" in {
-          forAll("products") { ps: List[Product] =>
+          forAll("products") { (ps: List[Product]) =>
             val repo: Repository[IO] = new TestRepository[IO](ps)
             def service: HttpRoutes[IO] =
               Router("/" -> new ProductsRoutes(repo).routes)
@@ -92,7 +92,7 @@ final class ProductsRoutesTest extends BaseSpec {
           val expectedStatusCode = Status.NoContent
 
           s"return $expectedStatusCode" in {
-            forAll("product") { p: Product =>
+            forAll("product") { (p: Product) =>
               val repo: Repository[IO] = new TestRepository[IO](Seq(p))
               def service: HttpRoutes[IO] =
                 Router("/" -> new ProductsRoutes(repo).routes)
@@ -111,7 +111,7 @@ final class ProductsRoutesTest extends BaseSpec {
           val expectedStatusCode = Status.InternalServerError
 
           s"return $expectedStatusCode" in {
-            forAll("product") { p: Product =>
+            forAll("product") { (p: Product) =>
               def service: HttpRoutes[IO] =
                 Router("/" -> new ProductsRoutes(emptyRepository).routes)
               val response: IO[Response[IO]] = service.orNotFound.run(

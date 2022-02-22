@@ -824,7 +824,7 @@ for {
 
 Awesome! We have our main code compiling under Scala 3 now! :-D
 
-Compiling the tests suites greets us with a couple of errors though, so no celebrations just yet.
+Compiling the tests suites greets us with a couple of errors though, so no celebrations just yet. Some of them are refined related like in the main code (missing macros) so we will apply our `unsafeFrom` workaround for them and get rid of them. Then we have an error about implicit values needing an explicit type which is a good practice anyway.
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 

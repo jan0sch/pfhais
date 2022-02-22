@@ -33,7 +33,7 @@ class ApiConfigTest extends BaseSpec {
     "loading valid config format" when {
       "settings are invalid" must {
         "fail" in {
-          forAll("port") { i: Int =>
+          forAll("port") { (i: Int) =>
             whenever(i < 1 || i > 65535) {
               val config = ConfigFactory.parseString(s"""api{"host":"","port":$i}""")
               ConfigSource.fromConfig(config).at("api").load[ApiConfig] match {
@@ -47,7 +47,7 @@ class ApiConfigTest extends BaseSpec {
 
       "settings are valid" must {
         "load correct settings" in {
-          forAll("input") { expected: ApiConfig =>
+          forAll("input") { (expected: ApiConfig) =>
             val config =
               ConfigFactory.parseString(
                 s"""api{"host":"${expected.host}","port":${expected.port}}"""

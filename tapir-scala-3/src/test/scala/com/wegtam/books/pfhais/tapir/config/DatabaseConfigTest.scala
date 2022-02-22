@@ -33,7 +33,7 @@ class DatabaseConfigTest extends BaseSpec {
     "loading valid config format" when {
       "settings are invalid" must {
         "fail" in {
-          forAll("input") { i: Int =>
+          forAll("input") { (i: Int) =>
             val config = ConfigFactory.parseString(
               """database {
                   |  "driver":"",
@@ -52,7 +52,7 @@ class DatabaseConfigTest extends BaseSpec {
 
       "settings are valid" must {
         "load correct settings" in {
-          forAll("input") { expected: DatabaseConfig =>
+          forAll("input") { (expected: DatabaseConfig) =>
             val config = ConfigFactory.parseString(
               s"""database {
                    |  "driver": "${expected.driver}",

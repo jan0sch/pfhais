@@ -50,7 +50,7 @@ final class DoobieRepositoryTest extends BaseSpec {
           val tx = Transactor
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
-          forAll("ID") { id: ProductId =>
+          forAll("ID") { (id: ProductId) =>
             for {
               rows <- repo.loadProduct(id)
             } yield {
@@ -67,7 +67,7 @@ final class DoobieRepositoryTest extends BaseSpec {
           val tx = Transactor
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
-          forAll("product") { p: Product =>
+          forAll("product") { (p: Product) =>
             for {
               _    <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
@@ -100,7 +100,7 @@ final class DoobieRepositoryTest extends BaseSpec {
           val tx = Transactor
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
-          forAll("products") { ps: List[Product] =>
+          forAll("products") { (ps: List[Product]) =>
             for {
               _ <- ps.traverse(repo.saveProduct)
               rows = repo
@@ -131,7 +131,7 @@ final class DoobieRepositoryTest extends BaseSpec {
         val tx = Transactor
           .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
         val repo = new DoobieRepository(tx)
-        forAll("product") { p: Product =>
+        forAll("product") { (p: Product) =>
           for {
             cnt  <- repo.saveProduct(p)
             rows <- repo.loadProduct(p.id)
@@ -152,7 +152,7 @@ final class DoobieRepositoryTest extends BaseSpec {
           val tx = Transactor
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
-          forAll("product") { p: Product =>
+          forAll("product") { (p: Product) =>
             for {
               cnt  <- repo.updateProduct(p)
               rows <- repo.loadProduct(p.id)

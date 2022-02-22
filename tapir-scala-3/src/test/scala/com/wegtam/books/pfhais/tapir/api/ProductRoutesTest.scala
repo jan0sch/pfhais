@@ -45,7 +45,7 @@ final class ProductRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.NotFound
 
         s"return $expectedStatusCode" in {
-          forAll("id") { id: ProductId =>
+          forAll("id") { (id: ProductId) =>
             Uri.fromString("/product/" + id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
@@ -66,7 +66,7 @@ final class ProductRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.Ok
 
         s"return $expectedStatusCode and the product" in {
-          forAll("product") { p: Product =>
+          forAll("product") { (p: Product) =>
             Uri.fromString("/product/" + p.id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
@@ -90,7 +90,7 @@ final class ProductRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.BadRequest
 
         s"return $expectedStatusCode" in {
-          forAll("id") { id: ProductId =>
+          forAll("id") { (id: ProductId) =>
             Uri.fromString("/product/" + id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
@@ -116,7 +116,7 @@ final class ProductRoutesTest extends BaseSpec {
           val expectedStatusCode = Status.NotFound
 
           s"return $expectedStatusCode" in {
-            forAll("product") { p: Product =>
+            forAll("product") { (p: Product) =>
               Uri.fromString("/product/" + p.id.toString) match {
                 case Left(_) => fail("Could not generate valid URI!")
                 case Right(u) =>
@@ -138,7 +138,7 @@ final class ProductRoutesTest extends BaseSpec {
           val expectedStatusCode = Status.NoContent
 
           s"return $expectedStatusCode" in {
-            forAll("product") { p: Product =>
+            forAll("product") { (p: Product) =>
               Uri.fromString("/product/" + p.id.toString) match {
                 case Left(_) => fail("Could not generate valid URI!")
                 case Right(u) =>

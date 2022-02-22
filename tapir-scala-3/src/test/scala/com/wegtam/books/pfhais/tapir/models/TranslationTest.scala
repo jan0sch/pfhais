@@ -23,7 +23,7 @@ class TranslationTest extends BaseSpec {
     "decoding from JSON" when {
       "JSON format is invalid" must {
         "return an error" in {
-          forAll("input") { s: String =>
+          forAll("input") { (s: String) =>
             decode[Translation](s).isLeft must be(true)
           }
         }
@@ -48,7 +48,7 @@ class TranslationTest extends BaseSpec {
 
         "data is valid" must {
           "return the correct types" in {
-            forAll("input") { i: Translation =>
+            forAll("input") { (i: Translation) =>
               val json = s"""{
                 |"lang": ${i.lang.asJson.noSpaces},
                 |"name": ${i.name.asJson.noSpaces}
@@ -67,7 +67,7 @@ class TranslationTest extends BaseSpec {
 
     "encoding to JSON" must {
       "return correct JSON" in {
-        forAll("input") { i: Translation =>
+        forAll("input") { (i: Translation) =>
           val json = i.asJson.noSpaces
           json must include(s""""lang":${i.lang.asJson.noSpaces}""")
           json must include(s""""name":${i.name.asJson.noSpaces}""")
@@ -75,7 +75,7 @@ class TranslationTest extends BaseSpec {
       }
 
       "return decodeable JSON" in {
-        forAll("input") { i: Translation =>
+        forAll("input") { (i: Translation) =>
           decode[Translation](i.asJson.noSpaces) match {
             case Left(_)  => fail("Must be able to decode encoded JSON!")
             case Right(d) => withClue("Must decode the same product!")(d must be(i))

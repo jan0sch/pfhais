@@ -13,6 +13,7 @@ package com.wegtam.books.pfhais.tapir.db
 
 import cats.effect._
 import com.wegtam.books.pfhais.BaseSpec
+import com.wegtam.books.pfhais.tapir._
 import com.wegtam.books.pfhais.tapir.config._
 import eu.timepit.refined.auto._
 import org.flywaydb.core.Flyway
@@ -60,10 +61,10 @@ final class FlywayDatabaseMigratorTest extends BaseSpec {
     "the database is not available" must {
       "throw an exception" in {
         val cfg = DatabaseConfig(
-          driver = "This is no driver name!",
-          url = "jdbc://some.host/whatever",
-          user = "no-user",
-          pass = "no-password"
+          driver = NonEmptyString.unsafeFrom("This is no driver name!"),
+          url = DatabaseUrl.unsafeFrom("jdbc://some.host/whatever"),
+          user = DatabaseLogin.unsafeFrom("no-user"),
+          pass = DatabasePassword.unsafeFrom("no-password")
         )
         val migrator: DatabaseMigrator[IO] = new FlywayDatabaseMigrator
         val program                        = migrator.migrate(cfg.url, cfg.user, cfg.pass)

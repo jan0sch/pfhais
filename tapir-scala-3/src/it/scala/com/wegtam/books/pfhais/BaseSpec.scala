@@ -11,14 +11,15 @@
 
 package com.wegtam.books.pfhais
 
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config._
 import com.wegtam.books.pfhais.tapir.config._
 import eu.timepit.refined.auto._
-import pureconfig._
 import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import pureconfig._
 
 /**
   * A base class for our integration tests.
@@ -33,7 +34,7 @@ abstract class BaseSpec
   protected val config   = ConfigFactory.load()
   protected val dbConfig = ConfigSource.fromConfig(config).at("database").load[DatabaseConfig]
 
-  implicit val runtime = cats.effect.unsafe.IORuntime.global
+  implicit val runtime: IORuntime = IORuntime.global
 
   override def beforeAll(): Unit = {
     val _ = withClue("Database configuration could not be loaded!") {
