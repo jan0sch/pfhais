@@ -22,7 +22,7 @@ class ProductTest extends BaseSpec {
     "decoding from JSON" when {
       "JSON format is invalid" must {
         "return an error" in {
-          forAll("input") { s: String =>
+          forAll("input") { (s: String) =>
             decode[Product](s).isLeft must be(true)
           }
         }
@@ -40,7 +40,7 @@ class ProductTest extends BaseSpec {
 
         "data is valid" must {
           "return the correct types" in {
-            forAll("input") { i: Product =>
+            forAll("input") { (i: Product) =>
               val json = s"""{
                 |"id": ${i.id.asJson.noSpaces},
                 |"names": ${i.names.asJson.noSpaces}
@@ -59,7 +59,7 @@ class ProductTest extends BaseSpec {
 
     "encoding to JSON" must {
       "return correct JSON" in {
-        forAll("input") { i: Product =>
+        forAll("input") { (i: Product) =>
           val json = i.asJson.noSpaces
           json must include(s""""id":${i.id.asJson.noSpaces}""")
           json must include(s""""names":${i.names.asJson.noSpaces}""")
@@ -67,7 +67,7 @@ class ProductTest extends BaseSpec {
       }
 
       "return decodeable JSON" in {
-        forAll("input") { p: Product =>
+        forAll("input") { (p: Product) =>
           decode[Product](p.asJson.noSpaces) match {
             case Left(_)  => fail("Must be able to decode encoded JSON!")
             case Right(d) => withClue("Must decode the same product!")(d must be(p))
@@ -78,7 +78,7 @@ class ProductTest extends BaseSpec {
 
     "#fromDatabase" must {
       "create correct results" in {
-        forAll("input") { p: Product =>
+        forAll("input") { (p: Product) =>
           val rows = p.names.toNonEmptyList.map(t => (p.id, t.lang, t.name)).toList
           Product.fromDatabase(rows) must contain(p)
         }
@@ -87,7 +87,7 @@ class ProductTest extends BaseSpec {
 
     "ordering" must {
       "sort by ID" in {
-        forAll("products") { ps: List[Product] =>
+        forAll("products") { (ps: List[Product]) =>
           val expected = ps.map(_.id).sorted
           val sorted   = ps.sorted.map(_.id)
           sorted mustEqual expected

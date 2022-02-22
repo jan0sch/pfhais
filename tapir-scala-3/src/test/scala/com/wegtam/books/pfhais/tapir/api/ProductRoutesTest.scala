@@ -18,16 +18,7 @@ import com.wegtam.books.pfhais.tapir.db._
 import com.wegtam.books.pfhais.tapir.models._
 import com.wegtam.books.pfhais.tapir.models.TypeGenerators._
 import io.circe.syntax._
-import org.http4s.{
-  EntityDecoder,
-  EntityEncoder,
-  HttpRoutes,
-  Method,
-  Request,
-  Response,
-  Status,
-  Uri
-}
+import org.http4s.{ EntityDecoder, EntityEncoder, HttpRoutes, Method, Request, Response, Status, Uri }
 import org.http4s.circe._
 import org.http4s.implicits._
 import org.http4s.server.Router
@@ -45,12 +36,11 @@ final class ProductRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.NotFound
 
         s"return $expectedStatusCode" in {
-          forAll("id") { id: ProductId =>
+          forAll("id") { (id: ProductId) =>
             Uri.fromString("/product/" + id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
-                def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(emptyRepository).routes)
+                def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(emptyRepository).routes)
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.GET, uri = u)
                 )
@@ -66,13 +56,12 @@ final class ProductRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.Ok
 
         s"return $expectedStatusCode and the product" in {
-          forAll("product") { p: Product =>
+          forAll("product") { (p: Product) =>
             Uri.fromString("/product/" + p.id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
-                val repo: Repository[IO] = new TestRepository[IO](Seq(p))
-                def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(repo).routes)
+                val repo: Repository[IO]    = new TestRepository[IO](Seq(p))
+                def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(repo).routes)
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.GET, uri = u)
                 )
@@ -90,13 +79,12 @@ final class ProductRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.BadRequest
 
         s"return $expectedStatusCode" in {
-          forAll("id") { id: ProductId =>
+          forAll("id") { (id: ProductId) =>
             Uri.fromString("/product/" + id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
-                def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(emptyRepository).routes)
-                val payload = scala.util.Random.alphanumeric.take(256).mkString
+                def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(emptyRepository).routes)
+                val payload                 = scala.util.Random.alphanumeric.take(256).mkString
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.PUT, uri = u)
                     .withEntity(payload.asJson.noSpaces)
@@ -104,7 +92,7 @@ final class ProductRoutesTest extends BaseSpec {
                 val result = response.unsafeRunSync()
                 result.status must be(expectedStatusCode)
                 result.as[String].unsafeRunSync() must be(
-                  "Invalid value for: body (Attempt to decode value on failed cursor at 'id', Attempt to decode value on failed cursor at 'names')"
+                  "Invalid value for: body (Product)"
                 )
             }
           }
@@ -116,12 +104,11 @@ final class ProductRoutesTest extends BaseSpec {
           val expectedStatusCode = Status.NotFound
 
           s"return $expectedStatusCode" in {
-            forAll("product") { p: Product =>
+            forAll("product") { (p: Product) =>
               Uri.fromString("/product/" + p.id.toString) match {
                 case Left(_) => fail("Could not generate valid URI!")
                 case Right(u) =>
-                  def service: HttpRoutes[IO] =
-                    Router("/" -> new ProductRoutes(emptyRepository).routes)
+                  def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(emptyRepository).routes)
                   val response: IO[Response[IO]] = service.orNotFound.run(
                     Request(method = Method.PUT, uri = u)
                       .withEntity(p)
@@ -138,13 +125,12 @@ final class ProductRoutesTest extends BaseSpec {
           val expectedStatusCode = Status.NoContent
 
           s"return $expectedStatusCode" in {
-            forAll("product") { p: Product =>
+            forAll("product") { (p: Product) =>
               Uri.fromString("/product/" + p.id.toString) match {
                 case Left(_) => fail("Could not generate valid URI!")
                 case Right(u) =>
-                  val repo: Repository[IO] = new TestRepository[IO](Seq(p))
-                  def service: HttpRoutes[IO] =
-                    Router("/" -> new ProductRoutes(repo).routes)
+                  val repo: Repository[IO]    = new TestRepository[IO](Seq(p))
+                  def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(repo).routes)
                   val response: IO[Response[IO]] = service.orNotFound.run(
                     Request(method = Method.PUT, uri = u)
                       .withEntity(p)

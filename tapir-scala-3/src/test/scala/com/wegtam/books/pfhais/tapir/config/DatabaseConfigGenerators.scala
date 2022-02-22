@@ -12,20 +12,18 @@
 package com.wegtam.books.pfhais.tapir.config
 
 import com.wegtam.books.pfhais.tapir._
-import eu.timepit.refined.api.RefType
-import eu.timepit.refined.auto._
 import org.scalacheck.{ Arbitrary, Gen }
 
 object DatabaseConfigGenerators {
-  val DefaultPassword: DatabasePassword = "secret"
+  val DefaultPassword: DatabasePassword = DatabasePassword.unsafeFrom("secret")
 
   val genDatabaseConfig: Gen[DatabaseConfig] = for {
     gp <- Gen.nonEmptyListOf(Gen.alphaNumChar)
-    p = RefType.applyRef[DatabasePassword](gp.mkString).getOrElse(DefaultPassword)
+    p = DatabasePassword.from(gp.mkString).toOption.getOrElse(DefaultPassword)
   } yield DatabaseConfig(
-    driver = "org.postgresql.Driver",
-    url = "jdbc:postgresql://localhost:5422/test-database",
-    user = "tapir",
+    driver = NonEmptyString.unsafeFrom("org.postgresql.Driver"),
+    url = DatabaseUrl.unsafeFrom("jdbc:postgresql://localhost:5422/test-database"),
+    user = DatabaseLogin.unsafeFrom("tapir"),
     pass = p
   )
 

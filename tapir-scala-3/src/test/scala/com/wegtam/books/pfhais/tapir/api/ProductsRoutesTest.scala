@@ -37,8 +37,7 @@ final class ProductsRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.Ok
 
         s"return $expectedStatusCode and an empty list" in {
-          def service: HttpRoutes[IO] =
-            Router("/" -> new ProductsRoutes(emptyRepository).routes)
+          def service: HttpRoutes[IO] = Router("/" -> new ProductsRoutes(emptyRepository).routes)
           val response: IO[Response[IO]] = service.orNotFound.run(
             Request(method = Method.GET, uri = uri"/products")
           )
@@ -52,10 +51,9 @@ final class ProductsRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.Ok
 
         s"return $expectedStatusCode and a list of products" in {
-          forAll("products") { ps: List[Product] =>
-            val repo: Repository[IO] = new TestRepository[IO](ps)
-            def service: HttpRoutes[IO] =
-              Router("/" -> new ProductsRoutes(repo).routes)
+          forAll("products") { (ps: List[Product]) =>
+            val repo: Repository[IO]    = new TestRepository[IO](ps)
+            def service: HttpRoutes[IO] = Router("/" -> new ProductsRoutes(repo).routes)
             val response: IO[Response[IO]] = service.orNotFound.run(
               Request(method = Method.GET, uri = uri"/products")
             )
@@ -72,9 +70,8 @@ final class ProductsRoutesTest extends BaseSpec {
         val expectedStatusCode = Status.BadRequest
 
         s"return $expectedStatusCode" in {
-          def service: HttpRoutes[IO] =
-            Router("/" -> new ProductsRoutes(emptyRepository).routes)
-          val payload = scala.util.Random.alphanumeric.take(256).mkString
+          def service: HttpRoutes[IO] = Router("/" -> new ProductsRoutes(emptyRepository).routes)
+          val payload                 = scala.util.Random.alphanumeric.take(256).mkString
           val response: IO[Response[IO]] = service.orNotFound.run(
             Request(method = Method.POST, uri = uri"/products")
               .withEntity(payload.asJson.noSpaces)
@@ -82,7 +79,7 @@ final class ProductsRoutesTest extends BaseSpec {
           val result = response.unsafeRunSync()
           result.status must be(expectedStatusCode)
           result.as[String].unsafeRunSync() must be(
-            "Invalid value for: body (Attempt to decode value on failed cursor at 'id', Attempt to decode value on failed cursor at 'names')"
+            "Invalid value for: body (Product)"
           )
         }
       }
@@ -92,10 +89,9 @@ final class ProductsRoutesTest extends BaseSpec {
           val expectedStatusCode = Status.NoContent
 
           s"return $expectedStatusCode" in {
-            forAll("product") { p: Product =>
-              val repo: Repository[IO] = new TestRepository[IO](Seq(p))
-              def service: HttpRoutes[IO] =
-                Router("/" -> new ProductsRoutes(repo).routes)
+            forAll("product") { (p: Product) =>
+              val repo: Repository[IO]    = new TestRepository[IO](Seq(p))
+              def service: HttpRoutes[IO] = Router("/" -> new ProductsRoutes(repo).routes)
               val response: IO[Response[IO]] = service.orNotFound.run(
                 Request(method = Method.POST, uri = uri"/products")
                   .withEntity(p)
@@ -111,9 +107,8 @@ final class ProductsRoutesTest extends BaseSpec {
           val expectedStatusCode = Status.InternalServerError
 
           s"return $expectedStatusCode" in {
-            forAll("product") { p: Product =>
-              def service: HttpRoutes[IO] =
-                Router("/" -> new ProductsRoutes(emptyRepository).routes)
+            forAll("product") { (p: Product) =>
+              def service: HttpRoutes[IO] = Router("/" -> new ProductsRoutes(emptyRepository).routes)
               val response: IO[Response[IO]] = service.orNotFound.run(
                 Request(method = Method.POST, uri = uri"/products")
                   .withEntity(p)

@@ -16,11 +16,12 @@ import cats.syntax.eq._
 import com.comcast.ip4s.{ Host, Port }
 import pureconfig._
 
-/**
-  * The configuration for our HTTP API.
+/** The configuration for our HTTP API.
   *
-  * @param host The hostname or ip address on which the service shall listen.
-  * @param port The port number on which the service shall listen.
+  * @param host
+  *   The hostname or ip address on which the service shall listen.
+  * @param port
+  *   The port number on which the service shall listen.
   */
 final case class ApiConfig(host: Host, port: Port)
 

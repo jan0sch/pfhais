@@ -22,7 +22,7 @@ import scala.collection.immutable._
 
 object TypeGenerators {
 
-  val DefaultProductName: ProductName = "I am a product name!"
+  val DefaultProductName: ProductName = ProductName.unsafeFrom("I am a product name!")
 
   val genLanguageCode: Gen[LanguageCode] = Gen.oneOf(LanguageCodes.all)
 

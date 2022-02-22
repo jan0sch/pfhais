@@ -35,10 +35,8 @@ class TestRepository[F[_]: Async](data: Seq[Product]) extends Repository[F] {
     Stream.emits(rows)
   }
 
-  override def saveProduct(p: Product): F[Int] =
-    data.find(_.id === p.id).fold(0.pure[F])(_ => 1.pure[F])
+  override def saveProduct(p: Product): F[Int] = data.find(_.id === p.id).fold(0.pure[F])(_ => 1.pure[F])
 
-  override def updateProduct(p: Product): F[Int] =
-    data.find(_.id === p.id).fold(0.pure[F])(_ => 1.pure[F])
+  override def updateProduct(p: Product): F[Int] = data.find(_.id === p.id).fold(0.pure[F])(_ => 1.pure[F])
 
 }

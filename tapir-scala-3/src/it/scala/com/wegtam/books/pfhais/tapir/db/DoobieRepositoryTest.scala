@@ -50,12 +50,10 @@ final class DoobieRepositoryTest extends BaseSpec {
           val tx = Transactor
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
-          forAll("ID") { id: ProductId =>
+          forAll("ID") { (id: ProductId) =>
             for {
               rows <- repo.loadProduct(id)
-            } yield {
-              rows must be(empty)
-            }
+            } yield rows must be(empty)
           }
         }
       }
@@ -67,12 +65,12 @@ final class DoobieRepositoryTest extends BaseSpec {
           val tx = Transactor
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
-          forAll("product") { p: Product =>
+          forAll("product") { (p: Product) =>
             for {
               _    <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
             } yield {
-              rows must not be (empty)
+              rows must not be empty
               Product.fromDatabase(rows) must contain(p)
             }
           }
@@ -100,23 +98,23 @@ final class DoobieRepositoryTest extends BaseSpec {
           val tx = Transactor
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
-          forAll("products") { ps: List[Product] =>
+          forAll("products") { (ps: List[Product]) =>
             for {
               _ <- ps.traverse(repo.saveProduct)
               rows = repo
                 .loadProducts()
                 .groupAdjacentBy(_._1)
-                .map {
-                  case (_, rows) => Product.fromDatabase(rows.toList)
+                .map { case (_, rows) =>
+                  Product.fromDatabase(rows.toList)
                 }
-                .collect {
-                  case Some(p) => p
+                .collect { case Some(p) =>
+                  p
                 }
                 .compile
                 .toList
             } yield {
               val products = rows.unsafeRunSync()
-              products must not be (empty)
+              products must not be empty
               products mustEqual ps
             }
           }
@@ -131,13 +129,13 @@ final class DoobieRepositoryTest extends BaseSpec {
         val tx = Transactor
           .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
         val repo = new DoobieRepository(tx)
-        forAll("product") { p: Product =>
+        forAll("product") { (p: Product) =>
           for {
             cnt  <- repo.saveProduct(p)
             rows <- repo.loadProduct(p.id)
           } yield {
             cnt must be > 0
-            rows must not be (empty)
+            rows must not be empty
             Product.fromDatabase(rows) must contain(p)
           }
         }
@@ -152,7 +150,7 @@ final class DoobieRepositoryTest extends BaseSpec {
           val tx = Transactor
             .fromDriverManager[IO](c.driver, c.url, c.user, c.pass)
           val repo = new DoobieRepository(tx)
-          forAll("product") { p: Product =>
+          forAll("product") { (p: Product) =>
             for {
               cnt  <- repo.updateProduct(p)
               rows <- repo.loadProduct(p.id)
@@ -179,7 +177,7 @@ final class DoobieRepositoryTest extends BaseSpec {
               rows <- repo.loadProduct(p.id)
             } yield {
               cnt must be > 0
-              rows must not be (empty)
+              rows must not be empty
               Product.fromDatabase(rows) must contain(p)
             }
           }

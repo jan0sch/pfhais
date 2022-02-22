@@ -11,13 +11,13 @@
 
 package com.wegtam.books.pfhais
 
+import cats.effect.unsafe.IORuntime
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-/**
-  * A base class for our tests.
+/** A base class for our tests.
   */
 abstract class BaseSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks {
-  implicit val runtime = cats.effect.unsafe.IORuntime.global
+  implicit val runtime: IORuntime = IORuntime.global
 }

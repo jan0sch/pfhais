@@ -18,11 +18,12 @@ import io.circe.generic.semiauto._
 import io.circe.refined._
 import sttp.tapir._
 
-/**
-  * The translation data for a product name.
+/** The translation data for a product name.
   *
-  * @param lang A language code specifying the target translation.
-  * @param name The product name in the language.
+  * @param lang
+  *   A language code specifying the target translation.
+  * @param name
+  *   The product name in the language.
   */
 final case class Translation(lang: LanguageCode, name: ProductName)
 

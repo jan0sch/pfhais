@@ -20,18 +20,19 @@ import doobie.refined.implicits._
 import eu.timepit.refined.auto._
 import fs2.Stream
 
-/**
-  * The doobie implementation of our repository.
+/** The doobie implementation of our repository.
   *
-  * @param tx A transactor for actually executing our queries.
+  * @param tx
+  *   A transactor for actually executing our queries.
   */
 final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F] {
 
-  /**
-    * Load a product from the database repository.
+  /** Load a product from the database repository.
     *
-    * @param id The unique ID of the product.
-    * @return A list of database rows for a single product which you'll need to combine.
+    * @param id
+    *   The unique ID of the product.
+    * @return
+    *   A list of database rows for a single product which you'll need to combine.
     */
   override def loadProduct(id: ProductId): F[List[(ProductId, LanguageCode, ProductName)]] =
     sql"""SELECT products.id, names.lang_code, names.name 
@@ -42,10 +43,10 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
       .to[List]
       .transact(tx)
 
-  /**
-    * Load all products from the database repository.
+  /** Load all products from the database repository.
     *
-    * @return A stream of database rows which you'll need to combine.
+    * @return
+    *   A stream of database rows which you'll need to combine.
     */
   override def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)] =
     sql"""SELECT products.id, names.lang_code, names.name
@@ -56,11 +57,12 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
       .stream
       .transact(tx)
 
-  /**
-    * Save the given product in the database.
+  /** Save the given product in the database.
     *
-    * @param p A product to be saved.
-    * @return The number of affected database rows (product + translations).
+    * @param p
+    *   A product to be saved.
+    * @return
+    *   The number of affected database rows (product + translations).
     */
   override def saveProduct(p: Product): F[Int] = {
     val namesSql    = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
@@ -72,11 +74,12 @@ final class DoobieRepository[F[_]: Sync](tx: Transactor[F]) extends Repository[F
     program.transact(tx)
   }
 
-  /**
-    * Update the given product in the database.
+  /** Update the given product in the database.
     *
-    * @param p The product to be updated.
-    * @return The number of affected database rows.
+    * @param p
+    *   The product to be updated.
+    * @return
+    *   The number of affected database rows.
     */
   override def updateProduct(p: Product): F[Int] = {
     val namesSql    = "INSERT INTO names (product_id, lang_code, name) VALUES (?, ?, ?)"
