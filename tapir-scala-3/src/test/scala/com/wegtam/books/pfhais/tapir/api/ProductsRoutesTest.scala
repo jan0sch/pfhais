@@ -82,7 +82,7 @@ final class ProductsRoutesTest extends BaseSpec {
           val result = response.unsafeRunSync()
           result.status must be(expectedStatusCode)
           result.as[String].unsafeRunSync() must be(
-            "Invalid value for: body (Attempt to decode value on failed cursor at 'id', Attempt to decode value on failed cursor at 'names')"
+            "Invalid value for: body (Product)"
           )
         }
       }

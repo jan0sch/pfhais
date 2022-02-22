@@ -824,7 +824,9 @@ for {
 
 Awesome! We have our main code compiling under Scala 3 now! :-D
 
-Compiling the tests suites greets us with a couple of errors though, so no celebrations just yet. Some of them are refined related like in the main code (missing macros) so we will apply our `unsafeFrom` workaround for them and get rid of them. Then we have an error about implicit values needing an explicit type which is a good practice anyway.
+Compiling the tests suites greets us with a couple of errors though, so no celebrations just yet. Some of them are refined related like in the main code (missing macros) so we will apply our `unsafeFrom` workaround for them and get rid of them. Then we have an error about implicit values needing an explicit type which is a good practice anyway. The integration tests look similar and are easy to fix too. However we have two failing tests after compilation. One within each route test and both related to checking the some error response for malformed requests. So we simply adjust the error message we test for and we are done.
+
+I> We have a completely compiling project with green tests under Scala 3 now!
 
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
