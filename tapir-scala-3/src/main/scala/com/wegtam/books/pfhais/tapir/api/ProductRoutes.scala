@@ -41,15 +41,14 @@ final class ProductRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F]
     })
 
   private val updateRoute: HttpRoutes[F] =
-    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.updateProduct.serverLogic {
-      case (_, p) =>
-        for {
-          cnt <- repo.updateProduct(p)
-          res = cnt match {
-            case 0 => StatusCode.NotFound.asLeft[Unit]
-            case _ => ().asRight[StatusCode]
-          }
-        } yield res
+    Http4sServerInterpreter[F]().toRoutes(ProductRoutes.updateProduct.serverLogic { case (_, p) =>
+      for {
+        cnt <- repo.updateProduct(p)
+        res = cnt match {
+          case 0 => StatusCode.NotFound.asLeft[Unit]
+          case _ => ().asRight[StatusCode]
+        }
+      } yield res
     })
 
   val routes: HttpRoutes[F] = getRoute <+> updateRoute
@@ -60,11 +59,11 @@ object ProductRoutes {
   val example: Product = Product(
     id = java.util.UUID.randomUUID,
     names = NonEmptySet.one(
-        Translation(
-          lang = LanguageCode.unsafeFrom("de"),
-          name = ProductName.unsafeFrom("Das ist ein Name.")
-        )
-      ) ++
+      Translation(
+        lang = LanguageCode.unsafeFrom("de"),
+        name = ProductName.unsafeFrom("Das ist ein Name.")
+      )
+    ) ++
       NonEmptySet.one(
         Translation(
           lang = LanguageCode.unsafeFrom("en"),

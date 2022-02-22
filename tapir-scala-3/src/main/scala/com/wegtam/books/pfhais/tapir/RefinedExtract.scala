@@ -15,24 +15,21 @@ import eu.timepit.refined.api._
 import eu.timepit.refined.string._
 import shapeless.Witness
 
-/**
-  * A type class to extract a regular expression value from
-  * a refined type.
+/** A type class to extract a regular expression value from a refined type.
   */
 trait RefinedExtract[T] {
 
-  /**
-    * Returns the regular expression of a refined type
-    * of the kind `MatchesRegex`.
+  /** Returns the regular expression of a refined type of the kind `MatchesRegex`.
     *
-    * @return A string containing the regular expression.
+    * @return
+    *   A string containing the regular expression.
     */
   def regex: String
 }
 
 object RefinedExtract {
-  implicit def instance[T, S <: String](
-      implicit ev: String Refined MatchesRegex[S] =:= T,
+  implicit def instance[T, S <: String](implicit
+      ev: String Refined MatchesRegex[S] =:= T,
       ws: Witness.Aux[S]
   ): RefinedExtract[T] = new RefinedExtract[T] { val regex = ws.value }
 }

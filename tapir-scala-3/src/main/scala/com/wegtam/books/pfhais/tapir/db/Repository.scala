@@ -14,41 +14,44 @@ package com.wegtam.books.pfhais.tapir.db
 import com.wegtam.books.pfhais.tapir.models._
 import fs2.Stream
 
-/**
-  * A base class for our database repository.
+/** A base class for our database repository.
   *
-  * @tparam F A higher kinded type which wraps the actual return value.
+  * @tparam F
+  *   A higher kinded type which wraps the actual return value.
   */
 trait Repository[F[_]] {
 
-  /**
-    * Load a product from the database repository.
+  /** Load a product from the database repository.
     *
-    * @param id The unique ID of the product.
-    * @return A list of database rows for a single product which you'll need to combine.
+    * @param id
+    *   The unique ID of the product.
+    * @return
+    *   A list of database rows for a single product which you'll need to combine.
     */
   def loadProduct(id: ProductId): F[List[(ProductId, LanguageCode, ProductName)]]
 
-  /**
-    * Load all products from the database repository.
+  /** Load all products from the database repository.
     *
-    * @return A stream of database rows which you'll need to combine.
+    * @return
+    *   A stream of database rows which you'll need to combine.
     */
   def loadProducts(): Stream[F, (ProductId, LanguageCode, ProductName)]
 
-  /**
-    * Save the given product in the database.
+  /** Save the given product in the database.
     *
-    * @param p A product to be saved.
-    * @return The number of affected database rows (product + translations).
+    * @param p
+    *   A product to be saved.
+    * @return
+    *   The number of affected database rows (product + translations).
     */
   def saveProduct(p: Product): F[Int]
 
-  /**
-    * Update the given product in the database.
+  /** Update the given product in the database.
     *
-    * @param p The product to be updated.
-    * @return The number of affected database rows.
+    * @param p
+    *   The product to be updated.
+    * @return
+    *   The number of affected database rows.
     */
   def updateProduct(p: Product): F[Int]
 

@@ -12,24 +12,22 @@
 package com.wegtam.books.pfhais.tapir.config
 
 import com.typesafe.config.ConfigValue
-import com.wegtam.books.pfhais.tapir.{
-  DatabaseLogin,
-  DatabasePassword,
-  DatabaseUrl,
-  NonEmptyString
-}
+import com.wegtam.books.pfhais.tapir.{ DatabaseLogin, DatabasePassword, DatabaseUrl, NonEmptyString }
 import eu.timepit.refined.api._
 import eu.timepit.refined.auto._
 import pureconfig._
 import pureconfig.error._
 
-/**
-  * The configuration for our database connection.
+/** The configuration for our database connection.
   *
-  * @param driver The class name of the driver to use.
-  * @param url    The JDBC connection url (driver specific).
-  * @param user   The username for the database connection.
-  * @param pass   The password for the database connection.
+  * @param driver
+  *   The class name of the driver to use.
+  * @param url
+  *   The JDBC connection url (driver specific).
+  * @param user
+  *   The username for the database connection.
+  * @param pass
+  *   The password for the database connection.
   */
 final case class DatabaseConfig(
     driver: NonEmptyString,
@@ -40,8 +38,8 @@ final case class DatabaseConfig(
 
 object DatabaseConfig {
 
-  implicit def refTypeConfigConvert[F[_, _], T, P](
-      implicit configConvert: ConfigConvert[T],
+  implicit def refTypeConfigConvert[F[_, _], T, P](implicit
+      configConvert: ConfigConvert[T],
       refType: RefType[F],
       validate: Validate[T, P]
   ): ConfigConvert[F[T, P]] =
@@ -67,8 +65,7 @@ object DatabaseConfig {
               case Right(refined) => Right(refined)
             }
         }
-      override def to(t: F[T, P]): ConfigValue =
-        configConvert.to(refType.unwrap(t))
+      override def to(t: F[T, P]): ConfigValue = configConvert.to(refType.unwrap(t))
     }
 
   implicit val configReader: ConfigReader[DatabaseConfig] =

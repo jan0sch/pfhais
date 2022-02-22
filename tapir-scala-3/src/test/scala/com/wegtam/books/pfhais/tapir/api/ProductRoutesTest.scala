@@ -18,16 +18,7 @@ import com.wegtam.books.pfhais.tapir.db._
 import com.wegtam.books.pfhais.tapir.models._
 import com.wegtam.books.pfhais.tapir.models.TypeGenerators._
 import io.circe.syntax._
-import org.http4s.{
-  EntityDecoder,
-  EntityEncoder,
-  HttpRoutes,
-  Method,
-  Request,
-  Response,
-  Status,
-  Uri
-}
+import org.http4s.{ EntityDecoder, EntityEncoder, HttpRoutes, Method, Request, Response, Status, Uri }
 import org.http4s.circe._
 import org.http4s.implicits._
 import org.http4s.server.Router
@@ -49,8 +40,7 @@ final class ProductRoutesTest extends BaseSpec {
             Uri.fromString("/product/" + id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
-                def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(emptyRepository).routes)
+                def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(emptyRepository).routes)
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.GET, uri = u)
                 )
@@ -70,9 +60,8 @@ final class ProductRoutesTest extends BaseSpec {
             Uri.fromString("/product/" + p.id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
-                val repo: Repository[IO] = new TestRepository[IO](Seq(p))
-                def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(repo).routes)
+                val repo: Repository[IO]    = new TestRepository[IO](Seq(p))
+                def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(repo).routes)
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.GET, uri = u)
                 )
@@ -94,9 +83,8 @@ final class ProductRoutesTest extends BaseSpec {
             Uri.fromString("/product/" + id.toString) match {
               case Left(_) => fail("Could not generate valid URI!")
               case Right(u) =>
-                def service: HttpRoutes[IO] =
-                  Router("/" -> new ProductRoutes(emptyRepository).routes)
-                val payload = scala.util.Random.alphanumeric.take(256).mkString
+                def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(emptyRepository).routes)
+                val payload                 = scala.util.Random.alphanumeric.take(256).mkString
                 val response: IO[Response[IO]] = service.orNotFound.run(
                   Request(method = Method.PUT, uri = u)
                     .withEntity(payload.asJson.noSpaces)
@@ -120,8 +108,7 @@ final class ProductRoutesTest extends BaseSpec {
               Uri.fromString("/product/" + p.id.toString) match {
                 case Left(_) => fail("Could not generate valid URI!")
                 case Right(u) =>
-                  def service: HttpRoutes[IO] =
-                    Router("/" -> new ProductRoutes(emptyRepository).routes)
+                  def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(emptyRepository).routes)
                   val response: IO[Response[IO]] = service.orNotFound.run(
                     Request(method = Method.PUT, uri = u)
                       .withEntity(p)
@@ -142,9 +129,8 @@ final class ProductRoutesTest extends BaseSpec {
               Uri.fromString("/product/" + p.id.toString) match {
                 case Left(_) => fail("Could not generate valid URI!")
                 case Right(u) =>
-                  val repo: Repository[IO] = new TestRepository[IO](Seq(p))
-                  def service: HttpRoutes[IO] =
-                    Router("/" -> new ProductRoutes(repo).routes)
+                  val repo: Repository[IO]    = new TestRepository[IO](Seq(p))
+                  def service: HttpRoutes[IO] = Router("/" -> new ProductRoutes(repo).routes)
                   val response: IO[Response[IO]] = service.orNotFound.run(
                     Request(method = Method.PUT, uri = u)
                       .withEntity(p)

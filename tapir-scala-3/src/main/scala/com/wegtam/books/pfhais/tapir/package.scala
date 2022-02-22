@@ -24,9 +24,7 @@ package object tapir {
   object DatabaseLogin extends RefinedTypeOps[DatabaseLogin, String] with CatsRefinedTypeOpsSyntax
   // A string containing a database password which must be non empty.
   type DatabasePassword = String Refined NonEmpty
-  object DatabasePassword
-      extends RefinedTypeOps[DatabasePassword, String]
-      with CatsRefinedTypeOpsSyntax
+  object DatabasePassword extends RefinedTypeOps[DatabasePassword, String] with CatsRefinedTypeOpsSyntax
   // A string containing a database url.
   type DatabaseUrl = String Refined Uri
   object DatabaseUrl extends RefinedTypeOps[DatabaseUrl, String] with CatsRefinedTypeOpsSyntax

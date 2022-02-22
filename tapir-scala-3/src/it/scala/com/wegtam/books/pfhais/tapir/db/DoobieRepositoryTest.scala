@@ -53,9 +53,7 @@ final class DoobieRepositoryTest extends BaseSpec {
           forAll("ID") { (id: ProductId) =>
             for {
               rows <- repo.loadProduct(id)
-            } yield {
-              rows must be(empty)
-            }
+            } yield rows must be(empty)
           }
         }
       }
@@ -72,7 +70,7 @@ final class DoobieRepositoryTest extends BaseSpec {
               _    <- repo.saveProduct(p)
               rows <- repo.loadProduct(p.id)
             } yield {
-              rows must not be (empty)
+              rows must not be empty
               Product.fromDatabase(rows) must contain(p)
             }
           }
@@ -106,17 +104,17 @@ final class DoobieRepositoryTest extends BaseSpec {
               rows = repo
                 .loadProducts()
                 .groupAdjacentBy(_._1)
-                .map {
-                  case (_, rows) => Product.fromDatabase(rows.toList)
+                .map { case (_, rows) =>
+                  Product.fromDatabase(rows.toList)
                 }
-                .collect {
-                  case Some(p) => p
+                .collect { case Some(p) =>
+                  p
                 }
                 .compile
                 .toList
             } yield {
               val products = rows.unsafeRunSync()
-              products must not be (empty)
+              products must not be empty
               products mustEqual ps
             }
           }
@@ -137,7 +135,7 @@ final class DoobieRepositoryTest extends BaseSpec {
             rows <- repo.loadProduct(p.id)
           } yield {
             cnt must be > 0
-            rows must not be (empty)
+            rows must not be empty
             Product.fromDatabase(rows) must contain(p)
           }
         }
@@ -179,7 +177,7 @@ final class DoobieRepositoryTest extends BaseSpec {
               rows <- repo.loadProduct(p.id)
             } yield {
               cnt must be > 0
-              rows must not be (empty)
+              rows must not be empty
               Product.fromDatabase(rows) must contain(p)
             }
           }

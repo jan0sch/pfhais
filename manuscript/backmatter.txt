@@ -858,6 +858,37 @@ Before calling it a day we should switch back to 2.13 and do a clean compile to 
 
 We can also remove some code related to Scala 2 (plugins and compiler settings).
 
+Q> So what is left to do?
+
+Well, we should change our scalafmt configuration because we surely do not want to get our shiny new Scala 3 code formatted according to Scala 2 syntax. ;-)
+
+{caption: "A new configuration for scalafmt"}
+```text
+version        = 3.4.3
+runner.dialect = scala3
+style          = defaultWithAlign
+# Other options...
+danglingParentheses.preset = true
+maxColumn                  = 120
+newlines.forceBeforeMultilineAssign = def
+project.excludeFilters     = [".*\\.sbt"]
+rewrite.rules              = [Imports, RedundantBraces, RedundantParens]
+rewrite.imports.sort       = ascii
+rewriteTokens              = {
+  "⇒" = "=>"
+  "←" = "<-"
+  "→" = "->"
+}
+spaces.inImportCurlyBraces = true
+unindentTopLevelOperators  = true
+```
+
+We used the opportunity to upgrade to the latest scalafmt and use a bit different settings. Running a `scalafmtAll` rewrites a lot of code, so we need to check if it still compiles. This looks fine so we are done, are we?
+
+Q> So what is left to do?
+
+Wait, we've been here before, haven't we? Hint: remember that `updateDocumentation` function using optics that we have stubbed out? Sometimes I wonder how many times smaller (or bigger) things get dropped under the table during such migrations only to be re-implemented later with great effort for new.
+
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
 [^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36

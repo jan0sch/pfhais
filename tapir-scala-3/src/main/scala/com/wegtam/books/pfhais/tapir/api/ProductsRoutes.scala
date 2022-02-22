@@ -39,11 +39,11 @@ final class ProductsRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F
       val ps = repo
         .loadProducts()
         .groupAdjacentBy(_._1)
-        .map {
-          case (_, rows) => Product.fromDatabase(rows.toList)
+        .map { case (_, rows) =>
+          Product.fromDatabase(rows.toList)
         }
-        .collect {
-          case Some(p) => p
+        .collect { case Some(p) =>
+          p
         }
         .map(_.asJson.noSpaces)
         .intersperse(",")
@@ -73,11 +73,11 @@ object ProductsRoutes {
     Product(
       id = java.util.UUID.randomUUID,
       names = NonEmptySet.one(
-          Translation(
-            lang = LanguageCode.unsafeFrom("de"),
-            name = ProductName.unsafeFrom("Das ist ein Name.")
-          )
-        ) ++
+        Translation(
+          lang = LanguageCode.unsafeFrom("de"),
+          name = ProductName.unsafeFrom("Das ist ein Name.")
+        )
+      ) ++
         NonEmptySet.one(
           Translation(
             lang = LanguageCode.unsafeFrom("en"),
@@ -94,11 +94,11 @@ object ProductsRoutes {
     Product(
       id = java.util.UUID.randomUUID,
       names = NonEmptySet.one(
-          Translation(
-            lang = LanguageCode.unsafeFrom("de"),
-            name = ProductName.unsafeFrom("Das sind nicht die Droiden, nach denen sie suchen!")
-          )
-        ) ++
+        Translation(
+          lang = LanguageCode.unsafeFrom("de"),
+          name = ProductName.unsafeFrom("Das sind nicht die Droiden, nach denen sie suchen!")
+        )
+      ) ++
         NonEmptySet.one(
           Translation(
             lang = LanguageCode.unsafeFrom("en"),

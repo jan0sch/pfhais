@@ -21,8 +21,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import pureconfig._
 
-/**
-  * A base class for our integration tests.
+/** A base class for our integration tests.
   */
 abstract class BaseSpec
     extends AnyWordSpec

@@ -19,11 +19,12 @@ import io.circe._
 import io.circe.generic.semiauto._
 import sttp.tapir._
 
-/**
-  * A product.
+/** A product.
   *
-  * @param id    The unique ID of the product.
-  * @param names A list of translations of the product name.
+  * @param id
+  *   The unique ID of the product.
+  * @param names
+  *   A list of translations of the product name.
   */
 final case class Product(id: ProductId, names: NonEmptySet[Translation])
 
@@ -44,11 +45,12 @@ object Product {
 
   implicit val schemaFor: Schema[Product] = Schema.derived[Product]
 
-  /**
-    * Try to create a Product from the given list of database rows.
+  /** Try to create a Product from the given list of database rows.
     *
-    * @param rows The database rows describing a product and its translations.
-    * @return An option to the successfully created Product.
+    * @param rows
+    *   The database rows describing a product and its translations.
+    * @return
+    *   An option to the successfully created Product.
     */
   def fromDatabase(rows: Seq[(ProductId, LanguageCode, ProductName)]): Option[Product] = {
     val po = for {
@@ -56,12 +58,11 @@ object Product {
       t = Translation(lang = c, name = n)
       p <- Product(id = id, names = NonEmptySet.one(t)).some
     } yield p
-    po.map(
-      p =>
-        rows.drop(1).foldLeft(p) { (a, cols) =>
-          val (_, c, n) = cols
-          a.copy(names = a.names.add(Translation(lang = c, name = n)))
-        }
+    po.map(p =>
+      rows.drop(1).foldLeft(p) { (a, cols) =>
+        val (_, c, n) = cols
+        a.copy(names = a.names.add(Translation(lang = c, name = n)))
+      }
     )
   }
 }
