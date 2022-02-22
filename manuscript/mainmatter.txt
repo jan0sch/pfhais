@@ -3966,7 +3966,7 @@ I> While I'm writing these lines the awesome tapir project has merged a pull-req
 
 However don't forget about optics because their usage goes far beyond what we have done here.
 
-## Moving to Scala 3...
+# Moving to Scala 3...
 
 When I wrote this book version 2.12 was the thing and 2.13 was not yet released. While I did enable cross-building for 2.13 after it was released the next big version was still far away. But then it happened and Scala 3 was released. However it took some time until libraries and frameworks moved to support it. As I am writing this some still have not added support for it because in some areas this involves a significant amount of work.
 
@@ -3990,7 +3990,7 @@ Furthermore there is the Scala-3-Migrate plugin for sbt which supports on a vari
 
 So the second step would be to use the Scala-3-Migrate plugin to guide our migration to Scala 3. During this phase we will see what can be kept, what can be used with some restrictions and what has to be dropped.
 
-### Step 1: Updating to 2.13.x
+## Step 1: Updating to 2.13.x
 
 The currently recommended version to start a migration from is 2.13.7 so we will target this Scala version for updating our project. In the source code you can see that I simply copied the `tapir` folder of our project and named it `tapir-scala-3` to not mess with our existing code.
 
@@ -4007,7 +4007,7 @@ I> As much as I like it to turn any warning into an error, for a migration like 
 
 Furthermore to reduce the clutter in our build file we remove support for Scala 2.12 and the related compiler options. In the case that you have to support older versions of Scala (cross compilation) things get more complicated. In our case we can move completely to Scala 3. :-)
 
-#### Details and some compiling issues
+### Details and some compiling issues
 
 So what was done until now?
 
@@ -4249,7 +4249,7 @@ The things left to update look like they might be a bit more involving:
 
 As mentioned before we shouldn't simply dive in but check what is really needed. To gather the necessary information we move on to the next step.
 
-### Step 2: Migrating to Scala 3
+## Step 2: Migrating to Scala 3
 
 We have prepared our battle ground and already included the sbt plugin so we can just issue the `migrate-libs tapir` command to get some output. This is quite a lot so let's concentrate on the important parts. First there is some explanation on the top:
 
