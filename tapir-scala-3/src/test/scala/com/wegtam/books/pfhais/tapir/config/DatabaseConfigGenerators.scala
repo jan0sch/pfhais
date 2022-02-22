@@ -12,8 +12,6 @@
 package com.wegtam.books.pfhais.tapir.config
 
 import com.wegtam.books.pfhais.tapir._
-import eu.timepit.refined.api.RefType
-import eu.timepit.refined.auto._
 import org.scalacheck.{ Arbitrary, Gen }
 
 object DatabaseConfigGenerators {

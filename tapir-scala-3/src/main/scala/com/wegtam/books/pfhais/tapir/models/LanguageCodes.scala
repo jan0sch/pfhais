@@ -11,8 +11,6 @@
 
 package com.wegtam.books.pfhais.tapir.models
 
-import eu.timepit.refined.auto._
-
 object LanguageCodes {
 
   // A list of valid ISO-639-1 language codes.

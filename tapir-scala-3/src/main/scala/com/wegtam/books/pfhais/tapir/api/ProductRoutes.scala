@@ -57,7 +57,7 @@ final class ProductRoutes[F[_]: Async](repo: Repository[F]) extends Http4sDsl[F]
 }
 
 object ProductRoutes {
-  val example = Product(
+  val example: Product = Product(
     id = java.util.UUID.randomUUID,
     names = NonEmptySet.one(
         Translation(

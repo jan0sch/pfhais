@@ -828,6 +828,26 @@ Compiling the tests suites greets us with a couple of errors though, so no celeb
 
 I> We have a completely compiling project with green tests under Scala 3 now!
 
+This is awesome but according to the official migration guide we should also try to migrate our syntax. So let's run the `migrate-syntax tapir` command in the sbt shell.
+
+{caption: "Result of the migrate-syntax command"}
+```text
+[info]
+[info] The syntax incompatibilities have been fixed in tapir / Test
+[info]
+[info]
+[info] You can now commit the change!
+[info] Then you can run the next command:
+[info]
+[info] migrate tapir
+[info]
+[info]
+```
+
+Looking at the source we can see that only some annotations have been added. And finally we run `migrate tapir` and it bails out with an error. I'll spare you the gory details but I did not have any clue about what was going wrong. But we know that everything is fine under Scala 3 anyway. So what about simply ignoring the tools lamentations and move on with our lives? Sounds good? Yeah, to me too. :-)
+
+Before calling it a day we should switch back to 2.13 and do a clean compile to see some unused imports warnings be printed out. These are easy to fix and cleaner code is easier to maintain.
+
 [^41]: https://github.com/optics-dev/Monocle/issues/1001
 
 [^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
