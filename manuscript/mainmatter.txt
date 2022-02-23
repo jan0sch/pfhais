@@ -4832,7 +4832,17 @@ We used the opportunity to upgrade to the latest scalafmt and use a bit differen
 
 Q> So what is left to do?
 
-Wait, we've been here before, haven't we? Hint: remember that `updateDocumentation` function using optics that we have stubbed out? Sometimes I wonder how many times smaller (or bigger) things get dropped under the table during such migrations only to be re-implemented later with great effort for new.
+Wait, we've been here before, haven't we? Hint: remember that `updateDocumentation` function using optics that we have stubbed out? Sometimes I wonder how many times smaller (or bigger) things get dropped under the table during such migrations only to be re-implemented later with great effort for new. We start with adding the needed import for the new Monocle (`import monocle.syntax.all._`) and try some things out. First we have this nice implicit extractor for the regular expression which defines our refined `LanguageCode` type. This one doesn't seem to work any longer. To keep things simple, we just write it down in the code.
+
+Onwards to the `.focus` macro which is a killer feature of the new Monocle release. Instead of writing and combining all our custom `Lens` instances we should now be able to do something like the following:
+
+{caption: "The Monocle focus in action"}
+```scala
+docs.focus(_.components.some.parameters.each.schema.pattern)
+  .replace(uuidRegex.some)
+```
+
+Looks neat but we get an error that the function `components` is an overloaded one which seems is not supported. So it won't be that easy.
 
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
