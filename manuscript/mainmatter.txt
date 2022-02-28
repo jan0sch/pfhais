@@ -4157,7 +4157,7 @@ Of our other options we can pick either the version 0.17.20 or something from th
 
 Upgrading software is not for the faint hearted so let's be brave and try to update to 0.17.20. The line between bravery and stupidity is a bit hazy but we'll see how we do. :-)
 
-The first thing we stumble upon is of course a ton of errors because the namespace for tapir changed. Because changing it is simple but tedious it screams for automation and therefore we'll use a shell script.
+The first thing we stumble upon is of course a ton of errors because the namespace for tapir changed. Because changing it is simple but tedious it screams for automation and therefore we'll use a shell script[^41].
 
 {caption: "Shell script to fix import namespace errors"}
 ```sh
@@ -4198,7 +4198,7 @@ After digging a bit through the tapir code we can see that we simply have to pas
 
 This is good news and furthermore starting our service via `sbt run` looks good also. :-)
 
-Now we could move on to the next step or we might try updating some more dependencies. For starters we remove the wartremover plugin because it isn't available for Scala 3 anyway. Besides the plugin we must remove the settings in the `build.sbt` and the annotations within the code (see the `@SuppressWarnings` annotations). As a bonus we get rid of some warnings about `Any` type inference which are false positives anyway. Next is the move to the Ember server for http4s from the Blaze one because Ember is the new default and recommended one. For this the our main entry point in `Tapir.scala` has to be adjusted a bit.
+Now we could move on to the next step or we might try updating some more dependencies. For starters we remove the wartremover plugin because it isn't available for Scala 3 anyway. Besides the plugin we must remove the settings in the `build.sbt` and the annotations within the code (see the `@SuppressWarnings` annotations). As a bonus we get rid of some warnings about `Any` type inference which are false positives anyway. Next is the move to the Ember server for http4s from the Blaze one because Ember is the new default and recommended one. For this our main entry point in `Tapir.scala` has to be adjusted a bit.
 
 First we change from `IOApp` to `IOApp.WithContext` and implement the `executionContextResource` function. In addition we adjust our blocking thread pool to use 2 threads or half of the available processors.
 
@@ -4287,9 +4287,9 @@ For our example here however we do it for demonstrating the upgrade process. In 
 
 Q> But where to start?
 
-So, tapir has dependencies on http4s and also cats-effect it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving. After increasing the version number for Monocle and changing also the artefact group and removing the laws package we are greeted by a number of deprecation warnings and one errors upon compilation. This doesn't look too bad so maybe we are lucky after all, are we?
+So, tapir has dependencies on http4s and also cats-effect therefore it will surely influence http4s and also doobie which also uses cats-effect. So the first candidate should be kittens because it doesn't affect the other dependencies. The next one will be Monocle because although *maybe* not necessary it also doesn't mess up the other dependencies. While updating kittens is done by simply increasing the version number the Monocle part will likely be more involving. After increasing the version number for Monocle and changing also the artefact group and removing the laws package we are greeted by a number of deprecation warnings and one errors upon compilation. This doesn't look too bad so maybe we are lucky after all, are we?
 
-For the deprecations there is an open issue for providing Scalafix rules for automatic code rewrite but it is not yet done[^41] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
+For the deprecations there is an open issue for providing Scalafix rules for automatic code rewrite but it is not yet done[^42] therefore we have to do it ourselves. But at the issue we find a nice list of deprecated methods and their replacements! As for the error message:
 
 {caption: "Compiler error related to Monocle"}
 ```text
@@ -4321,7 +4321,7 @@ However now we get a lot of errors if we try to compile our tests. So we need to
 [error] ... object scalatestplus is not a member of package org
 ```
 
-This is strange not only because Monocle has no apparent connection to our testing libraries. But doing our research we find an issue in the bugtracker of scalatestplus[^42] and applying the workaround from there (manually including a dependency to discipline-scalatest) solves our issue. Hooray! But to be honest: I have no idea what is going on behind the scenes here. Likely some dependency issues which cannot be resolved and are silently dropped or so. While we're at it we simply upgrade our Scala version to 2.13.8.
+This is strange not only because Monocle has no apparent connection to our testing libraries. But doing our research we find an issue in the bugtracker of scalatestplus[^43] and applying the workaround from there (manually including a dependency to discipline-scalatest) solves our issue. Hooray! But to be honest: I have no idea what is going on behind the scenes here. Likely some dependency issues which cannot be resolved and are silently dropped or so. While we're at it we simply upgrade our Scala version to 2.13.8.
 
 Ignoring the remaining deprecation warnings our tests are running fine and we take another look at the output of `migrate-libs tapir` within sbt. It seems we have to at least upgrade to tapir 0.18.x. The current stable version being 0.19.x we can see that it depends on http4s 0.23.x which in turn depends on cats-effect 3. Being a major rewrite version 3 of cats-effect will clash with our doobie version. So we will have to switch to the current pre-release version of it. But at least it is close to being released. :-)
 
@@ -4351,7 +4351,7 @@ host <- IO(
 )
 ```
 
-It will work but why do we have introduced properly typed configuration then? On the other hand we might have to drop pureconfig because the migrate plugin told us that there is no version of it for Scala 3 yet. However looking at the repository and bugtracker [^43]we can see that basic Scala 3 support is supposed to be there. So let's try to do it the proper way first!
+It will work but why do we have introduced properly typed configuration then? On the other hand we might have to drop pureconfig because the migrate plugin told us that there is no version of it for Scala 3 yet. However looking at the repository and bugtracker[^44] we can see that basic Scala 3 support is supposed to be there. So let's try to do it the proper way first!
 
 While we're at it we realise that we also need a `Port` type also instead of custom `PortNumber` and of course pureconfig needs to be provided with type classes which can read these types.
 
@@ -4652,8 +4652,6 @@ Q> So what now?
 
 We could call it a day and stick with Scala 2 for the time being. However maybe there is a strong need for an upgrade. A library which only works partially under Scala 2 or other reasons. So imagine that we refactor our service a bit by removing some dependencies and add some more boilerplate to make up for it. At first we could simply remove the `CrossVersion` settings and use only libraries which are released for Scala 3. This move leaves us with hundreds of compiler errors. Many of them seem to be related to refined.
 
-On a side note: We have used package objects in our code which have been dropped in Scala 3. Therefore we need to refactor these also.
-
 Because we have to start *somewhere* we try to create our `ConfigReader` instances for pureconfig manually to avoid the dependency to the derivation module. Luckily there are some helpers like the `ConfigReader.forProductX` methods which make this quite easy.
 
 {caption: "A manual constructed reader for pureconfig"}
@@ -4767,7 +4765,7 @@ for {
   //...
 ```
 
-Awesome! We have our main code compiling under Scala 3 now! :-D
+Awesome! We have our main code compiling under Scala 3 now! =)
 
 Compiling the tests suites greets us with a couple of errors though, so no celebrations just yet. Some of them are refined related like in the main code (missing macros) so we will apply our `unsafeFrom` workaround for them and get rid of them. Then we have an error about implicit values needing an explicit type which is a good practice anyway. The integration tests look similar and are easy to fix too. However we have two failing tests after compilation. One within each route test and both related to checking the some error response for malformed requests. So we simply adjust the error message we test for and we are done.
 
@@ -4820,9 +4818,7 @@ project.excludeFilters     = [".*\\.sbt"]
 rewrite.rules              = [Imports, RedundantBraces, RedundantParens]
 rewrite.imports.sort       = ascii
 rewriteTokens              = {
-  "⇒" = "=>"
-  "←" = "<-"
-  "→" = "->"
+  ...
 }
 spaces.inImportCurlyBraces = true
 unindentTopLevelOperators  = true
@@ -4885,6 +4881,7 @@ Q> So what is left to do?
 
 Nothing! Go forth, ship your release and treat yourself for having ported your project to Scala 3. :-)
 
+Of course I cheated because there is always something left like the not working `example` for one of our `ProductsRoutes` endpoints and furthermore: We have used package objects in our code which have been dropped in Scala 3. Therefore we should refactor these also. So feel free to do the required changes as a final exercise.
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
@@ -4946,12 +4943,14 @@ Nothing! Go forth, ship your release and treat yourself for having ported your p
 
 [^40]: https://www.ecma-international.org/ecma-262/5.1/#sec-7.8.5
 
-[^41]: https://github.com/optics-dev/Monocle/issues/1001
+[^41]: We could have used scalafix here but I consider this overkill for such a thing.
 
-[^42]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
+[^42]: https://github.com/optics-dev/Monocle/issues/1001
 
-[^43]: https://github.com/pureconfig/pureconfig/issues/970
+[^43]: https://github.com/scalatest/scalatestplus-scalacheck/issues/36
 
-[^44]: https://docs.scala-lang.org/scala3/reference/other-new-features/opaques.html
+[^44]: https://github.com/pureconfig/pureconfig/issues/970
 
-[^45]: https://github.com/softwaremill/quicklens
+[^45]: https://docs.scala-lang.org/scala3/reference/other-new-features/opaques.html
+
+[^46]: https://github.com/softwaremill/quicklens
