@@ -34,10 +34,9 @@ lazy val tapir =
         library.http4sEmberServer,
         library.kittens,
         library.logback,
-        library.monocleCore,
-        library.monocleMacro,
         library.postgresql,
         library.pureConfig,
+        library.quickLens,
         library.refinedCats,
         library.refinedCore,
         library.tapirCirce,
@@ -74,9 +73,9 @@ lazy val library =
       val http4s        = "0.23.10"
       val kittens       = "3.0.0-M3"
       val logback       = "1.2.10"
-      val monocle       = "3.1.0"
       val postgresql    = "42.3.2"
       val pureConfig    = "0.17.1"
+      val quickLens     = "1.8.3"
       val refined       = "0.9.28"
       val scalaCheck    = "1.15.4"
       val scalaTest     = "3.2.11"
@@ -101,10 +100,9 @@ lazy val library =
     val http4sEmberClient = "org.http4s"                  %% "http4s-ember-client"      % Version.http4s
     val kittens           = "org.typelevel"               %% "kittens"                  % Version.kittens
     val logback           = "ch.qos.logback"              %  "logback-classic"          % Version.logback
-    val monocleCore       = "dev.optics"                  %% "monocle-core"             % Version.monocle
-    val monocleMacro      = "dev.optics"                  %% "monocle-macro"            % Version.monocle
     val postgresql        = "org.postgresql"              %  "postgresql"               % Version.postgresql
     val pureConfig        = "com.github.pureconfig"       %% "pureconfig-core"          % Version.pureConfig
+    val quickLens         = "com.softwaremill.quicklens"  %% "quicklens"                % Version.quickLens
     val refinedCore       = "eu.timepit"                  %% "refined"                  % Version.refined
     val refinedCats       = "eu.timepit"                  %% "refined-cats"             % Version.refined
     val refinedScalaCheck = "eu.timepit"                  %% "refined-scalacheck"       % Version.refined

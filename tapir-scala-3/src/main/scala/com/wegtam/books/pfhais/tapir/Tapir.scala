@@ -15,6 +15,7 @@ import java.util.concurrent.{ ExecutorService, Executors }
 
 import cats.effect._
 import cats.syntax.all._
+import com.softwaremill.quicklens._
 import com.typesafe.config._
 import com.wegtam.books.pfhais.tapir.api._
 import com.wegtam.books.pfhais.tapir.config._
@@ -22,18 +23,17 @@ import com.wegtam.books.pfhais.tapir.db._
 import com.wegtam.books.pfhais.tapir.models.LanguageCode
 import doobie._
 import eu.timepit.refined.auto._
-import monocle._
-import monocle.macros._
-import monocle.syntax.all._
 import org.http4s.ember.server._
 import org.http4s.server.Router
 import pureconfig._
+import sttp.tapir.apispec._
 import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.SwaggerUI
 
+import scala.collection.immutable._
 import scala.concurrent.ExecutionContext
 import scala.io.StdIn
 
@@ -89,34 +89,19 @@ object Tapir extends IOApp {
     *   An updated documentation structure.
     */
   private def updateDocumentation(docs: OpenAPI): OpenAPI = {
-    // Generate some lenses.
-    // val components: Lens[OpenAPI, Option[Components]] = GenLens[OpenAPI](_.components)
-    // val componentsSchemas: Lens[Components, ListMap[String, ReferenceOr[Schema]]] =
-    // GenLens[Components](_.schemas)
-    // val paths: Lens[OpenAPI, ListMap[String, PathItem]] = GenLens[OpenAPI](_.paths)
-    // val getOps: Lens[PathItem, Option[Operation]]       = GenLens[PathItem](_.get)
-    // val putOps: Lens[PathItem, Option[Operation]]       = GenLens[PathItem](_.put)
-    // val operationParams: Lens[Operation, List[ReferenceOr[Parameter]]] =
-    // GenLens[Operation](_.parameters)
-    // val parameterSchema: Lens[Parameter, ReferenceOr[Schema]] = GenLens[Parameter](_.schema)
-    // val schemaProperties: Lens[Schema, ListMap[String, ReferenceOr[Schema]]] =
-    // GenLens[Schema](_.properties)
-    // val schemaPattern: Lens[Schema, Option[String]] = GenLens[Schema](_.pattern)
-    // Now try to get things going...
+    // Our regular expressions.
     val langRegex = "/^[a-z]{2}$/"
     val uuidRegex = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i"
-    // (paths at ("/product/{id}") composeOptional possible andThen getOps composeOptional possible andThen operationParams composeTraversal each composeOptional possible andThen parameterSchema composeOptional possible andThen schemaPattern)
-    //   .replace(uuidRegex.some)(docs)
-    // val updatePutProductId =
-    // (paths at ("/product/{id}") composeOptional possible andThen putOps composeOptional possible andThen operationParams composeTraversal each composeOptional possible andThen parameterSchema composeOptional possible andThen schemaPattern)
-    //   .replace(uuidRegex.some)(updateGetProductId)
-    // val updateModelProduct =
-    // (components composeOptional possible andThen componentsSchemas at ("Product") composeOptional possible composeOptional possible andThen schemaProperties at ("id") composeOptional possible composeOptional possible andThen schemaPattern)
-    //   .replace(uuidRegex.some)(updatePutProductId)
-    // val updateModelTranslation =
-    // (components composeOptional possible andThen componentsSchemas at ("Translation") composeOptional possible composeOptional possible andThen schemaProperties at ("lang") composeOptional possible composeOptional possible andThen schemaPattern)
-    //   .replace(langRegex.some)(updateModelProduct)
-    // updateModelTranslation
-    docs
+    // Update the documentation structure.
+    val updateProductId = docs
+      .modify(_.paths.pathItems.at("/product/{id}").parameters.each.eachRight.schema.at.eachRight.pattern)
+      .using(_ => uuidRegex.some)
+    val updateModelProduct = updateProductId
+      .modify(_.components.at.schemas.at("Product").eachRight.properties.at("id").eachRight.pattern)
+      .using(_ => uuidRegex.some)
+    val updateModelTranslation = updateModelProduct
+      .modify(_.components.at.schemas.at("Translation").eachRight.properties.at("lang").eachRight.pattern)
+      .using(_ => langRegex.some)
+    updateModelTranslation
   }
 }

@@ -4844,6 +4844,47 @@ docs.focus(_.components.some.parameters.each.schema.pattern)
 
 Looks neat but we get an error that the function `components` is an overloaded one which seems is not supported. So it won't be that easy.
 
+After poking around and asking for help (Please ask for help if you need it, there is absolutely nothing wrong with this.) we realise that we will have to generate lenses like before because the shiny focus macro cannot (yet) solve this for us. Sadly the `GenLens` macro also has problems with overloaded methods therefore we try to define `Getter` and `Setter` functionality for these manually. Some lenses can still be generated via `GenLens` like this `GenLens[Operation](_.parameters)` for example. For others we define code like the following:
+
+{caption: "Manually define Getter and Setter"}
+```scala
+val componentsGetter = Getter[OpenAPI, Option[Components]](_.components)
+val componentsSetter = Setter[OpenAPI, Option[Components]](
+  f => o => o.copy(components = f(o.components))
+)
+```
+
+However this is even more cumbersome than the manual macros before so maybe there is another way... And it turns out that we have another optics library for Scala which is called Quicklens[^45]. The fact that is comes from the same people that do the tapir project looks promising and indeed we do find a working implementation quickly.
+
+{caption: "Using optics from Quicklens to update our documentation"}
+```scala
+private def updateDocumentation(docs: OpenAPI): OpenAPI = {
+  // Our regular expressions.
+  val langRegex = ???
+  val uuidRegex = ???
+  // Update the documentation structure.
+  val updateProductId = docs
+    .modify(_.paths.pathItems.at("/product/{id}").parameters.each
+    .eachRight.schema.at.eachRight.pattern)
+    .using(_ => uuidRegex.some)
+  val updateModelProduct = updateProductId
+    .modify(_.components.at.schemas.at("Product").eachRight
+    .properties.at("id").eachRight.pattern)
+    .using(_ => uuidRegex.some)
+  val updateModelTranslation = updateModelProduct
+    .modify(_.components.at.schemas.at("Translation").eachRight
+    .properties.at("lang").eachRight.pattern)
+    .using(_ => langRegex.some)
+  updateModelTranslation
+}
+```
+
+The `.modify` functionality looks very similar to `.focus` from Monocle and apart from the fact that the modifiers have different names we also do the same like in the Monocle code (*read* traverse through our structure). While Monocle would allow us to use more advanced features we are happy with Quicklens here because it fulfils our needs.
+
+Q> So what is left to do?
+
+Nothing! Go forth, ship your release and treat yourself for having ported your project to Scala 3. :-)
+
 
 [^11]: http://slick.lightbend.com/doc/3.3.1/database.html
 
@@ -4913,3 +4954,4 @@ Looks neat but we get an error that the function `components` is an overloaded o
 
 [^44]: https://docs.scala-lang.org/scala3/reference/other-new-features/opaques.html
 
+[^45]: https://github.com/softwaremill/quicklens
