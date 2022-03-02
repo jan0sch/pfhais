@@ -4003,7 +4003,7 @@ addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.5.0")
 
 Now we switch the default version for Scala to `2.13.7` and try to compile the project. We run into some missing dependencies errors which will force our hand into upgrading several dependencies. In addition we stumble upon the matter that the compiler flag `-Xlint:nullary-override` has been dropped so we remove it or comment it out.
 
-I> As much as I like it to turn any warning into an error, for a migration like this I recommend to fix only the deprecation issues and then turn of the `Xfatal-warnings` flag.
+I> As much as I like it to turn any warning into an error, for a migration like this I recommend to fix only the deprecation issues and then turn off the `Xfatal-warnings` flag.
 
 Furthermore to reduce the clutter in our build file we remove support for Scala 2.12 and the related compiler options. In the case that you have to support older versions of Scala (cross compilation) things get more complicated. In our case we can move completely to Scala 3. :-)
 
