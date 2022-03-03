@@ -69,8 +69,8 @@ object Tapir extends IOApp {
       )
       updatedDocs = updateDocumentation(docs)
       docsRoutes  = Http4sServerInterpreter[IO]().toRoutes(SwaggerUI[IO](updatedDocs.toYaml))
-      routes      = productRoutes.routes <+> productsRoutes.routes
-      httpApp     = Router("/" -> routes, "/docs" -> docsRoutes).orNotFound
+      routes      = productRoutes.routes <+> productsRoutes.routes <+> docsRoutes
+      httpApp     = Router("/" -> routes).orNotFound
       resource = EmberServerBuilder
         .default[IO]
         .withHost(apiConfig.host)
