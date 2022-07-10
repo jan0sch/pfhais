@@ -4661,7 +4661,7 @@ implicit val configReader: ConfigReader[DatabaseConfig] =
     (DatabaseConfig(_, _, _, _))
 ```
 
-The code compiles again (on 2.13!) and the tests are looking good. On Scala 3 we run again into the problem that the refined pureconfig module is not available. So we could either drop our beloved refined types or we write manual readers for them. In Scala 3 we could use the opaque type aliases[^4] to get more type safety but they are much less powerful than refined types. Well, we'll see how it goes, so at first we define companion objects for our refined types to gain some more functionality i.e. the `from` method to convert arbitrary types into refined ones.
+The code compiles again (on 2.13!) and the tests are looking good. On Scala 3 we run again into the problem that the refined pureconfig module is not available. So we could either drop our beloved refined types or we write manual readers for them. In Scala 3 we could use the opaque type aliases[^45] to get more type safety but they are much less powerful than refined types. Well, we'll see how it goes, so at first we define companion objects for our refined types to gain some more functionality i.e. the `from` method to convert arbitrary types into refined ones.
 
 {caption: "A companion object for a refined type providing more functionality"}
 ```scala
@@ -4850,7 +4850,7 @@ val componentsSetter = Setter[OpenAPI, Option[Components]](
 )
 ```
 
-However this is even more cumbersome than the manual macros before so maybe there is another way... And it turns out that we have another optics library for Scala which is called Quicklens[^45]. The fact that is comes from the same people that do the tapir project looks promising and indeed we do find a working implementation quickly.
+However this is even more cumbersome than the manual macros before so maybe there is another way... And it turns out that we have another optics library for Scala which is called Quicklens[^46]. The fact that is comes from the same people that do the tapir project looks promising and indeed we do find a working implementation quickly.
 
 {caption: "Using optics from Quicklens to update our documentation"}
 ```scala
