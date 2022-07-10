@@ -23,7 +23,7 @@ This book uses the Creative Commons Attribution ShareAlike 4.0 International (CC
 # Thanks
 
 I would like to thank my beloved wife and family who bear with me and make all of this possible.
-Also I send a big thank you to alle the nice people from the Scala community which I've had the pleasure to meet. Special thanks go to Adam Warski (tapir), Frank S. Thomas (refined), Julien Truffaut (Monocle) and Ross A. Baker (http4s) for their help, advise and patience.
+Also I send a big thank you to all the nice people from the Scala community which I've had the pleasure to meet. Special thanks go to Adam Warski (tapir), Frank S. Thomas (refined), Julien Truffaut (Monocle) and Ross A. Baker (http4s) for their help, advise and patience.
 
 [^1]: https://akka.io
 
