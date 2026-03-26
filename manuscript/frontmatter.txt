@@ -14,7 +14,7 @@ The answer to this can be found in this book which is intended to be read from c
 
 This edition includes a chapter about migrating the project to Scala 3. Which includes all the nasty issues that we tend to run into if we touch code after a longer time.
 
-Code and book source can be found in the following repository: https://github.com/jan0sch/pfhais
+Code and book source can be found in the following repository: https://codeberg.org/jan0sch/pfhais
 
 ## Copyleft Notice
 
